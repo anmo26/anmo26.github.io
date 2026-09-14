@@ -928,10 +928,61 @@
     bed.classList.add('mobile-freeform');
 
     deoverlapItems(items);
+    resettleWhenImagesLoad(bed, items);
 
     bed.setAttribute('data-frozen', '');
     growBed(bed);
   }
+
+  /**
+   * A photo whose file has not arrived yet has almost no height, so the
+   * settling above measures it as a sliver and lets a neighbour sit where
+   * the full-size picture is about to appear. Wait for the pictures, then
+   * settle once more against their real heights.
+   *
+   * Only ever done while the arrangement is still the one the page worked
+   * out for itself: the moment a visitor picks anything up, where things
+   * sit is their decision, and a late-loading photo must not shove it
+   * around underneath them.
+   */
+  function resettleWhenImagesLoad(bed, items) {
+    var imgs = bed.querySelectorAll('img');
+    var i;
+
+    bed.setAttribute('data-settling', '');
+    bed.addEventListener('pointerdown', function () {
+      bed.removeAttribute('data-settling');
+    }, { once: true, capture: true });
+
+    function settle() {
+      if (!bed.hasAttribute('data-settling')) return;
+      deoverlapItems(items);
+      growBed(bed);
+    }
+
+    // The first settle above ran against whatever width the bed happened to
+    // have at that instant -- fitBed has not yet chosen the phone's scale,
+    // and that choice changes the bed's width, which changes how tall every
+    // wrapped caption and scaled photo ends up. Settle again once the
+    // browser has finished laying all of that out, and again as the pictures
+    // themselves arrive, since a photo that has not loaded reserves the
+    // wrong hole until it does.
+    requestAnimationFrame(function () { requestAnimationFrame(settle); });
+
+    for (i = 0; i < imgs.length; i++) {
+      if (imgs[i].complete) continue;
+      imgs[i].addEventListener('load', settle, { once: true });
+      imgs[i].addEventListener('error', settle, { once: true });
+    }
+
+    // Past this point the arrangement is the one the visitor sees and may
+    // already be rearranging; nothing loading late gets to move it again.
+    setTimeout(function () {
+      settle();
+      bed.removeAttribute('data-settling');
+    }, 4000);
+  }
+
 
   // A gap to leave between two items once one has been dropped below the
   // other -- small enough to still read as one arrangement, wide enough

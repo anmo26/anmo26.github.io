@@ -57,6 +57,51 @@ function fromHeader(buf) {
   return null;
 }
 
+/**
+ * The EXIF orientation flag of a JPEG, 1-8, or null when there isn't one.
+ *
+ * A camera held sideways does not rewrite the pixels -- it stores the photo
+ * the way the sensor read it and notes which way up it should be shown. Both
+ * the browser and `sips` honour that note, so the picture on screen is often
+ * the transpose of the numbers sitting in the frame header. Reading the flag
+ * is the only way the generator can describe a photo the way it will actually
+ * appear rather than the way it happens to be stored.
+ */
+function jpegOrientation(buf) {
+  if (!(buf.length > 4 && buf.readUInt16BE(0) === 0xffd8)) return null;
+  let i = 2;
+  while (i < buf.length - 4) {
+    if (buf[i] !== 0xff) { i++; continue; }
+    const marker = buf[i + 1];
+    if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { i += 2; continue; }
+    if (marker === 0xda) return null;              // start of scan: past all metadata
+    const len = buf.readUInt16BE(i + 2);
+    if (marker === 0xe1 && buf.toString('ascii', i + 4, i + 10) === 'Exif\0\0') {
+      const tiff = i + 10;
+      if (tiff + 8 > buf.length) return null;
+      const order = buf.toString('ascii', tiff, tiff + 2);
+      if (order !== 'II' && order !== 'MM') return null;
+      const be = order === 'MM';
+      const u16 = o => (be ? buf.readUInt16BE(o) : buf.readUInt16LE(o));
+      const u32 = o => (be ? buf.readUInt32BE(o) : buf.readUInt32LE(o));
+      const ifd = tiff + u32(tiff + 4);
+      if (ifd + 2 > buf.length) return null;
+      const count = u16(ifd);
+      for (let e = 0; e < count; e++) {
+        const entry = ifd + 2 + e * 12;
+        if (entry + 12 > buf.length) return null;
+        if (u16(entry) === 0x0112) {
+          const v = u16(entry + 8);
+          return v >= 1 && v <= 8 ? v : null;
+        }
+      }
+      return null;
+    }
+    i += 2 + len;
+  }
+  return null;
+}
+
 function fromSips(filePath) {
   const r = spawnSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', filePath], { encoding: 'utf8' });
   if (r.status !== 0 || !r.stdout) return null;
@@ -71,7 +116,17 @@ export function imageSize(filePath) {
     const buf = Buffer.alloc(65536);
     const read = fs.readSync(fd, buf, 0, 65536, 0);
     fs.closeSync(fd);
-    return fromHeader(buf.subarray(0, read)) ?? fromSips(filePath);
+    const head = buf.subarray(0, read);
+    const size = fromHeader(head) ?? fromSips(filePath);
+    if (!size) return null;
+
+    // Orientations 5-8 are the quarter turns: the photo is displayed with its
+    // stored width and height swapped. Reporting the stored pair would have
+    // the page reserve a landscape hole for a portrait picture, so everything
+    // below it jumps once the real image arrives.
+    const o = jpegOrientation(head);
+    if (o >= 5 && o <= 8) return { width: size.height, height: size.width };
+    return size;
   } catch {
     return null;
   }
