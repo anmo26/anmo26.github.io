@@ -159,13 +159,14 @@
   padding: 7px;
   margin: 0;
   scrollbar-width: thin;
-  scrollbar-color: var(--ipod-faint) transparent;
+  scrollbar-color: var(--rule, rgba(38, 36, 31, .16)) transparent;
 }
 .ipod-list:focus { outline: none; }
 .ipod-list:focus-visible { outline: 1px solid var(--ipod-mark); outline-offset: -1px; }
 
 .ipod-list::-webkit-scrollbar { width: 5px; }
-.ipod-list::-webkit-scrollbar-thumb { background: var(--ipod-faint); }
+.ipod-list::-webkit-scrollbar-track { background: transparent; }
+.ipod-list::-webkit-scrollbar-thumb { background: var(--rule, rgba(38, 36, 31, .16)); }
 
 .ipod-tile {
   display: flex;
@@ -203,7 +204,7 @@
   background:
     linear-gradient(150deg,
       hsl(var(--h1, 34) 26% calc(var(--l, 70) * 1%)) 0%,
-      hsl(var(--h2, 86) 15% calc((var(--l, 70) - 16) * 1%)) 100%);
+      hsl(var(--h2, 86) 15% calc((var(--l, 70) - 13) * 1%)) 100%);
 }
 .ipod-tile-initials {
   font-family: var(--serif, Georgia, serif);
@@ -417,8 +418,8 @@ body.theme-ink .ipod {
 body.theme-ink .ipod-tile-art.is-generated {
   background:
     linear-gradient(150deg,
-      hsl(var(--h1, 34) 22% calc((var(--l, 70) - 28) * 1%)) 0%,
-      hsl(var(--h2, 86) 13% calc((var(--l, 70) - 42) * 1%)) 100%);
+      hsl(var(--h1, 34) 20% calc((var(--l, 70) - 18) * 1%)) 0%,
+      hsl(var(--h2, 86) 12% calc((var(--l, 70) - 31) * 1%)) 100%);
 }
 
 /* --------------------------------------------------------------- responsive */

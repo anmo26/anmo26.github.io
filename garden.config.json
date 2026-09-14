@@ -15,5 +15,10 @@
   "_comment_publish": "true = watch.js git-commits and pushes each change",
   "publish": false,
   "url": null,
-  "debounceMs": 2000
+  "debounceMs": 2000,
+  "guestbook": {
+    "enabled": false,
+    "mode": "local",
+    "url": null
+  }
 }

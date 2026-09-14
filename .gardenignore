@@ -6,4 +6,3 @@ node_modules/
 *.tmp
 README.md
 publish-setup.sh
-guestbook-api/

@@ -88,7 +88,10 @@
   }
 
   function initials(name) {
-    var words = String(name).replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+    var words = String(name)
+      .replace(/['\u2019]/g, '')          // don't let "today's" split into two words
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/).filter(Boolean);
     if (!words.length) return '♪';                    // eighth note
     if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
     return (words[0][0] + words[1][0]).toUpperCase();
@@ -187,7 +190,7 @@
       var h = hash(t.name);
       art.style.setProperty('--h1', String(26 + (h % 70)));
       art.style.setProperty('--h2', String(26 + ((h >> 8) % 70)));
-      art.style.setProperty('--l',  String(58 + ((h >> 16) % 24)));
+      art.style.setProperty('--l',  String(62 + ((h >> 16) % 22)));
 
       function generated() {
         art.className = 'ipod-tile-art is-generated';
@@ -244,7 +247,7 @@
 
       var cur = tracks[state.index];
       if (state.view === 'list') {
-        bar.textContent = 'Playlists';
+        bar.textContent = 'playlists';
         ticker.textContent = cur.note ? cur.name + ' — ' + cur.note : cur.name;
       } else {
         var now = tracks[state.playing] || cur;
@@ -274,7 +277,7 @@
       frame.title = 'Spotify player: ' + t.name;
       frame.loading = 'lazy';
       frame.setAttribute('frameborder', '0');
-      frame.setAttribute('allowfullscreen', '');
+      // `allow` already grants fullscreen; the legacy attribute only warns.
       frame.setAttribute('allow',
         'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');
       stage.appendChild(frame);

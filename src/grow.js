@@ -243,6 +243,10 @@ function renderPage({ siteName, title, files, positioned, description, socialIma
                       assetPrefix, isRoot, tagline, marquee, guestbook }) {
   const windows = files.map(renderWindow).join('\n');
 
+  // A guestbook needs a server to hold visitor notes, which GitHub Pages
+  // cannot do. Off until there is a backend; flip "enabled" in the config.
+  const showGuestbook = isRoot && guestbook && guestbook.enabled === true;
+
   // Freeform positions live in a media query so phones get the plain stack
   // defined in the base stylesheet and wide screens get the Finder layout.
   let freeform = '';
@@ -340,7 +344,7 @@ ${head}
     <div class="plantbed${positioned ? ' freeform' : ' scattered'}">
 ${windows}
     </div>
-${isRoot ? `
+${showGuestbook ? `
     <section class="guestbed" id="gb-notes">
       <div class="gb-header">
         <h2>guestbook</h2>
@@ -495,12 +499,13 @@ export function growSite(opts = {}) {
     rules: loadRules(root, config),
     tagline: config.tagline,
     marquee: config.marquee ??
-      'welcome to my garden  *  drag the windows around  *  sign the guestbook  *  best viewed with curiosity  *',
+      'welcome to my garden  *  drag the windows around  *  everything here is a real file  *  best viewed with curiosity  *',
     siteName: opts.title ?? config.title ?? path.basename(root),
     description: config.description,
 
-    // Handed straight to window.GARDEN_CONFIG so app.js can find the
-    // guestbook backend: { "mode": "remote", "url": "https://..." }.
+    // Handed straight to window.GARDEN_CONFIG. The guestbook stays hidden
+    // until it is { "enabled": true, "mode": "remote", "url": "https://..." }
+    // pointing at a real backend -- GitHub Pages cannot store visitor notes.
     guestbook: config.guestbook,
     depth: 0,
     maxDepth: opts.depth ?? config.depth ?? 3,

@@ -36,7 +36,7 @@
       <p>a file gallery. a mirror of a folder.</p>
       <div class="rule"></div>
     </header>
-    <div class="marquee"><span>welcome to my garden  *  drag the windows around  *  sign the guestbook  *  best viewed with curiosity  *</span></div>
+    <div class="marquee"><span>welcome to my garden  *  drag the windows around  *  everything here is a real file  *  best viewed with curiosity  *</span></div>
 
     <div class="plantbed freeform">
       <div class="win kind-markdown" id="p0" data-key="about.md">
@@ -122,27 +122,6 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
       </div>
     </div>
 
-    <section class="guestbed" id="gb-notes">
-      <div class="gb-header">
-        <h2>guestbook</h2>
-        <p>leave a note. drag it wherever you like. it stays where you put it.</p>
-      </div>
-      <div class="win kind-guestbook" data-key="__guestbook" id="guestbook">
-        <div class="win-bar">
-          <span class="win-title">leave a note</span>
-          <span class="win-meta">guestbook</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-        </div>
-        <div class="win-body">
-          <form class="gb-form" id="gb-form">
-            <input name="name" type="text" maxlength="40" placeholder="your name (optional)" autocomplete="off">
-            <textarea name="body" maxlength="800" placeholder="say something. drag your note anywhere." required></textarea>
-            <button type="submit">post it</button>
-          </form>
-          <p class="gb-status" id="gb-status"></p>
-        </div>
-      </div>
-    </section>
   </main>
 
   <nav class="taskbar">
@@ -152,7 +131,7 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
     <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
   </nav>
 
-  <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden"};</script>
+  <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
   <script src="garden-assets/app.js"></script>
 </body>
 <!--
