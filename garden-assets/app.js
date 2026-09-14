@@ -392,8 +392,11 @@
     // have cancelled the click, and a press that never travels IS a click.
     if (e.cancelable) e.preventDefault();
 
-    var x = Math.max(0, drag.originX + (e.clientX - drag.startX));
-    var y = Math.max(0, drag.originY + (e.clientY - drag.startY));
+    // The bed can be scaled to fit the window, and these are screen pixels.
+    // Without dividing, the item would lag behind the pointer.
+    var k = bedScale || 1;
+    var x = Math.max(0, drag.originX + (e.clientX - drag.startX) / k);
+    var y = Math.max(0, drag.originY + (e.clientY - drag.startY) / k);
     drag.el.style.left = x + 'px';
     drag.el.style.top = y + 'px';
   }
@@ -473,6 +476,7 @@
       moved[d.key] = { x: x, y: y };
       set('moved', moved);
     }
+    fitSoon();
   }
 
   window.addEventListener('pointermove', dragMove);
@@ -502,6 +506,7 @@
 
       var rect = el.getBoundingClientRect();
       var parent = offset.getBoundingClientRect();
+      var k = bedScale || 1;
 
       pending = {
         el: el,
@@ -509,8 +514,8 @@
         onDrop: onDrop,
         handle: handle,
         pointerId: e.pointerId,
-        originX: rect.left - parent.left,
-        originY: rect.top - parent.top,
+        originX: (rect.left - parent.left) / k,
+        originY: (rect.top - parent.top) / k,
         startX: e.clientX,
         startY: e.clientY
       };
@@ -599,9 +604,105 @@
     });
   }
 
+
+  /* ================================================================== FIT
+     The arrangement is whatever Finder says it is, and a folder dragged wide
+     on a big display does not fit a laptop window -- which left the site
+     needing scrolling in both directions at once. Rather than move anything,
+     which would throw away the arrangement, the whole bed is scaled down
+     until it fits.
+
+     There is a floor: past a point the filenames stop being readable, and a
+     page you cannot read is worse than a page you have to scroll. Below that
+     floor it scrolls, just less than it did.
+     --------------------------------------------------------------------- */
+
+  var bedScale = 1;
+  var MIN_SCALE = 0.62;
+  var TASKBAR_H = 44;
+
+  function bedContent(bed) {
+    var items = bed.querySelectorAll(':scope > .item');
+    var w = 0, h = 0;
+    var base = bed.getBoundingClientRect();
+    var k = bedScale || 1;
+
+    for (var i = 0; i < items.length; i++) {
+      var b = items[i].getBoundingClientRect();
+      // Back out of whatever scale is on right now, so this measures the
+      // arrangement itself rather than the last answer we gave.
+      w = Math.max(w, (b.right - base.left) / k);
+      h = Math.max(h, (b.bottom - base.top) / k);
+    }
+    return { w: w, h: h };
+  }
+
+  function fitBed() {
+    var bed = document.querySelector('.plantbed');
+    if (!bed) return;
+
+    var on = get('toggle.fit', true) &&
+             window.matchMedia('(min-width: 560px)').matches &&
+             bed.classList.contains('freeform');
+
+    if (!on) {
+      bedScale = 1;
+      bed.style.transform = '';
+      bed.style.height = '';
+      bed.style.minHeight = '';
+      bed.style.width = '';
+      return;
+    }
+
+    var size = bedContent(bed);
+    if (!size.w || !size.h) return;
+
+    var availW = bed.parentNode.clientWidth;
+    var top = bed.getBoundingClientRect().top + window.pageYOffset - bedOffsetY(bed);
+    var availH = window.innerHeight - top - TASKBAR_H;
+    if (availW < 80 || availH < 160) return;
+
+    var k = Math.min(1, availW / size.w, availH / size.h);
+    if (k < MIN_SCALE) k = MIN_SCALE;
+
+    bedScale = k;
+    if (k === 1) {
+      bed.style.transform = '';
+      bed.style.height = '';
+      bed.style.minHeight = '';
+      return;
+    }
+
+    // transform does not change layout, so the page would keep the unscaled
+    // height and scroll into empty paper. Say what the box is really worth.
+    bed.style.transformOrigin = 'top left';
+    bed.style.transform = 'scale(' + k + ')';
+    bed.style.width = (100 / k) + '%';
+    bed.style.height = Math.ceil(size.h * k) + 'px';
+    // The generator writes a min-height for the unscaled arrangement into the
+    // page itself, and that would win -- leaving a screen of empty paper
+    // below the folder to scroll through.
+    bed.style.minHeight = bed.style.height;
+  }
+
+  /** How far the bed has already been shifted by its own transform. */
+  function bedOffsetY(bed) {
+    return 0;   // transform-origin is the top-left, so the top never moves
+  }
+
+  var fitTimer = null;
+  function fitSoon() {
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(fitBed, 60);
+  }
+
+  window.addEventListener('resize', fitSoon);
+
   /* ============================================================== TOGGLES */
 
   var TOGGLES = [
+    { id: 'fit', label: 'fit', def: true,
+      apply: function () { fitSoon(); } },
     { id: 'grain', label: 'grain',
       apply: function (on) { document.body.classList.toggle('grain', on); } },
     { id: 'clock', label: 'clock', def: true,
@@ -1171,6 +1272,13 @@
     mountItems();
     mountGuestbook();
     restorePositions();
+    fitBed();
+    // Pictures settle after they load, and the bed is only as big as what is
+    // in it -- so measure again once they have.
+    window.addEventListener('load', fitSoon);
+    document.querySelectorAll('.plantbed img').forEach(function (img) {
+      if (!img.complete) img.addEventListener('load', fitSoon, { once: true });
+    });
   }
 
   /* ============================================================== BROADCAST
