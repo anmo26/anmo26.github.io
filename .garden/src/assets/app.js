@@ -578,12 +578,13 @@
   }
 
   function dragEnd() {
-    pending = null;
+    clearTimeout(holdTimer);
+    if (pending) { drop(pending); pending = null; }
     if (!drag) return;
     var d = drag;
     drag = null;
+    drop(d);
     swallowNextClick(d.el);
-    d.el.classList.remove('focused');
 
     var x = parseInt(d.el.style.left, 10);
     var y = parseInt(d.el.style.top, 10);
@@ -597,13 +598,24 @@
       moved[d.key] = { x: x, y: y };
       set('moved', moved);
     }
+    growBed(bedOf(d.el));
     fitSoon();
   }
 
   window.addEventListener('pointermove', dragMove);
-  window.addEventListener('pointerdown', function () { pending = null; }, true);
+  window.addEventListener('pointerdown', function () {
+    clearTimeout(holdTimer);
+    if (pending) { drop(pending); pending = null; }
+  }, true);
   window.addEventListener('pointerup', dragEnd);
   window.addEventListener('pointercancel', dragEnd);
+
+  /* A long press is the drag gesture now, so the browser's own long-press
+     menu -- iOS's link preview, Android's context menu -- would otherwise
+     open on top of the item the visitor has just picked up. */
+  window.addEventListener('contextmenu', function (e) {
+    if (drag || (pending && pending.held)) e.preventDefault();
+  });
 
   /**
    * A press does not become a drag until the pointer has actually travelled.
