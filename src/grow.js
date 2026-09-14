@@ -24,7 +24,9 @@ const ROOT_DEFAULT = path.join(__dirname, '..');
 
 /* ------------------------------------------------------------------ config */
 
-const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore', 'node_modules'];
+const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore',
+                       'node_modules', 'garden-assets', 'src', '*.sh',
+                       'garden.config.json', '.nojekyll', '.gitignore'];
 
 const EXT = {
   image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.bmp'],
@@ -37,7 +39,9 @@ const EXT = {
 };
 
 const TOP_PADDING = 50;            // px of breathing room above the topmost item
-const INLINE_TEXT_LIMIT = 2048;    // bigger text files become a plain link
+// Writing is the point of this site, so markdown gets a generous budget.
+// Plain text and source files stay modest so a stray log can't flood a page.
+const INLINE_LIMIT = { markdown: 200000, text: 20000, raw: 4096 };
 const ROOT_FONT_PX = 14;
 const MAX_MEDIA_PX = 24 * ROOT_FONT_PX;  // matches `max-width/height: 24em`
 
@@ -143,7 +147,7 @@ function describe(dir, entry, rules) {
   }
 
   if (type === 'markdown' || type === 'text' || type === 'raw') {
-    if (stat.size > INLINE_TEXT_LIMIT) return { ...file, type: 'other' };
+    if (stat.size > INLINE_LIMIT[type]) return { ...file, type: 'other' };
     let body = '';
     try { body = fs.readFileSync(full, 'utf8'); } catch { return { ...file, type: 'other' }; }
     if (body.includes('\u0000')) return { ...file, type: 'other' };  // binary
@@ -170,70 +174,68 @@ function estimateHeight(file) {
 
 /* ----------------------------------------------------------------- the page */
 
-function renderItem(f) {
-  const link = (label) => `<a href="${f.href}">${escapeHtml(label)}</a>`;
+const FOLDER_GLYPH = '\u{1F4C1}';
 
+function renderBody(f) {
   switch (f.type) {
     case 'directory':
-      return `<h3>${link(f.name)} (${f.contents})</h3>`;
+      return `<span class="folder">${FOLDER_GLYPH}</span><a href="${f.href}">open</a>`;
     case 'image':
-      return `<h3>${link(f.name)} (${f.size})</h3>\n` +
-             `        <a href="${f.href}"><img src="${f.href}" alt="${escapeHtml(f.name)}" ` +
+      return `<a href="${f.href}"><img src="${f.href}" alt="${escapeHtml(f.name)}" ` +
              `width="${f.width}" height="${f.height}" loading="lazy"></a>`;
     case 'video':
-      return `<h3>${link(f.name)} (${f.size})</h3>\n` +
-             `        <video width="${f.width}" height="${f.height}" controls preload="metadata">` +
+      return `<video width="${f.width}" height="${f.height}" controls preload="metadata">` +
              `<source src="${f.href}"></video>`;
     case 'audio':
-      return `<h3>${link(f.name)} (${f.size})</h3>\n` +
-             `        <audio controls preload="none"><source src="${f.href}"></audio>`;
+      return `<audio controls preload="none"><source src="${f.href}"></audio>`;
     case 'markdown':
-      return `<h3>${link(f.name)} (${f.size})</h3>\n` +
-             `        <div class="md">${markdown(f.contents)}</div>`;
+      return `<div class="md">${markdown(f.contents)}</div>`;
     case 'text':
-      return `<h3>${link(f.name)} (${f.size})</h3>\n` +
-             `        <pre>${escapeHtml(f.contents)}</pre>`;
     case 'raw':
-      return `<h3>${link(f.name)}</h3>\n` +
-             `        <pre>${escapeHtml(f.contents)}</pre>`;
+      return `<pre>${escapeHtml(f.contents)}</pre>`;
     default:
-      return `<h3>${link(f.name)} (${f.size})</h3>`;
+      return `<a href="${f.href}">download</a>`;
   }
 }
 
-const STYLE = `
-    html, body { height: 100%; margin: 0; -webkit-text-size-adjust: 100%; text-size-adjust: none; }
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: ${ROOT_FONT_PX}px;
-      color: #111;
-      background-color: rgb(250, 251, 247);
-      overflow-x: scroll;
-    }
-    main { max-width: 100%; box-sizing: border-box; padding: 1.5em; }
-    .plantbed { position: relative; }
-    /* Narrow screens (phones) get a plain stack; the freeform positions are
-       reapplied in the media query at the bottom of this stylesheet. */
-    .item {
-      display: inline-block; vertical-align: top;
-      margin: 0 .75em 1.5em 0; padding: 0 1em;
-      max-width: 100%; box-sizing: border-box;
-      outline: 1px solid rgba(0,0,0,.1);
-    }
-    .item img, .item video, .item audio { width: auto; height: auto; max-width: 100%; max-height: 24em; }
-    .item audio { height: 3em; width: 100%; }
-    .item pre, .item .md { white-space: pre-wrap; overflow-wrap: anywhere; }
-    h1, h2, h3, h4, h5, h6 { font-size: 1em; font-weight: normal; color: #a33230; }
-    h1, h2, h3, h4, h5, h6, p, ul, ol, li, pre, code { margin: 0; }
-    pre { font-family: inherit; white-space: pre-wrap; }
-    a { color: #008900; }
-    .md h1, .md h2, .md h3, .md h4, .md h5, .md h6, .md p, .md pre, .md ul, .md ol { margin-top: 1em; }
-    .md img { max-width: 100%; }
-    .crumbs { margin-bottom: 1.5em; }`;
+function renderWindow(f, i) {
+  const meta = f.type === 'directory' ? f.contents : (f.size ?? '');
+  const titleLink = f.type === 'directory' || f.type === 'other'
+    ? `<a href="${f.href}">${escapeHtml(f.name)}</a>`
+    : escapeHtml(f.name);
 
-function renderPage({ siteName, title, files, positioned, description, socialImage }) {
-  const items = files.map((f, i) =>
-    `      <div class="item" id="p${i}">\n        ${renderItem(f)}\n      </div>`).join('\n');
+  return `      <div class="win kind-${f.type}" id="p${i}" data-key="${escapeHtml(f.name)}">
+        <div class="win-bar">
+          <span class="win-title">${titleLink}</span>
+          <span class="win-meta">${escapeHtml(meta)}</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+          <button class="win-btn js-close" type="button" title="close">x</button>
+        </div>
+        <div class="win-body">${renderBody(f)}</div>
+      </div>`;
+}
+
+function guestbookWindow() {
+  return `      <div class="win kind-guestbook" data-key="__guestbook" id="guestbook">
+        <div class="win-bar">
+          <span class="win-title">guestbook.exe</span>
+          <span class="win-meta">leave a note</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+        </div>
+        <div class="win-body">
+          <form class="gb-form" id="gb-form">
+            <input name="name" type="text" maxlength="40" placeholder="your name (optional)" autocomplete="off">
+            <textarea name="body" maxlength="800" placeholder="say something. drag your note anywhere." required></textarea>
+            <button type="submit">post it</button>
+          </form>
+          <p class="gb-status" id="gb-status"></p>
+        </div>
+      </div>`;
+}
+
+function renderPage({ siteName, title, files, positioned, description, socialImage,
+                      assetPrefix, isRoot, tagline, marquee }) {
+  const windows = files.map(renderWindow).join('\n');
 
   // Freeform positions live in a media query so phones get the plain stack
   // defined in the base stylesheet and wide screens get the Finder layout.
@@ -244,28 +246,32 @@ function renderPage({ siteName, title, files, positioned, description, socialIma
     const minY = Math.min(...files.map(f => f.y));
     const halfWidth = Math.round((maxX - minX) / 2);
     const height = Math.round(
-      Math.max(...files.map(f => f.y - minY + TOP_PADDING + estimateHeight(f))));
+      Math.max(...files.map(f => f.y - minY + TOP_PADDING + estimateHeight(f)))) + 40;
 
     const rules = files.map((f, i) =>
       `      #p${i} { top: ${f.y - minY + TOP_PADDING}px; left: ${f.x - minX}px; }`).join('\n');
 
     freeform = `
-    @media (min-width: ${FREEFORM_MIN_WIDTH}px) {
-      body { overflow-x: scroll; }
-      .plantbed { width: 0; height: ${height}px; left: max(0px, calc(50% - ${halfWidth}px - 1em)); }
-      .item { position: absolute; margin: 0; max-width: none; }
-      .item * { width: max-content; }
-      .item img, .item video, .item audio { max-width: 24em; }
-      .item audio { width: auto; }
+    @media (min-width: 760px) {
+      .plantbed { min-height: ${height}px; margin-left: max(0px, calc(50% - ${halfWidth}px - 13rem)); }
 ${rules}
     }`;
   }
 
-  const body = `    <div class="plantbed">\n${items}\n    </div>`;
-
-  const heading = title
-    ? `    <div class="crumbs"><h3><a href="..">back</a></h3><p>${escapeHtml(title)}</p></div>\n`
-    : '';
+  const head = isRoot
+    ? `    <header class="masthead">
+      <h1>${escapeHtml(siteName)}</h1>
+      <p>${escapeHtml(tagline || description || '')}</p>
+      <div class="rule"></div>
+    </header>
+    <div class="marquee"><span>${escapeHtml(marquee)}</span></div>
+`
+    : `    <header class="masthead">
+      <h1>${escapeHtml(title.replace(/\/$/, ''))}</h1>
+      <p><a href="..">&larr; back to ${escapeHtml(siteName)}</a></p>
+      <div class="rule"></div>
+    </header>
+`;
 
   const pageTitle = `${escapeHtml(siteName)}${title ? '/' + escapeHtml(title) : ''}`;
   const desc = escapeHtml(description || `${siteName} is a site grown from a folder.`);
@@ -286,18 +292,42 @@ ${rules}
   <meta property="og:description" content="${desc}">
   <meta property="og:type" content="website">${og}
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
-  <style>${STYLE}${freeform}
+  <link rel="stylesheet" href="${assetPrefix}garden-assets/style.css">
+  <style>${freeform}
   </style>
 </head>
 
 <body>
+  <div id="clock-shell" title="click to change format"><pre id="clock"></pre></div>
+
   <main>
-${heading}${body}
+${head}
+    <div class="plantbed${positioned ? ' freeform' : ''}">
+${windows}
+    </div>
+${isRoot ? `
+    <section class="guestbed" id="gb-notes">
+      <div class="gb-header">
+        <h2>guestbook</h2>
+        <p>leave a note. drag it wherever you like. it stays where you put it.</p>
+      </div>
+${guestbookWindow()}
+    </section>` : ''}
   </main>
+
+  <nav class="taskbar">
+    <span class="start">${escapeHtml(siteName)}</span>
+    <span id="taskbar-toggles" style="display:contents"></span>
+    <span class="spacer"></span>
+    <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
+  </nav>
+
+  <script>window.GARDEN_CONFIG = ${JSON.stringify({ siteName })};</script>
+  <script src="${assetPrefix}garden-assets/app.js"></script>
 </body>
 <!--
-layout and templates after kevin.garden / file.gallery by Kevin N. Chen
-https://kevin.garden — CC BY-NC 4.0
+a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)
+https://kevin.garden
 -->
 </html>
 `;
@@ -346,6 +376,8 @@ function grow(dir, ctx) {
 
   const rel = path.relative(root, dir);
   const firstImage = files.find(f => f.type === 'image');
+  const depthFromRoot = rel ? rel.split(path.sep).length : 0;
+
   const html = renderPage({
     siteName: ctx.siteName,
     title: rel ? rel + '/' : null,
@@ -353,6 +385,10 @@ function grow(dir, ctx) {
     positioned,
     description: ctx.description,
     socialImage: rel ? null : firstImage?.href,
+    assetPrefix: '../'.repeat(depthFromRoot),
+    isRoot: depthFromRoot === 0,
+    tagline: ctx.tagline,
+    marquee: ctx.marquee,
   });
 
   const out = path.join(dir, 'index.html');
@@ -381,6 +417,27 @@ function grow(dir, ctx) {
   }
 }
 
+/* ------------------------------------------------------------------ assets */
+
+/**
+ * Copies the stylesheet and script into <root>/garden-assets/ so the site is
+ * self-contained and can be pushed anywhere. Only writes on change, to keep
+ * the file watcher from chasing its own tail.
+ */
+function copyAssets(root) {
+  const from = path.join(__dirname, 'assets');
+  const to = path.join(root, 'garden-assets');
+  fs.mkdirSync(to, { recursive: true });
+
+  for (const name of fs.readdirSync(from)) {
+    const src = fs.readFileSync(path.join(from, name));
+    const dst = path.join(to, name);
+    let current = null;
+    try { current = fs.readFileSync(dst); } catch { /* new file */ }
+    if (!current || !current.equals(src)) fs.writeFileSync(dst, src);
+  }
+}
+
 /* -------------------------------------------------------------- entry point */
 
 export function growSite(opts = {}) {
@@ -395,9 +452,14 @@ export function growSite(opts = {}) {
     throw new Error(`not a directory: ${root}`);
   }
 
+  copyAssets(root);
+
   const ctx = {
     root,
     rules: loadRules(root, config),
+    tagline: config.tagline,
+    marquee: config.marquee ??
+      'welcome to my garden  *  drag the windows around  *  sign the guestbook  *  best viewed with curiosity  *',
     siteName: opts.title ?? config.title ?? path.basename(root),
     description: config.description,
     depth: 0,

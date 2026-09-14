@@ -9,122 +9,113 @@
   <meta property="og:title" content="anmo.garden">
   <meta property="og:description" content="a file gallery. a mirror of a folder.">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="sample-a-field.png">
-  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="garden-assets/style.css">
   <style>
-    html, body { height: 100%; margin: 0; -webkit-text-size-adjust: 100%; text-size-adjust: none; }
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 14px;
-      color: #111;
-      background-color: rgb(250, 251, 247);
-      overflow-x: scroll;
-    }
-    main { max-width: 100%; box-sizing: border-box; padding: 1.5em; }
-    .plantbed { position: relative; }
-    /* Narrow screens (phones) get a plain stack; the freeform positions are
-       reapplied in the media query at the bottom of this stylesheet. */
-    .item {
-      display: inline-block; vertical-align: top;
-      margin: 0 .75em 1.5em 0; padding: 0 1em;
-      max-width: 100%; box-sizing: border-box;
-      outline: 1px solid rgba(0,0,0,.1);
-    }
-    .item img, .item video, .item audio { width: auto; height: auto; max-width: 100%; max-height: 24em; }
-    .item audio { height: 3em; width: 100%; }
-    .item pre, .item .md { white-space: pre-wrap; overflow-wrap: anywhere; }
-    h1, h2, h3, h4, h5, h6 { font-size: 1em; font-weight: normal; color: #a33230; }
-    h1, h2, h3, h4, h5, h6, p, ul, ol, li, pre, code { margin: 0; }
-    pre { font-family: inherit; white-space: pre-wrap; }
-    a { color: #008900; }
-    .md h1, .md h2, .md h3, .md h4, .md h5, .md h6, .md p, .md pre, .md ul, .md ol { margin-top: 1em; }
-    .md img { max-width: 100%; }
-    .crumbs { margin-bottom: 1.5em; }
   </style>
 </head>
 
 <body>
+  <div id="clock-shell" title="click to change format"><pre id="clock"></pre></div>
+
   <main>
+    <header class="masthead">
+      <h1>anmo.garden</h1>
+      <p>a file gallery. a mirror of a folder.</p>
+      <div class="rule"></div>
+    </header>
+    <div class="marquee"><span>welcome to my garden  *  drag the windows around  *  sign the guestbook  *  best viewed with curiosity  *</span></div>
+
     <div class="plantbed">
-      <div class="item" id="p0">
-        <h3><a href="about.md">about.md</a> (468B)</h3>
-        <div class="md"><h1>anmo.garden</h1>
+      <div class="win kind-markdown" id="p0" data-key="about.md">
+        <div class="win-bar">
+          <span class="win-title">about.md</span>
+          <span class="win-meta">468B</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+          <button class="win-btn js-close" type="button" title="close">x</button>
+        </div>
+        <div class="win-body"><div class="md"><h1>anmo.garden</h1>
 <p>this is a file gallery. it is a mirror of the folder that hosts it.</p>
 <p>every page here was written by <code>src/grow.js</code>, which walks the folder,
 looks at each file, and reads the icon positions that Finder stores in
 the invisible <code>.DS_Store</code> file sitting in each directory.</p>
 <p>so the way things are scattered on this page is not a design decision
 made in CSS. it is wherever i dragged the icons in a Finder window.</p>
-<p>to rearrange the site, rearrange the folder.</p></div>
+<p>to rearrange the site, rearrange the folder.</p></div></div>
       </div>
-      <div class="item" id="p1">
-        <h3><a href="garden.config.json">garden.config.json</a> (564B)</h3>
-        <pre>{
-  &quot;source&quot;: &quot;/Users/anmoli/garden&quot;,
-  &quot;title&quot;: &quot;anmo.garden&quot;,
-  &quot;description&quot;: &quot;a file gallery. a mirror of a folder.&quot;,
-  &quot;depth&quot;: 3,
-
-  &quot;_comment_exclude&quot;: &quot;globs never shown on the site (also see .gardenignore)&quot;,
-  &quot;exclude&quot;: [
-    &quot;*.psd&quot;,
-    &quot;*.zip&quot;,
-    &quot;private*&quot;,
-    &quot;drafts/&quot;
-  ],
-
-  &quot;_comment_include&quot;: &quot;if non-empty, ONLY files matching these appear. leave empty to show everything not excluded.&quot;,
-  &quot;include&quot;: [],
-
-  &quot;_comment_publish&quot;: &quot;true = watch.js git-commits and pushes each change&quot;,
-  &quot;publish&quot;: false,
-  &quot;url&quot;: null,
-  &quot;debounceMs&quot;: 2000
-}</pre>
+      <div class="win kind-directory" id="p1" data-key="art/">
+        <div class="win-bar">
+          <span class="win-title"><a href="art/">art/</a></span>
+          <span class="win-meta">3 items</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+          <button class="win-btn js-close" type="button" title="close">x</button>
+        </div>
+        <div class="win-body"><span class="folder">📁</span><a href="art/">open</a></div>
       </div>
-      <div class="item" id="p2">
-        <h3><a href="notes/">notes/</a> (2 items)</h3>
+      <div class="win kind-directory" id="p2" data-key="notes/">
+        <div class="win-bar">
+          <span class="win-title"><a href="notes/">notes/</a></span>
+          <span class="win-meta">2 items</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+          <button class="win-btn js-close" type="button" title="close">x</button>
+        </div>
+        <div class="win-body"><span class="folder">📁</span><a href="notes/">open</a></div>
       </div>
-      <div class="item" id="p3">
-        <h3><a href="README.md">README.md</a> (4.04kB)</h3>
+      <div class="win kind-directory" id="p3" data-key="thoughts/">
+        <div class="win-bar">
+          <span class="win-title"><a href="thoughts/">thoughts/</a></span>
+          <span class="win-meta">1 item</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+          <button class="win-btn js-close" type="button" title="close">x</button>
+        </div>
+        <div class="win-body"><span class="folder">📁</span><a href="thoughts/">open</a></div>
       </div>
-      <div class="item" id="p4">
-        <h3><a href="sample-a-field.png">sample-a-field.png</a> (298.1kB)</h3>
-        <a href="sample-a-field.png"><img src="sample-a-field.png" alt="sample-a-field.png" width="400" height="300" loading="lazy"></a>
-      </div>
-      <div class="item" id="p5">
-        <h3><a href="sample-b-light.png">sample-b-light.png</a> (39.8kB)</h3>
-        <a href="sample-b-light.png"><img src="sample-b-light.png" alt="sample-b-light.png" width="320" height="420" loading="lazy"></a>
-      </div>
-      <div class="item" id="p6">
-        <h3><a href="serve.sh">serve.sh</a> (165B)</h3>
-        <pre>#!/bin/sh
-# Serve the garden at http://localhost:8000
-cd &quot;$(dirname &quot;$0&quot;)&quot; || exit 1
-echo &quot;serving $(pwd) at http://localhost:8000&quot;
-exec python3 -m http.server 8000</pre>
-      </div>
-      <div class="item" id="p7">
-        <h3><a href="src/">src/</a> (5 items)</h3>
-      </div>
-      <div class="item" id="p8">
-        <h3><a href="watch.sh">watch.sh</a> (287B)</h3>
-        <pre>#!/bin/sh
-# Regrow the garden whenever anything in it changes.
-# Needs fswatch:  brew install fswatch
-cd &quot;$(dirname &quot;$0&quot;)&quot; || exit 1
-node src/grow.js &quot;$@&quot;
-fswatch -o -r --exclude 'index\.html$' . | while read -r _; do
-  echo &quot;--- change detected, regrowing&quot;
-  node src/grow.js &quot;$@&quot;
-done</pre>
+      <div class="win kind-directory" id="p4" data-key="writings/">
+        <div class="win-bar">
+          <span class="win-title"><a href="writings/">writings/</a></span>
+          <span class="win-meta">1 item</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+          <button class="win-btn js-close" type="button" title="close">x</button>
+        </div>
+        <div class="win-body"><span class="folder">📁</span><a href="writings/">open</a></div>
       </div>
     </div>
+
+    <section class="guestbed" id="gb-notes">
+      <div class="gb-header">
+        <h2>guestbook</h2>
+        <p>leave a note. drag it wherever you like. it stays where you put it.</p>
+      </div>
+      <div class="win kind-guestbook" data-key="__guestbook" id="guestbook">
+        <div class="win-bar">
+          <span class="win-title">guestbook.exe</span>
+          <span class="win-meta">leave a note</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+        </div>
+        <div class="win-body">
+          <form class="gb-form" id="gb-form">
+            <input name="name" type="text" maxlength="40" placeholder="your name (optional)" autocomplete="off">
+            <textarea name="body" maxlength="800" placeholder="say something. drag your note anywhere." required></textarea>
+            <button type="submit">post it</button>
+          </form>
+          <p class="gb-status" id="gb-status"></p>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <nav class="taskbar">
+    <span class="start">anmo.garden</span>
+    <span id="taskbar-toggles" style="display:contents"></span>
+    <span class="spacer"></span>
+    <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
+  </nav>
+
+  <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden"};</script>
+  <script src="garden-assets/app.js"></script>
 </body>
 <!--
-layout and templates after kevin.garden / file.gallery by Kevin N. Chen
-https://kevin.garden — CC BY-NC 4.0
+a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)
+https://kevin.garden
 -->
 </html>

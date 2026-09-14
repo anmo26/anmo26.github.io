@@ -92,7 +92,7 @@ src/dsstore.js    minimal .DS_Store (Bud1 B-tree) reader, for Iloc records
 src/imagesize.js  pixel dimensions from file headers, sips as fallback
 src/markdown.js   small markdown renderer
 serve.sh          python3 -m http.server on :8000
-watch.sh          regrow on change (needs `brew install fswatch`)
+live.sh          watch the folder, rebuild + publish on every change
 .gardenignore     what not to publish
 ```
 

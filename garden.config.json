@@ -1,9 +1,8 @@
 {
-  "source": "/Users/anmoli/garden",
+  "source": "/Users/anmoli/Desktop/garden",
   "title": "anmo.garden",
   "description": "a file gallery. a mirror of a folder.",
   "depth": 3,
-
   "_comment_exclude": "globs never shown on the site (also see .gardenignore)",
   "exclude": [
     "*.psd",
@@ -11,10 +10,8 @@
     "private*",
     "drafts/"
   ],
-
   "_comment_include": "if non-empty, ONLY files matching these appear. leave empty to show everything not excluded.",
   "include": [],
-
   "_comment_publish": "true = watch.js git-commits and pushes each change",
   "publish": false,
   "url": null,
