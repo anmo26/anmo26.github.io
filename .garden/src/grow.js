@@ -30,7 +30,7 @@ const ROOT_DEFAULT = path.join(__dirname, '..');
 const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore',
                        'node_modules', 'garden-assets', 'src', '*.sh',
                        'garden.config.json', '.nojekyll', '.gitignore',
-                       '.garden-cache', '.thumbs', '.originals'];
+                       '.garden-cache', '.thumbs', '.originals', '.garden'];
 
 const EXT = {
   image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.bmp'],

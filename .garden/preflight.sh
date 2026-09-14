@@ -1,13 +1,13 @@
 #!/bin/bash
 # preflight.sh — look before you publish.
 #
-#   ./preflight.sh          summary
-#   ./preflight.sh --list   summary, plus every file that would go public
+#   ./.garden/preflight.sh          summary
+#   ./.garden/preflight.sh --list   summary, plus every file that would go public
 #
 # READ-ONLY. This script reports. It never commits, pushes, or edits anything.
 
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 LIST=0
 [ "${1:-}" = "--list" ] && LIST=1
@@ -89,7 +89,7 @@ done < <(git ls-files)
 
 echo "  $FILES tracked files, $(human "$TOTAL") total."
 [ -n "$BIGGEST_NAME" ] && echo "  largest: $BIGGEST_NAME ($(human "$BIGGEST_SIZE"))"
-[ "$LIST" -eq 1 ] || echo "  run ./preflight.sh --list to see every file."
+[ "$LIST" -eq 1 ] || echo "  run ./.garden/preflight.sh --list to see every file."
 echo "  Every one of these is readable by anyone once you push."
 
 UNTRACKED=$(git ls-files --others --exclude-standard | wc -l | tr -d ' ')
@@ -143,7 +143,7 @@ if git remote | grep -qx 'origin'; then
   fi
 else
   echo "  no remote configured - nothing has been published."
-  echo "  run ./publish-setup.sh YOUR-GITHUB-USERNAME when you are ready."
+  echo "  run ./.garden/publish-setup.sh YOUR-GITHUB-USERNAME when you are ready."
 fi
 
 # ------------------------------------------------------- 5. pages setup
@@ -161,13 +161,13 @@ if [ -f index.html ]; then
   echo "  index.html present - the site has a front page."
 else
   warn "no index.html at the top level. The site will 404."
-  echo "    regenerate it with:  node src/grow.js"
+  echo "    regenerate it with:  node .garden/src/grow.js"
 fi
 
-if [ -f garden.config.json ]; then
-  PUB=$(grep -o '"publish"[[:space:]]*:[[:space:]]*[a-z]*' garden.config.json | awk -F: '{gsub(/ /,"",$2); print $2}')
-  URLV=$(grep -o '"url"[[:space:]]*:[[:space:]]*[^,]*' garden.config.json | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')
-  echo "  garden.config.json: publish=${PUB:-unknown} url=${URLV:-unknown}"
+if [ -f .garden/garden.config.json ]; then
+  PUB=$(grep -o '"publish"[[:space:]]*:[[:space:]]*[a-z]*' .garden/garden.config.json | awk -F: '{gsub(/ /,"",$2); print $2}')
+  URLV=$(grep -o '"url"[[:space:]]*:[[:space:]]*[^,]*' .garden/garden.config.json | head -1 | cut -d: -f2- | sed 's/^[[:space:]]*//')
+  echo "  .garden/garden.config.json: publish=${PUB:-unknown} url=${URLV:-unknown}"
   if [ "${PUB:-}" = "true" ]; then
     warn "publishing is ON. The watcher auto-commits and pushes every change."
     echo "    Anything you put in this folder goes public within about a minute."

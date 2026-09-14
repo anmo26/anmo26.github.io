@@ -1,8 +1,8 @@
 #!/bin/bash
 # publish-setup.sh — connect this garden to a GitHub repo and push it live.
 #
-#   ./publish-setup.sh YOUR-GITHUB-USERNAME
-#   ./publish-setup.sh YOUR-GITHUB-USERNAME --dry-run
+#   ./.garden/publish-setup.sh YOUR-GITHUB-USERNAME
+#   ./.garden/publish-setup.sh YOUR-GITHUB-USERNAME --dry-run
 #
 # Read PUBLISHING.md first. Run this AFTER you have created the empty repo on
 # github.com (public, no README, no .gitignore, no license).
@@ -19,7 +19,7 @@
 set -euo pipefail
 
 # Always operate on the folder this script lives in, never the shell's cwd.
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 say()  { printf '%s\n' "$*"; }
 fail() { printf '\nERROR: %s\n' "$1" >&2; shift; for l in "$@"; do printf '  %s\n' "$l" >&2; done; exit 1; }
@@ -37,7 +37,7 @@ while [ $# -gt 0 ]; do
     --replace-remote) REPLACE_REMOTE=1 ;;
     --repo)           REPO="${2:-}"; shift ;;
     -h|--help)        sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    -*)               fail "unknown option: $1" "run: ./publish-setup.sh --help" ;;
+    -*)               fail "unknown option: $1" "run: ./.garden/publish-setup.sh --help" ;;
     *)                if [ -z "$USER_NAME" ]; then USER_NAME="$1"; else fail "too many arguments: $1"; fi ;;
   esac
   shift
@@ -46,9 +46,9 @@ done
 # ---------------------------------------------------------------- username
 
 if [ -z "$USER_NAME" ]; then
-  say "usage: ./publish-setup.sh YOUR-GITHUB-USERNAME"
+  say "usage: ./.garden/publish-setup.sh YOUR-GITHUB-USERNAME"
   say ""
-  say "example:  ./publish-setup.sh anmo26"
+  say "example:  ./.garden/publish-setup.sh anmo26"
   say ""
   say "Use your GitHub username exactly as it appears in your profile URL:"
   say "  https://github.com/USERNAME  <- that part"
@@ -94,11 +94,11 @@ command -v git >/dev/null 2>&1 || fail "git is not installed." \
 if [ ! -d .git ]; then
   fail "this folder is not a git repository: $(pwd)" \
        "publish-setup.sh must sit inside the garden folder and be run as:" \
-       "  cd \"$(pwd)\" && ./publish-setup.sh $USER_NAME"
+       "  cd \"$(pwd)\" && ./.garden/publish-setup.sh $USER_NAME"
 fi
 
-if [ ! -f garden.config.json ]; then
-  fail "garden.config.json is missing from $(pwd)" \
+if [ ! -f .garden/garden.config.json ]; then
+  fail ".garden/garden.config.json is missing from $(pwd)" \
        "This does not look like the garden folder. Check where you are."
 fi
 
@@ -140,7 +140,7 @@ fi
 
 FILE_COUNT=$(git ls-files | wc -l | tr -d ' ')
 say "$FILE_COUNT tracked files will become PUBLIC when this pushes."
-say "Run ./preflight.sh to see exactly which ones."
+say "Run ./.garden/preflight.sh to see exactly which ones."
 say ""
 
 # ------------------------------------------------------------------ dry run
@@ -166,7 +166,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
   fi
   say "  - rename the current branch to 'main'"
   say "  - run: git push -u origin main"
-  say "  - on success only, set publish=true and url=$URL in garden.config.json"
+  say "  - on success only, set publish=true and url=$URL in .garden/garden.config.json"
   exit 0
 fi
 
@@ -190,9 +190,9 @@ if git remote | grep -qx 'origin'; then
          "Nothing has been changed. Decide which one is right:" \
          "" \
          "  - If the existing one is correct, run this script with that username:" \
-         "      ./publish-setup.sh <the username in the existing URL>" \
+         "      ./.garden/publish-setup.sh <the username in the existing URL>" \
          "  - If it is wrong or was set by mistake, replace it on purpose:" \
-         "      ./publish-setup.sh $USER_NAME --replace-remote" \
+         "      ./.garden/publish-setup.sh $USER_NAME --replace-remote" \
          "  - To just look at it:  git remote -v"
   fi
 else
@@ -228,7 +228,7 @@ if [ "$PUSH_STATUS" -ne 0 ]; then
   say ""
   say "------------------------------------------------------------"
   say "THE PUSH FAILED. Nothing was turned on."
-  say "garden.config.json was not touched, so the watcher will not"
+  say ".garden/garden.config.json was not touched, so the watcher will not"
   say "try to publish. Your site is still private."
   say "------------------------------------------------------------"
   say ""
@@ -271,7 +271,7 @@ if [ "$PUSH_STATUS" -ne 0 ]; then
       say "Cause: SSH was used but GitHub does not have your key."
       say ""
       say "Use HTTPS instead - it is simpler and needs no key:"
-      say "  ./publish-setup.sh $USER_NAME --replace-remote"
+      say "  ./.garden/publish-setup.sh $USER_NAME --replace-remote"
       ;;
     *"Could not resolve host"*|*"unable to access"*|*"timed out"*)
       say "Cause: no network connection to github.com."
@@ -296,13 +296,13 @@ fi
 
 if ! command -v node >/dev/null 2>&1; then
   say ""
-  say "Pushed. But node is not installed, so garden.config.json was left alone."
+  say "Pushed. But node is not installed, so .garden/garden.config.json was left alone."
   say "Edit it by hand: set \"publish\": true and \"url\": \"$URL\""
 else
   node - "$URL" <<'NODE'
 const fs = require('fs');
 const url = process.argv[2];
-const p = 'garden.config.json';
+const p = '.garden/garden.config.json';
 let c;
 try {
   c = JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -317,7 +317,7 @@ c.url = url;
 const tmp = p + '.tmp';
 fs.writeFileSync(tmp, JSON.stringify(c, null, 2) + '\n');
 fs.renameSync(tmp, p);
-console.log('\npublishing turned on in garden.config.json');
+console.log('\npublishing turned on in .garden/garden.config.json');
 NODE
 fi
 
