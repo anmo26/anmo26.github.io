@@ -13,6 +13,7 @@
  */
 import fs from 'fs';
 import { spawnSync } from 'child_process';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -588,7 +589,8 @@ function guestbookWindow() {
 }
 
 function renderPage({ siteName, title, files, positioned, description, socialImage,
-                      assetPrefix, isRoot, tagline, marquee, guestbook, music }) {
+                      assetPrefix, isRoot, tagline, marquee, guestbook, music,
+                      assetStamps }) {
   const items = files.map((f, i) => renderItem(f, i, assetPrefix)).join('\n');
 
   // A guestbook needs a server to hold visitor notes, which GitHub Pages
@@ -685,8 +687,8 @@ ${rules}
   <meta property="og:description" content="${desc}">
   <meta property="og:type" content="website">${og}
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="${assetPrefix}garden-assets/style.css">
-${showMusic ? `  <link rel="stylesheet" href="${assetPrefix}garden-assets/ipod.css">\n` : ''}\
+  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamps, 'style.css')}">
+${showMusic ? `  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamps, 'ipod.css')}">\n` : ''}\
   <style id="page-style">${freeform}
   </style>
 </head>
@@ -721,9 +723,9 @@ ${guestbookWindow()}
   </nav>
 
   <script>window.GARDEN_CONFIG = ${JSON.stringify({ siteName, guestbook })};</script>
-  <script src="${assetPrefix}garden-assets/app.js"></script>
+  <script src="${assetUrl(assetPrefix, assetStamps, 'app.js')}"></script>
 ${showMusic ? `  <script>window.GARDEN_MUSIC = ${JSON.stringify(musicData).replace(/</g, '\\u003c')};</script>
-  <script src="${assetPrefix}garden-assets/ipod.js"></script>\n` : ''}\
+  <script src="${assetUrl(assetPrefix, assetStamps, 'ipod.js')}"></script>\n` : ''}\
 </body>
 <!--
 a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)
@@ -788,6 +790,7 @@ function grow(dir, ctx) {
     description: ctx.description,
     // The converted copy when there is one -- a link preview cannot show HEIC.
     socialImage: rel ? null : (firstImage?.previewHref ?? firstImage?.href),
+    assetStamps: ctx.assetStamps,
     assetPrefix: '../'.repeat(depthFromRoot),
     isRoot: depthFromRoot === 0,
     tagline: ctx.tagline,
@@ -834,13 +837,28 @@ function copyAssets(root) {
   const to = path.join(root, 'garden-assets');
   fs.mkdirSync(to, { recursive: true });
 
+  // A short digest of each file, hung off its URL in the page. Browsers cache
+  // a stylesheet or a script hard, and the owner kept being served yesterday's
+  // behaviour after a fix landed. A changed file means a changed URL, so
+  // there is nothing left to go stale.
+  const stamps = {};
+
   for (const name of fs.readdirSync(from)) {
     const src = fs.readFileSync(path.join(from, name));
     const dst = path.join(to, name);
     let current = null;
     try { current = fs.readFileSync(dst); } catch { /* new file */ }
     if (!current || !current.equals(src)) fs.writeFileSync(dst, src);
+    stamps[name] = crypto.createHash('sha1').update(src).digest('hex').slice(0, 8);
   }
+
+  return stamps;
+}
+
+/** `garden-assets/app.js?v=1a2b3c4d` — empty if the file is not one of ours. */
+function assetUrl(prefix, stamps, name) {
+  const v = stamps && stamps[name];
+  return `${prefix}garden-assets/${name}` + (v ? `?v=${v}` : '');
 }
 
 /* -------------------------------------------------------------- entry point */
@@ -857,7 +875,7 @@ export function growSite(opts = {}) {
     throw new Error(`not a directory: ${root}`);
   }
 
-  copyAssets(root);
+  const assetStamps = copyAssets(root);
   beginIconRun();
 
   const ctx = {
@@ -873,6 +891,8 @@ export function growSite(opts = {}) {
     // until it is { "enabled": true, "mode": "remote", "url": "https://..." }
     // pointing at a real backend -- GitHub Pages cannot store visitor notes.
     guestbook: config.guestbook,
+
+    assetStamps,
 
     // One snapshot of Finder's live layout per build, not one call per
     // folder -- each osascript round trip costs about a third of a second.

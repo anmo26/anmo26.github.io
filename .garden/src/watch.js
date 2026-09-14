@@ -106,7 +106,7 @@ function trimLog() {
 const ORIGINALS = '.originals';
 const SKIP_DIRS = new Set(['node_modules', 'garden-assets', 'src']);
 
-function* findHeic(dir, rel = '') {
+function* findMedia(dir, re, rel = '') {
   let entries = [];
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
 
@@ -115,18 +115,75 @@ function* findHeic(dir, rel = '') {
     // so a converted original can never be found and converted again.
     if (e.name.startsWith('.')) continue;
     if (e.isDirectory()) {
-      if (!SKIP_DIRS.has(e.name)) yield* findHeic(path.join(dir, e.name), path.join(rel, e.name));
-    } else if (/\.heic$/i.test(e.name)) {
+      if (!SKIP_DIRS.has(e.name)) yield* findMedia(path.join(dir, e.name), re, path.join(rel, e.name));
+    } else if (re.test(e.name)) {
       yield { dir, rel, name: e.name };
     }
   }
+}
+
+/**
+ * The same problem as HEIC, one layer down: an iPhone records HEVC, which
+ * only Safari will play. A .MOV dropped in the folder therefore works for
+ * the owner and for nobody else. avconvert ships with macOS and rewrites it
+ * as H.264 in an .mp4, which every browser plays.
+ *
+ * Only HEVC is touched. A .MOV that is already H.264 plays fine and is left
+ * exactly where it is.
+ */
+function isHevc(file) {
+  const r = spawnSync('mdls', ['-name', 'kMDItemCodecs', '-raw', file],
+    { encoding: 'utf8', timeout: 15000 });
+  return r.status === 0 && /HEVC/i.test(r.stdout || '');
+}
+
+function convertVideo() {
+  let done = 0;
+
+  for (const f of findMedia(root, /\.(mov|m4v)$/i)) {
+    const src = path.join(f.dir, f.name);
+    const mp4 = path.join(f.dir, f.name.replace(/\.(mov|m4v)$/i, '.mp4'));
+
+    if (fs.existsSync(mp4)) continue;
+    if (!isHevc(src)) continue;
+
+    log(`converting ${f.name} (HEVC plays in Safari only)…`);
+    const r = spawnSync('avconvert', ['--preset', 'PresetPassthrough',
+      '--source', src, '--output', mp4], { encoding: 'utf8', timeout: 600000 });
+
+    // Passthrough keeps HEVC if it can, which is not what we want; fall back
+    // to a real re-encode when the result is still unplayable elsewhere.
+    if (r.status !== 0 || !fs.existsSync(mp4) || isHevc(mp4)) {
+      try { fs.unlinkSync(mp4); } catch {}
+      const r2 = spawnSync('avconvert', ['--preset', 'Preset1920x1080',
+        '--source', src, '--output', mp4], { encoding: 'utf8', timeout: 900000 });
+      if (r2.status !== 0 || !fs.existsSync(mp4)) {
+        log(`could not convert ${f.name}; leaving it alone`);
+        continue;
+      }
+    }
+
+    const keepDir = path.join(root, ORIGINALS, f.rel);
+    try {
+      fs.mkdirSync(keepDir, { recursive: true });
+      fs.renameSync(src, path.join(keepDir, f.name));
+    } catch (e) {
+      log(`converted ${f.name} but could not file the original: ${e.message}`);
+      continue;
+    }
+
+    log(`converted ${f.name} -> ${path.basename(mp4)} (original kept in ${ORIGINALS}/)`);
+    done++;
+  }
+
+  return done;
 }
 
 /** Returns how many were converted. Never throws; a failure leaves the file. */
 function convertHeic() {
   let done = 0;
 
-  for (const f of findHeic(root)) {
+  for (const f of findMedia(root, /\.heic$/i)) {
     const src = path.join(f.dir, f.name);
     const jpg = path.join(f.dir, f.name.replace(/\.heic$/i, '.jpg'));
 
@@ -175,6 +232,7 @@ function rebuild() {
   try {
     // Before the build, not after: the generator has to see the .jpg.
     convertHeic();
+    convertVideo();
     trimLog();
 
     // Run the generator as a child process rather than calling growSite() in
