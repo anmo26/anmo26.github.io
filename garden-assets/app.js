@@ -398,6 +398,25 @@
     drag.el.style.top = y + 'px';
   }
 
+  /**
+   * The browser paints its own grip in the bottom-right corner of anything
+   * with `resize`, and handles the drag itself. We must keep our hands off
+   * those pixels or the item runs away instead of the picture growing.
+   */
+  var GRIP = 18;
+
+  // Matches MAX_MEDIA_PX in the generator: how wide a picture is drawn before
+  // anybody touches it. Finder's grid is 112px, so wider than this starts
+  // landing on whatever was placed beside it.
+  var MEDIA_START_PX = 238;
+
+  function inResizeGrip(e) {
+    var box = e.target.closest ? e.target.closest('[data-resizable]') : null;
+    if (!box) return false;
+    var r = box.getBoundingClientRect();
+    return e.clientX > r.right - GRIP && e.clientY > r.bottom - GRIP;
+  }
+
   /** A press that turned into a drag must not also open the link under it. */
   function swallowNextClick(el) {
     var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
@@ -447,6 +466,7 @@
       // Real controls keep their own behaviour; a press on one is never a drag.
       if (e.target.closest('button, input, textarea, select, video, audio, iframe')) return;
       if (!window.matchMedia('(min-width: 560px)').matches) return;
+      if (inResizeGrip(e)) return;     // that corner belongs to the browser
 
       var offset = el.offsetParent;
       if (!offset) return;
@@ -491,11 +511,62 @@
 
       item.addEventListener('pointerdown', function () { item.style.zIndex = ++zTop; });
 
+      mountResizable(item);
+
       // Anything that stands for the file is a handle: the icon, the name,
       // the picture. Prose and code are not, so text stays selectable.
       var handles = item.querySelectorAll('h3, .icon, :scope > a > img, :scope > img, :scope > video');
       if (!handles.length) return;
       handles.forEach(function (h) { makeDraggable(item, h, item.dataset.key); });
+    });
+  }
+
+  /**
+   * Pictures and videos lying open on the front page can be pulled bigger or
+   * smaller by their corner, and stay that way. The browser does the actual
+   * resizing; all this does is give it something to resize, put back what
+   * was chosen last time, and write down the result.
+   */
+  function mountResizable(item) {
+    if (!item.classList.contains('kind-image') && !item.classList.contains('kind-video')) return;
+
+    var media = item.querySelector('img, video');
+    if (!media) return;
+    var box = media.parentNode;
+    if (!box || box === item) box = media;      // no wrapping link: resize the media
+    if (box.hasAttribute('data-resizable')) return;
+
+    box.setAttribute('data-resizable', '');
+
+    var key = item.dataset.key;
+    var sizes = get('sized', {});
+    if (key && sizes[key]) {
+      box.style.width = sizes[key].w + 'px';
+    } else {
+      // Measuring the rendered width here would read back the "fill the box"
+      // rule and lock in whatever the item happened to be. Size from the
+      // picture's own dimensions instead, capped the way the page caps them.
+      var nat = media.naturalWidth ||
+                parseInt(media.getAttribute('width'), 10) || 0;
+      box.style.width = (nat ? Math.min(nat, MEDIA_START_PX) : MEDIA_START_PX) + 'px';
+    }
+
+    if (!key || !window.ResizeObserver) return;
+
+    // Only record once the pointer is up: an observer firing mid-drag would
+    // write to storage on every frame.
+    var pendingW = 0;
+    var ro = new ResizeObserver(function (entries) {
+      pendingW = Math.round(entries[0].contentRect.width);
+    });
+    ro.observe(box);
+
+    window.addEventListener('pointerup', function () {
+      if (!pendingW) return;
+      var all = get('sized', {});
+      all[key] = { w: pendingW };
+      set('sized', all);
+      pendingW = 0;
     });
   }
 
@@ -572,6 +643,7 @@
     reset.title = 'put every item back where Finder has it';
     reset.addEventListener('click', function () {
       set('moved', {});
+      set('sized', {});
       location.reload();
     });
     bar.appendChild(reset);

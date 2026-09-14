@@ -63,8 +63,13 @@ const LOG_TAIL_LINES = 20;
 const ROOT_FONT_PX = 14;
 
 // Drawn size of a folder icon. The PNG is written at 2x this for retina.
-const ICON_PX = 96;
-const MAX_MEDIA_PX = 24 * ROOT_FONT_PX;  // matches `max-width/height: 24em`
+// Finder's icon grid is 112px, so anything near that wide crowds its
+// neighbours; 72 leaves the name room and the slot some air.
+const ICON_PX = 72;
+// The front page lays pictures out in the open, but Finder positions them on
+// that same 112px grid -- a photo drawn three slots wide lands on whatever
+// was placed beside it. Wide enough to look at, narrow enough to sit still.
+const MAX_MEDIA_PX = 17 * ROOT_FONT_PX;
 
 // Below this width the freeform positions are dropped and items simply stack.
 // A phone cannot usefully pan around a 900px-wide scatter.
