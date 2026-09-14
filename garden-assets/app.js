@@ -1145,46 +1145,76 @@
   }
 
   /* ============================================================== BROADCAST
-     The ticker says what the world is reading on Wikipedia right now. It is
-     the closest thing to live news that a page with no server can honestly
-     get: one public feed, no key, no tracking, and it allows the request
-     from a browser.
+     The ticker carries actual news: Wikipedia's "In the news", which is the
+     same short, sourced sentences that sit on its front page. One public
+     endpoint, no key, no tracking, and it answers cross-origin.
 
-     The owner's own words are already in the HTML. This only ever appends,
-     so with no JS, no network, or a feed that moved, the ticker still reads
-     exactly as it did before.
+     The owner's own words are already in the HTML. This replaces only the
+     part after them, so with no JS, no network, or a feed that moved, the
+     ticker still reads exactly as it was written.
      ========================================================================= */
+
+  var NEWS_URL = 'https://en.wikipedia.org/w/api.php?action=parse' +
+                 '&page=Template:In_the_news&prop=text&format=json&origin=*';
+  var NEWS_EVERY_MS = 60 * 60 * 1000;      // an hour
+  var newsBase = '';
+
+  /** Strip tags and entities without ever handing the string to innerHTML. */
+  function plainText(html) {
+    var doc;
+    try {
+      doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+    } catch (e) { return ''; }
+    return (doc.body.textContent || '').replace(/\[[^\]]*\]/g, '');
+  }
+
+  function headlines(html) {
+    var items = html.match(/<li\b[^>]*>[\s\S]*?<\/li>/gi) || [];
+    var out = [];
+
+    for (var i = 0; i < items.length && out.length < 6; i++) {
+      var t = plainText(items[i]).replace(/\s+/g, ' ').trim();
+
+      // The list ends with bare "ongoing" and "recent deaths" links, which
+      // are navigation rather than news. A real item is a whole sentence.
+      if (t.length < 40 || t.charAt(t.length - 1) !== '.') continue;
+      if (/^(Ongoing|Recent deaths)\b/i.test(t)) continue;
+
+      out.push(t.replace(/\.$/, ''));
+    }
+    return out;
+  }
+
+  function paintNews(span, lines) {
+    if (!lines.length) return;
+    // textContent, never innerHTML: every word of this came off the network.
+    span.textContent = newsBase + '  in the news  *  ' + lines.join('  *  ') + '  *';
+  }
+
+  function fetchNews(span) {
+    // Cache-bust, or an hourly refresh would be served the same response by
+    // the browser all day.
+    fetch(NEWS_URL + '&_=' + Math.floor(Date.now() / NEWS_EVERY_MS))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var html = j && j.parse && j.parse.text && j.parse.text['*'];
+        if (html) paintNews(span, headlines(html));
+      })
+      .catch(function () { /* offline, or the feed moved. The ticker stands. */ });
+  }
 
   function mountBroadcast() {
     var span = document.querySelector('.marquee span');
-    if (!span || !window.fetch) return;
+    if (!span || !window.fetch || !window.DOMParser) return;
 
-    var d = new Date();
-    // Yesterday: the current day's ranking is still being counted, and an
-    // empty list would leave the ticker looking broken for no reason.
-    d.setDate(d.getDate() - 1);
-    var ymd = d.getFullYear() + '/' +
-      ('0' + (d.getMonth() + 1)).slice(-2) + '/' + ('0' + d.getDate()).slice(-2);
+    newsBase = span.textContent;
+    fetchNews(span);
+    setInterval(function () { fetchNews(span); }, NEWS_EVERY_MS);
 
-    fetch('https://api.wikimedia.org/feed/v1/wikipedia/en/featured/' + ymd)
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        var list = j && j.mostread && j.mostread.articles;
-        if (!list || !list.length) return;
-
-        var titles = [];
-        for (var i = 0; i < list.length && titles.length < 8; i++) {
-          var t = list[i].normalizedtitle;
-          // Wikipedia's own furniture is not news.
-          if (t && t.indexOf('Main Page') < 0 && t.indexOf('Special:') < 0) titles.push(t);
-        }
-        if (!titles.length) return;
-
-        // textContent, not innerHTML: this string comes off the network.
-        span.textContent = span.textContent +
-          '  the world is reading  *  ' + titles.join('  *  ') + '  *';
-      })
-      .catch(function () { /* offline, or the feed moved. The ticker stands. */ });
+    // An hour is a long time to leave a laptop shut; catch up on waking.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) fetchNews(span);
+    });
   }
 
   function boot() {
