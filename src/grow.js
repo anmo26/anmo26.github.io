@@ -605,9 +605,11 @@ function grow(dir, ctx) {
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
 
   const positions = parseDSStore(path.join(dir, '.DS_Store'));
+  const rel = path.relative(root, dir);
+  const depthFromRoot = rel ? rel.split(path.sep).length : 0;
 
   const files = entries.map(e => {
-    const f = describe(dir, e, rules, ctx.root);
+    const f = describe(dir, e, rules, ctx.root, depthFromRoot === 0);
     const loc = positions[e.name]?.Iloc;
     if (loc) { f.x = loc.x; f.y = loc.y; }
     return f;
@@ -627,9 +629,7 @@ function grow(dir, ctx) {
     }
   }
 
-  const rel = path.relative(root, dir);
   const firstImage = files.find(f => f.type === 'image');
-  const depthFromRoot = rel ? rel.split(path.sep).length : 0;
 
   const html = renderPage({
     siteName: ctx.siteName,
