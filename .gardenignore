@@ -6,3 +6,6 @@ node_modules/
 *.tmp
 README.md
 publish-setup.sh
+
+# cover art is material for the player, not a gallery item
+covers/

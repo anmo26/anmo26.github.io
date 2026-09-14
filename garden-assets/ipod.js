@@ -202,12 +202,20 @@
 
       if (t.cover) {
         var img = document.createElement('img');
-        img.src = t.cover;
         img.alt = '';
-        img.loading = 'lazy';
         img.decoding = 'async';
+        // Deliberately NOT loading="lazy": these live inside a scrolling
+        // box, and a lazy image in a scroll container can sit unloaded
+        // forever because the heuristic watches the document viewport.
+        // Covers are a handful of small same-origin files; the thing that
+        // must stay lazy is the Spotify iframe, and it is.
+        // The listener goes on before `src`: a cached 404 fires `error`
+        // synchronously, and attaching afterwards would miss it.
         img.addEventListener('error', generated);     // missing file -> gradient
+        img.src = t.cover;
         art.appendChild(img);
+        // And once more for the case where it already failed and finished.
+        if (img.complete && img.naturalWidth === 0) generated();
       } else {
         generated();
       }
@@ -252,15 +260,16 @@
       } else {
         var now = tracks[state.playing] || cur;
         bar.textContent = now.name;
+        // The link goes first so it survives the ellipsis on a narrow
+        // screen; the note is the part that can afford to be cut.
         ticker.innerHTML = '';
         var a = document.createElement('a');
         a.href = now.link;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.textContent = 'open in Spotify ↗';
-        ticker.appendChild(document.createTextNode(
-          (now.note ? now.note + ' · ' : '')));
         ticker.appendChild(a);
+        if (now.note) ticker.appendChild(document.createTextNode(' · ' + now.note));
       }
 
       var t = tiles[state.index];

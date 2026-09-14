@@ -13,7 +13,7 @@ import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
-import { growSite, loadConfig } from './grow.js';
+import { loadConfig } from './grow.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT = path.join(__dirname, '..');
@@ -73,7 +73,19 @@ function rebuild() {
   building = true;
 
   try {
-    const { pages, changed } = growSite({ quiet: true });
+    // Run the generator as a child process rather than calling growSite() in
+    // here. ES modules are cached for the life of the process, so an imported
+    // grow.js would keep rebuilding from whatever the code looked like when
+    // the watcher started -- editing the generator would silently do nothing.
+    const out = spawnSync(process.execPath, [path.join(__dirname, 'grow.js')], {
+      cwd: root, encoding: 'utf8',
+    });
+    if (out.status !== 0) throw new Error((out.stderr || '').trim() || 'generator failed');
+
+    const tally = /(\d+) pages? visited, (\d+) written/.exec(out.stdout || '');
+    const pages = tally ? Number(tally[1]) : 0;
+    const changed = tally ? Number(tally[2]) : 0;
+
     if (changed > 0) {
       log(`regrew ${changed} of ${pages} page${pages === 1 ? '' : 's'}`);
       if (!noPublish && config.publish && hasGitRemote()) publish();

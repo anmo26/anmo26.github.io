@@ -11,15 +11,17 @@
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="garden-assets/style.css">
+  <link rel="stylesheet" href="garden-assets/ipod.css">
   <style>
     @media (min-width: 760px) {
-      .plantbed { min-height: 640px; margin-left: max(0px, calc(50% - 447px - 13rem)); }
+      .plantbed { min-height: 1338px; margin-left: max(0px, calc(50% - 447px - 13rem)); }
       #p0 { top: 120px; left: 404px; }
       #p1 { top: 50px; left: 694px; }
       #p2 { top: 580px; left: 74px; }
       #p3 { top: 450px; left: 894px; }
-      #p4 { top: 128px; left: 672px; }
+      #p4 { top: 443px; left: 467px; }
       #p5 { top: 240px; left: 0px; }
+      #music { top: 778px; left: 0px; }
     }
   </style>
 </head>
@@ -71,7 +73,7 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
       <div class="win kind-directory" id="p2" data-key="music/">
         <div class="win-bar">
           <span class="win-title"><a href="music/">music/</a></span>
-          <span class="win-meta">5 items</span>
+          <span class="win-meta">4 items</span>
           <button class="win-btn js-collapse" type="button" title="roll up">_</button>
           <button class="win-btn js-close" type="button" title="close">x</button>
         </div>
@@ -120,6 +122,63 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
 │              │
 └─────────────┘</span><a href="writings/">open</a></div>
       </div>
+      <div class="win kind-ipod" id="music" data-key="__music">
+        <div class="win-bar">
+          <span class="win-title">music</span>
+          <span class="win-meta">3 playlists</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+        </div>
+        <div class="win-body">
+          <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
+               data-view="list" data-player="off">
+
+            <div class="ipod-screen">
+              <div class="ipod-bar">
+                <button class="ipod-back" type="button"
+                        aria-label="menu, back to the playlist list">&#8249; menu</button>
+                <span class="ipod-bar-title" aria-live="polite">playlists</span>
+                <span class="ipod-battery" aria-hidden="true"></span>
+              </div>
+
+              <div class="ipod-view ipod-view-list">
+                <div class="ipod-list" role="listbox" tabindex="0" aria-label="playlists"></div>
+              </div>
+
+              <div class="ipod-view ipod-view-player">
+                <div class="ipod-stage"></div>
+                <div class="ipod-paused">
+                  <strong class="ipod-paused-name">paused</strong>
+                  <span>press &#9654;&#10073;&#10073; to start it again</span>
+                </div>
+              </div>
+
+              <div class="ipod-view ipod-view-empty">
+                <div class="ipod-empty">
+                  <strong>no music yet</strong>
+                  <span>put a Spotify link in a text file in <code>music/</code> and regrow.</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="ipod-ticker" aria-live="polite"></p>
+
+            <div class="ipod-wheel">
+              <button class="ipod-btn ipod-btn-menu" type="button" data-act="menu"
+                      aria-label="menu, back to the playlist list">menu</button>
+              <button class="ipod-btn ipod-btn-prev" type="button" data-act="prev"
+                      aria-label="previous playlist">&#8249;&#8249;</button>
+              <button class="ipod-btn ipod-btn-next" type="button" data-act="next"
+                      aria-label="next playlist">&#8250;&#8250;</button>
+              <button class="ipod-btn ipod-btn-play" type="button" data-act="play"
+                      aria-label="play or pause">&#9654;&#10073;&#10073;</button>
+              <button class="ipod-btn ipod-btn-select" type="button" data-act="select"
+                      aria-label="select, play the highlighted playlist"></button>
+            </div>
+
+            <p class="ipod-noscript">this player needs JavaScript.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
   </main>
@@ -133,6 +192,8 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
   <script src="garden-assets/app.js"></script>
+  <script>window.GARDEN_MUSIC = [{"name":"late night drives","file":"01 late night drives.txt","kind":"playlist","id":"37i9dQZF1DX4WYpdgoIcn6","embed":"https://open.spotify.com/embed/playlist/37i9dQZF1DX4WYpdgoIcn6?utm_source=generator","link":"https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6","cover":null,"note":"windows down, nothing to prove"},{"name":"deep focus","file":"02 deep focus.txt","kind":"playlist","id":"37i9dQZF1DWZeKCadgRdKQ","embed":"https://open.spotify.com/embed/playlist/37i9dQZF1DWZeKCadgRdKQ?utm_source=generator","link":"https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ","cover":"music/covers/deep-focus.jpg","note":"for the hours that need to disappear"},{"name":"peaceful piano","file":"03 peaceful piano.txt","kind":"playlist","id":"37i9dQZF1DX4sWSpwq3LiO","embed":"https://open.spotify.com/embed/playlist/37i9dQZF1DX4sWSpwq3LiO?utm_source=generator","link":"https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO","cover":null,"note":""}];</script>
+  <script src="garden-assets/ipod.js"></script>
 </body>
 <!--
 a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)
