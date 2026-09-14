@@ -1,0 +1,96 @@
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="p9780141902876" version="2.0">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+			<dc:title>Rashomon and Seventeen Other Stories</dc:title>
+			<dc:creator>Ryunosuke Akutagawa</dc:creator>
+			<dc:date>2006</dc:date>
+			<dc:identifier id="p9780141902876">9780141902876</dc:identifier>
+                        <dc:format>320 pages</dc:format>
+			<dc:coverage>London</dc:coverage>
+			<dc:coverage>New York</dc:coverage>
+			<dc:coverage>Camberwell</dc:coverage>
+			<dc:coverage>Ontario</dc:coverage>
+			<dc:coverage>New Delhi</dc:coverage>
+			<dc:coverage>Auckland</dc:coverage>
+			<dc:coverage>Rosebank</dc:coverage>
+			<dc:type>Text</dc:type>
+			<dc:language>en</dc:language>
+			<dc:rights>All rights reserved.</dc:rights>
+			<dc:publisher>Penguin Books Ltd</dc:publisher>
+	<description xmlns="http://purl.org/dc/elements/1.1/">&lt;p&gt;Ryünosuke Akutagawa (1892-1927) is one of Japan's foremost stylists - a modernist master whose short stories are marked by highly original imagery, cynicism, beauty and wild humour. 'Rashömon' and 'In a Bamboo Grove' inspired Kurosawa's magnificent film and depict a past in which morality is turned upside down, while tales such as 'The Nose', 'O-Gin' and 'Loyalty' paint a rich and imaginative picture of a medieval Japan peopled by Shoguns and priests, vagrants and peasants. And in later works such as 'Death Register', 'The Life of a Stupid Man' and 'Spinning Gears', Akutagawa drew from his own life to devastating effect, revealing his intense melancholy and terror of madness in exquisitely moving impressionistic stories.</description>
+</metadata>
+	<manifest>
+	<item href="fonts/CharisSILB.ttf" id="CharisSILB" media-type="application/application/x-font-ttf"/>
+	<item href="fonts/CharisSILBI.ttf" id="CharisSILBI" media-type="application/application/x-font-ttf"/>
+	<item href="fonts/CharisSILI.ttf" id="CharisSILI" media-type="application/application/x-font-ttf"/>
+	<item href="fonts/CharisSILR.ttf" id="CharisSILR" media-type="application/application/x-font-ttf"/>
+        <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
+	<item href="cover.html" id="cover" media-type="application/xhtml+xml"/>
+	<item href="frontm.html" id="frontm" media-type="application/xhtml+xml"/>
+	<item href="note.html" id="note" media-type="application/xhtml+xml"/>
+        <item href="acknowledgments.html" id="acknowledgments" media-type="application/xhtml+xml"/>
+	<item href="chronology.html" id="chronology" media-type="application/xhtml+xml"/>
+	<item href="introduction.html" id="introduction" media-type="application/xhtml+xml"/>
+	<item href="further.html" id="further" media-type="application/xhtml+xml"/>
+	<item href="translator.html" id="translator" media-type="application/xhtml+xml"/>
+	<item href="part01ch01.html" id="part01ch01" media-type="application/xhtml+xml"/>
+	<item href="part01ch02.html" id="part01ch02" media-type="application/xhtml+xml"/>
+	<item href="part01ch03.html" id="part01ch03" media-type="application/xhtml+xml"/>
+	<item href="part01ch04.html" id="part01ch04" media-type="application/xhtml+xml"/>
+	<item href="part01ch05.html" id="part01ch05" media-type="application/xhtml+xml"/>
+	<item href="part01ch06.html" id="part01ch06" media-type="application/xhtml+xml"/>
+	<item href="part02ch01.html" id="part02ch01" media-type="application/xhtml+xml"/>
+	<item href="part02ch02.html" id="part02ch02" media-type="application/xhtml+xml"/>
+	<item href="part02ch03.html" id="part02ch03" media-type="application/xhtml+xml"/>
+	<item href="part03ch01.html" id="part03ch01" media-type="application/xhtml+xml"/>
+	<item href="part03ch02.html" id="part03ch02" media-type="application/xhtml+xml"/>
+	<item href="part03ch03.html" id="part03ch03" media-type="application/xhtml+xml"/>
+	<item href="part04ch01.html" id="part04ch01" media-type="application/xhtml+xml"/>
+	<item href="part04ch02.html" id="part04ch02" media-type="application/xhtml+xml"/>
+	<item href="part04ch03.html" id="part04ch03" media-type="application/xhtml+xml"/>
+	<item href="part04ch04.html" id="part04ch04" media-type="application/xhtml+xml"/>
+	<item href="part04ch05.html" id="part04ch05" media-type="application/xhtml+xml"/>
+	<item href="part04ch06.html" id="part04ch06" media-type="application/xhtml+xml"/>
+	<item href="notes.html" id="notes" media-type="application/xhtml+xml"/>
+        <item href="fn3.html" id="fn3" media-type="application/xhtml+xml"/>
+	<item href="9780140449709.css" id="css" media-type="text/css"/>
+	<item href="page-template.xpgt" id="pt" media-type="application/adobe-page-template+xml"/>
+	<item href="page-map.xml" id="map" media-type="application/oebps-page-map+xml"/>
+        <item href="images/pub.jpg" id="pub" media-type="image/jpeg"/>
+ 	<item href="images/line.jpg" id="line" media-type="image/jpeg"/>
+ 	<item href="images/star.jpg" id="star" media-type="image/jpeg"/>
+ 	<item href="images/f012-01.jpg" id="f012-01" media-type="image/jpeg"/>
+ 	<item href="images/f0178-01.jpg" id="f0178-01" media-type="image/jpeg"/>
+ 	<item href="images/f0256-01.jpg" id="f0256-01" media-type="image/jpeg"/>
+
+</manifest>
+	<spine page-map="map" toc="ncx">
+		<itemref idref="cover"/>
+		<itemref idref="frontm"/>
+		<itemref idref="note"/>
+                <itemref idref="acknowledgments"/>
+		<itemref idref="chronology"/>
+		<itemref idref="introduction"/>
+		<itemref idref="further"/>
+		<itemref idref="translator"/>
+		<itemref idref="part01ch01"/>
+		<itemref idref="part01ch02"/>
+		<itemref idref="part01ch03"/>
+		<itemref idref="part01ch04"/>
+		<itemref idref="part01ch05"/>
+		<itemref idref="part01ch06"/>
+		<itemref idref="part02ch01"/>
+		<itemref idref="part02ch02"/>
+		<itemref idref="part02ch03"/>
+		<itemref idref="part03ch01"/>
+		<itemref idref="part03ch02"/>
+		<itemref idref="part03ch03"/>
+		<itemref idref="part04ch01"/>
+		<itemref idref="part04ch02"/>
+		<itemref idref="part04ch03"/>
+		<itemref idref="part04ch04"/>
+		<itemref idref="part04ch05"/>
+		<itemref idref="part04ch06"/>
+		<itemref idref="notes"/>
+		<itemref idref="fn3"/>
+        </spine>
+</package>

@@ -1,0 +1,302 @@
+@font-face { 
+	font-family: "Charis"; 
+	src: url(fonts/CharisSILR.ttf); 
+	font-style: normal;
+	font-weight: normal;
+}
+
+@font-face { 
+		font-family: "Charis"; 
+		src: url(fonts/CharisSILB.ttf); 
+		font-style: normal;
+		font-weight: bold;
+		
+}
+
+@font-face { 
+		font-family: "Charis"; 
+		src: url(fonts/CharisSILI.ttf); 
+		font-style: italic;
+		font-weight: normal;
+}
+
+@font-face { 
+	font-family: "Charis"; 
+	src: url(fonts/CharisSILBI.ttf); 
+	font-style: italic;
+	font-weight: bold;
+}
+body
+{
+    font-family: "Charis";
+}
+.center
+{
+     font-size: small;
+     margin-top: .6em;
+     margin-bottom: .6em;
+     text-align: center;
+}
+.centerk
+{
+     font-size: small;
+     margin-top: .6em;
+     margin-bottom: 2.6em;
+     text-align: center;
+}
+.attribute
+{
+     font-size: small;
+     margin-top: 1em;
+     margin-bottom: .6em;
+     text-align: right;
+}
+.table
+{
+     font-size: medium;
+     margin-top: .5em;
+     margin-left: 12pt;
+     margin-bottom: .5em;
+}
+.blockquote
+{
+     font-size: small;
+     margin-top: 1em;
+     margin-bottom: 1em;
+     margin-left: 24pt;
+     margin-right: 17pt;
+}
+.blockquote1
+{
+    font-size: small;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 24pt;
+    text-indent: 17pt;
+}
+.blockquote2
+{
+    font-size: small;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 24pt;
+    text-indent: 17pt;
+}
+.author
+{
+     font-size: medium;
+     margin-top: 1em;
+     margin-bottom: 1em;
+     page-break-before: right;
+}
+h1
+{
+     font-size: xx-large;
+     margin-top: .5em;
+     margin-bottom: 1em;
+}
+.halftitle
+{
+     font-size: medium;
+     margin-top: 1em;
+     margin-bottom: 1.5em;
+}
+.publisher
+{
+     margin-top: 16em;
+     margin-bottom: 1em;
+}
+.cpublisher
+{
+     font-size: medium;
+     margin-top: 10em;
+     margin-bottom: 1.5em;
+     page-break-before: right;
+}
+.copyright
+{
+     font-size: small;
+     margin-top: .5em;
+     margin-bottom: .5em;
+}
+.copyright1
+{
+     font-size: small;
+     margin-top: 1.5em;
+     margin-bottom: .5em;
+}
+.indent
+{
+     font-size: medium;
+     margin-top: .5em;
+     margin-bottom: .5em;
+     text-indent: 15pt;
+}
+.indent1
+{
+     font-size: medium;
+     margin-top: .8em;
+     margin-bottom: .5em;
+     text-indent: 15pt;
+}
+.indenthanging
+{
+    font-size: medium;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 14pt;
+    text-indent: -11pt;
+}
+.indenthanging1
+{
+    font-size: medium;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 16pt;
+    text-indent: -14pt;
+}
+.indenthanging2
+{
+    font-size: medium;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 16pt;
+    text-indent: 15pt;
+}
+.indenthanging3
+{
+    font-size: medium;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 16pt;
+    text-indent: -12pt;
+}
+.noindent
+{
+    font-size: medium;
+    margin-top: 1em;
+    margin-bottom: .5em;
+}
+.tocchapter
+{
+     font-size: medium;
+     margin-top: .5em;
+     margin-bottom: .5em;
+}
+h2
+{
+     font-size: x-large;
+     page-break-before: right;
+     margin-top: .6em;
+     margin-bottom: .5em;
+}
+h3
+{
+    font-size: large;
+    margin-top: .5em;
+    margin-bottom: 1em;
+}
+div.h3
+{
+    font-size: large; 
+    margin-top: 1em;
+    font-size: 1em;
+    margin-bottom: 1em;
+}
+h4
+{
+    font-size: large;
+    margin-top: .5em;
+    margin-bottom: .5em;
+}
+.image
+{
+    margin-top: 1em;
+    margin-bottom: 1em;
+    text-align: center;
+}
+.footnote
+{
+     font-size: small;
+     margin-top: .5em;
+     text-indent: 6pt;
+     margin-bottom: 2em;
+}
+SPAN.weblink
+{
+    text-decoration: none;
+}
+.editor
+{
+     font-size: medium;
+     margin-top: 1.5em;
+     margin-bottom: .5em;
+}
+svg
+{
+     height: 96%;
+     width: 98%;
+}
+p
+{
+     margin-top: .3em;
+     margin-bottom: .3em;
+}
+a.nounder
+{
+    text-decoration: none;
+}
+a.nounder1
+{
+    text-decoration: none;
+}
+.poem
+{
+    font-size: small;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 48pt;
+}
+.poemk
+{
+    font-size: small;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 60pt;
+    margin-right: 60pt;
+    text-align: center;
+}
+.poemk1
+{
+    font-size: small;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 16pt;
+    margin-right: 60pt;
+    text-align: center;
+}
+.poemk12
+{
+    font-size: small;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    margin-left: 8pt;
+    margin-right: 48pt;
+    text-align: center;
+}
+div.halftitle
+{
+    page-break-before: right;
+}
+div.title
+{
+    page-break-before: right;
+}
+div.copy
+{
+        page-break-before: right;
+}
+div.content
+{
+        page-break-before: right;
+}

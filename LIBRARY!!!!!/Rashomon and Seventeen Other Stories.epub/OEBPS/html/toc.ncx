@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="en">
+  <head>
+    <meta name="dtb:uid" content="9780140449709"/>
+    <meta name="dtb:depth" content="1"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>Rashomon and Seventeen Other Stories</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="cover" playOrder="1">
+      <navLabel>
+        <text>Cover</text>
+      </navLabel>
+      <content src="cover.html"/>
+    </navPoint>
+    <navPoint id="abt" playOrder="2">
+      <navLabel>
+        <text>About the Author</text>
+      </navLabel>
+      <content src="frontm.html"/>
+    </navPoint>
+    <navPoint id="title" playOrder="3">
+      <navLabel>
+        <text>Title Page</text>
+      </navLabel>
+      <content src="frontm.html#title"/>
+    </navPoint>
+    <navPoint id="copyright" playOrder="4">
+      <navLabel>
+        <text>Copyright page</text>
+      </navLabel>
+      <content src="frontm.html#copyright"/>
+    </navPoint>
+    <navPoint id="contents" playOrder="5">
+      <navLabel>
+        <text>Contents</text>
+      </navLabel>
+      <content src="frontm.html#contents"/>
+    </navPoint>
+    <navPoint id="note" playOrder="6">
+      <navLabel>
+        <text>Note on Japanese Name Order and Pronunciation</text>
+      </navLabel>
+      <content src="note.html"/>
+    </navPoint>
+    <navPoint id="acknowledgments" playOrder="7">
+      <navLabel>
+        <text>Acknowledgments</text>
+      </navLabel>
+      <content src="acknowledgments.html"/>
+    </navPoint>
+    <navPoint id="chronology" playOrder="8">
+      <navLabel>
+        <text>Chronology</text>
+      </navLabel>
+      <content src="chronology.html"/>
+    </navPoint>
+    <navPoint id="introduction" playOrder="9">
+      <navLabel>
+        <text>Introduction</text>
+      </navLabel>
+      <content src="introduction.html"/>
+    </navPoint>
+    <navPoint id="further" playOrder="10">
+      <navLabel>
+        <text>Further Reading</text>
+      </navLabel>
+      <content src="further.html"/>
+    </navPoint>
+    <navPoint id="translator" playOrder="11">
+      <navLabel>
+        <text>Translator’s Note</text>
+      </navLabel>
+      <content src="translator.html"/>
+     </navPoint>
+    <navPoint id="part01ch01a" playOrder="12">
+      <navLabel>
+        <text>Rashomon and Seventeen Other Stories</text>
+      </navLabel>
+      <content src="part01ch01.html"/>
+    <navPoint id="part01" playOrder="12">
+      <navLabel>
+        <text>A WORLD IN DECAY</text>
+      </navLabel>
+      <content src="part01ch01.html"/>
+    <navPoint id="part01ch01" playOrder="13">
+      <navLabel>
+        <text>RASHŌMON</text>
+      </navLabel>
+      <content src="part01ch01.html#part01ch01"/>
+    </navPoint>
+    <navPoint id="part01ch02" playOrder="14">
+      <navLabel>
+        <text>IN A BAMBOO GROVE</text>
+      </navLabel>
+      <content src="part01ch02.html"/>
+    </navPoint>
+    <navPoint id="part01ch03" playOrder="15">
+      <navLabel>
+        <text>THE NOSE</text>
+      </navLabel>
+      <content src="part01ch03.html"/>
+    </navPoint>
+    <navPoint id="part01ch04" playOrder="16">
+      <navLabel>
+        <text>DRAGON: THE OLD POTTER’S TALE</text>
+      </navLabel>
+      <content src="part01ch04.html"/>
+    </navPoint>
+    <navPoint id="part01ch05" playOrder="17">
+      <navLabel>
+        <text>THE SPIDER THREAD</text>
+      </navLabel>
+      <content src="part01ch05.html"/>
+    </navPoint>
+    <navPoint id="part01ch06" playOrder="18">
+      <navLabel>
+        <text>HELL SCREEN</text>
+      </navLabel>
+      <content src="part01ch06.html"/>
+    </navPoint>
+    </navPoint>
+
+    <navPoint id="part02" playOrder="19">
+      <navLabel>
+        <text>UNDER THE SWORD</text>
+      </navLabel>
+      <content src="part02ch01.html"/>
+    <navPoint id="part02ch01" playOrder="20">
+      <navLabel>
+        <text>DR. OGATA RYŌSAI: MEMORANDUM</text>
+      </navLabel>
+      <content src="part02ch01.html#part02ch01"/>
+    </navPoint>
+    <navPoint id="part02ch02" playOrder="21">
+      <navLabel>
+        <text>O-GIN</text>
+      </navLabel>
+      <content src="part02ch02.html"/>
+    </navPoint>
+    <navPoint id="part02ch03" playOrder="22">
+      <navLabel>
+        <text>LOYALTY</text>
+      </navLabel>
+      <content src="part02ch03.html"/>
+    </navPoint>
+    </navPoint>
+    <navPoint id="part03" playOrder="23">
+      <navLabel>
+        <text>MODERN TRAGICOMEDY</text>
+      </navLabel>
+      <content src="part03ch01.html"/>
+    <navPoint id="part03ch01" playOrder="24">
+      <navLabel>
+        <text>THE STORY OF A HEAD THAT FELL OFF</text>
+      </navLabel>
+      <content src="part03ch01.html#part03ch01"/>
+    </navPoint>
+    <navPoint id="part03ch02" playOrder="25">
+      <navLabel>
+        <text>GREEN ONIONS</text>
+      </navLabel>
+      <content src="part03ch02.html"/>
+    </navPoint>
+    <navPoint id="part03ch03" playOrder="26">
+      <navLabel>
+        <text>HORSE LEGS</text>
+      </navLabel>
+      <content src="part03ch03.html"/>
+    </navPoint>
+    </navPoint>
+    <navPoint id="part04" playOrder="27">
+      <navLabel>
+        <text>AKUTAGAWA’S OWN STORY</text>
+      </navLabel>
+      <content src="part04ch01.html"/>
+    <navPoint id="part04ch01" playOrder="28">
+      <navLabel>
+        <text>DAIDŌJI SHINSUKE: THE EARLY YEARS</text>
+      </navLabel>
+      <content src="part04ch01.html#part04ch01"/>
+    </navPoint>
+    <navPoint id="part04ch02" playOrder="29">
+      <navLabel>
+        <text>THE WRITER’S CRAFT</text>
+      </navLabel>
+      <content src="part04ch02.html"/>
+    </navPoint>
+    <navPoint id="part04ch03" playOrder="30">
+      <navLabel>
+        <text>THE BABY’S SICKNESS</text>
+      </navLabel>
+      <content src="part04ch03.html"/>
+    </navPoint>
+    <navPoint id="part04ch04" playOrder="31">
+      <navLabel>
+        <text>DEATH REGISTER</text>
+      </navLabel>
+      <content src="part04ch04.html"/>
+    </navPoint>
+    <navPoint id="part04ch05" playOrder="32">
+      <navLabel>
+        <text>THE LIFE OF A STUPID MAN</text>
+      </navLabel>
+      <content src="part04ch05.html"/>
+    </navPoint>
+    <navPoint id="part04ch06" playOrder="33">
+      <navLabel>
+        <text>SPINNING GEARS</text>
+      </navLabel>
+      <content src="part04ch06.html"/>
+    </navPoint>
+    </navPoint>
+    </navPoint>
+    <navPoint id="notes" playOrder="34">
+      <navLabel>
+        <text>Notes</text>
+      </navLabel>
+      <content src="notes.html"/>
+    </navPoint>
+    <navPoint id="footnotes" playOrder="35">
+      <navLabel>
+        <text>Footnote</text>
+      </navLabel>
+      <content src="fn3.html"/>
+    <navPoint id="fn3a" playOrder="35">
+        <navLabel>
+          <text>A WORLD IN DECAY</text>
+        </navLabel>
+        <content src="fn3.html"/>
+    <navPoint id="fn3" playOrder="35">
+        <navLabel>
+          <text>Page 3</text>
+        </navLabel>
+        <content src="fn3.html"/>
+      </navPoint>
+      </navPoint>
+      </navPoint>
+</navMap>
+</ncx>
