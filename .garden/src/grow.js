@@ -515,6 +515,56 @@ function sweepBundles(root) {
 }
 
 /**
+ * Writes a Finder clipping's extracted text out as a real .txt, mirroring the
+ * source path under <root>/.clippings/ (see CLIPPING_CACHE). Reused across
+ * builds like a thumbnail: only rewritten when the clipping itself is newer
+ * than the last copy. `text` is handed in already decoded, since the caller
+ * (describe) needed it anyway for the on-page snippet -- no sense asking
+ * plutil to extract the same field twice.
+ *
+ * Returns the packed file's path relative to the site root, or null if it
+ * could not be written (a read-only filesystem, mostly).
+ */
+let clippingClaimed = new Set();
+
+function packClipping(fullPath, root, text) {
+  const rel = path.relative(root, fullPath).replace(/\.textClipping$/i, '.txt');
+  const relSlash = rel.split(path.sep).join('/');
+  clippingClaimed.add(relSlash);
+  const out = path.join(root, CLIPPING_CACHE, rel);
+
+  try {
+    const src = fs.statSync(fullPath).mtimeMs;
+    const dst = fs.statSync(out).mtimeMs;
+    if (dst >= src) return CLIPPING_CACHE + '/' + relSlash;
+  } catch { /* not packed yet */ }
+
+  try {
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, text.replace(/\s+$/, '') + '\n');
+  } catch { return null; }
+
+  return CLIPPING_CACHE + '/' + relSlash;
+}
+
+/** Drops any packed clipping this walk didn't ask for -- same idea as sweepBundles. */
+function sweepClippings(root) {
+  let removed = 0;
+  const walk = (dir, prefix) => {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const rel = prefix ? prefix + '/' + e.name : e.name;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) { walk(full, rel); try { fs.rmdirSync(full); } catch {} }
+      else if (!clippingClaimed.has(rel)) { try { fs.unlinkSync(full); removed++; } catch {} }
+    }
+  };
+  walk(path.join(root, CLIPPING_CACHE), '');
+  return removed;
+}
+
+/**
  * A smaller copy of an oversized image, made once and reused. Returns its
  * path relative to the site root, or null if there is nothing to gain or the
  * conversion is not possible here.
