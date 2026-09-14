@@ -38,9 +38,14 @@
 
 html, body { height: 100%; margin: 0; }
 
+/* 14px, not 13. Everything inside .plantbed is drawn through the fit
+   transform in app.js, which on a laptop window settles on its 0.62 floor --
+   so type set here arrives on screen at roughly two thirds the size it says.
+   The sizes through this file are chosen for what they measure AFTER that,
+   not for what they read as in the source. */
 body {
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--ink);
   background-color: var(--paper);
@@ -87,7 +92,14 @@ body.theme-pocari {
     radial-gradient(circle at 85% 78%, rgba(62,143,214,.07) 0, transparent 42%);
 }
 
-main { padding: 2.5rem 1.5rem 1.5rem; }
+main { padding: 2.5rem 1.5rem 1.5rem; transition: opacity .2s ease; }
+
+/* Walking into a folder swaps this page's contents for the next one in
+   place, and until now there was no sign the click had landed at all. The
+   folder steps back while the next is fetched -- no spinner, no bar, the
+   paper just goes quiet. The delay is the whole point: a folder that
+   arrives quickly never dips, so only a wait is ever visible. */
+body.is-navigating main { opacity: .45; transition-delay: .13s; }
 
 /* ---------------------------------------------------------------- masthead */
 
@@ -97,21 +109,31 @@ main { padding: 2.5rem 1.5rem 1.5rem; }
   text-align: center;
 }
 
+/* The name of the place, at the size a name deserves. Large serif wants its
+   letters closed up rather than opened out -- the old .01em was tracking
+   meant for small type, and at this size it read as spaced-out rather than
+   set. */
 .masthead h1 {
   margin: 0;
   font-family: var(--serif);
-  font-size: 2.1rem;
+  font-size: 2.6rem;
   font-weight: 400;
-  letter-spacing: .01em;
+  letter-spacing: -.015em;
+  line-height: 1.04;
   color: var(--ink);
 }
 
+/* This is a sentence he wrote, so it is set as a sentence: the reading
+   serif, at reading size, in reading ink. It was a tracked-out lowercase
+   label, which styled his own words into a caption and made them the
+   hardest thing on the page to read. */
 .masthead p {
-  margin: .5rem 0 0;
-  font-size: .78rem;
-  letter-spacing: .08em;
-  text-transform: lowercase;
-  color: var(--ink-faint);
+  margin: .7rem 0 0;
+  font-family: var(--serif);
+  font-size: .98rem;
+  line-height: 1.55;
+  letter-spacing: 0;
+  color: var(--ink-soft);
 }
 
 .masthead .rule {
@@ -137,7 +159,7 @@ main { padding: 2.5rem 1.5rem 1.5rem; }
 .item h3 {
   margin: 0;
   font-family: var(--mono);
-  font-size: .72rem;
+  font-size: .9rem;
   font-weight: 400;
   line-height: 1.45;
   letter-spacing: .01em;
@@ -151,6 +173,8 @@ main { padding: 2.5rem 1.5rem 1.5rem; }
   color: var(--ochre);
   text-decoration: none;
   border-bottom: 1px solid transparent;
+  /* short enough that it reads as the page answering, not as an animation */
+  transition: border-bottom-color .12s ease;
 }
 .item h3 a:visited { color: var(--ochre); }
 .item h3 a:hover { border-bottom-color: var(--ochre); }
@@ -163,18 +187,33 @@ main { padding: 2.5rem 1.5rem 1.5rem; }
 
 .item .meta {
   color: var(--ink-faint);
-  font-size: .66rem;
+  font-size: .8rem;
   font-variant-numeric: tabular-nums;
 }
 
-.item.focused h3 a { border-bottom-color: currentColor; }
+/* Finder's answer to a press: the NAME takes the highlight, never the
+   picture. It is the only filled shape anywhere on this page, and it lives
+   for exactly as long as you are holding the item -- app.js puts .focused on
+   while you drag and takes it off when you let go. Before this the held item
+   grew a hairline underline, which is also what hovering does, so picking
+   something up looked like nothing at all. */
+.item.focused h3 a,
+.item.focused h3 a:visited {
+  background: var(--ochre);
+  color: var(--paper);
+  border-bottom-color: transparent;
+  padding: .05em .28em;
+  margin: 0 -.28em;
+}
+.item.kind-directory.focused h3 a,
+.item.kind-directory.focused h3 a:visited { background: var(--olive); }
 
 .item img, .item video { display: block; max-width: 100%; height: auto; margin-top: .3rem; }
 .item audio { width: 100%; margin-top: .3rem; }
 .item pre {
   margin: .3rem 0 0;
   font-family: var(--mono);
-  font-size: .74rem;
+  font-size: .92rem;
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -212,6 +251,12 @@ main { padding: 2.5rem 1.5rem 1.5rem; }
   cursor: grab;
 }
 .item .icon:active { cursor: grabbing; }
+/* An icon under the pointer lifts off the paper by a hair. Its shadow is
+   already in the PNG macOS rendered, so the lift is the whole effect --
+   nothing is added, the thing just comes up to meet you. */
+.item .icon img { transition: transform .14s cubic-bezier(.2,.7,.3,1); }
+.item:hover .icon img,
+.item.focused .icon img { transform: translateY(-2px); }
 .item .icon img {
   /* A thumbnail keeps its aspect: Finder scales a photo to fit the square,
      it never crops it. The icons carry their own soft shadow, so there is
@@ -226,12 +271,12 @@ a { color: var(--ochre); text-underline-offset: 2px; }
 a:visited { color: var(--olive); }
 
 /* writing, set properly — this is what the site is for */
-.md { font-family: var(--serif); font-size: .95rem; line-height: 1.62; color: var(--ink); }
+.md { font-family: var(--serif); font-size: 1.16rem; line-height: 1.62; color: var(--ink); }
 .md > :first-child { margin-top: 0; }
 .md h1, .md h2, .md h3 {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: 1.12rem;
+  font-size: 1.34rem;
   margin: 1.4rem 0 .4rem;
   color: var(--ink);
 }
@@ -244,12 +289,80 @@ a:visited { color: var(--olive); }
 }
 .md code { font-family: var(--mono); font-size: .8em; color: var(--ochre); }
 .md pre {
-  font-family: var(--mono); font-size: .74rem;
+  font-family: var(--mono); font-size: .9rem;
   background: var(--surface-2); border: 1px solid var(--rule-soft);
   padding: .7rem; overflow-x: auto;
 }
 .md img { max-width: 100%; }
 .md hr { border: none; border-top: 1px solid var(--rule); margin: 1.5rem 0; }
+
+/* --------------------------------------------------------------- surface
+
+   The paper can be given a texture. These are one overlay across the whole
+   window rather than a background on any element, so the texture belongs to
+   the light in the room and not to the folder -- it does not slide when the
+   page scrolls and it does not tile differently on a long page.
+
+   Every pattern is drawn in flat black on nothing and then multiplied into
+   whatever paper is underneath, so it takes the theme's own colour and can
+   never introduce one of its own. On the dark paper that would be a no-op
+   -- black into near-black changes nothing -- so there the layer is
+   inverted and screened instead, and the same four patterns come back as
+   light on dark.
+
+   `grain` is also the class app.js already toggles, so the taskbar button
+   works as-is. The other three want a cycler; see the note in the handover.
+   ---------------------------------------------------------------------- */
+
+:root      { --tex-blend: multiply; --tex-flip: none; }
+body.theme-ink { --tex-blend: screen; --tex-flip: invert(1); }
+
+body::after {
+  content: '';
+  display: none;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  /* over the page and over an open file, but under the clock and the
+     taskbar: a texture is on the paper, not on the controls */
+  z-index: 9994;
+  mix-blend-mode: var(--tex-blend);
+  filter: var(--tex-flip);
+}
+
+body.grain::after,
+body.tex-grain::after,
+body.tex-scan::after,
+body.tex-weave::after,
+body.tex-dots::after { display: block; }
+
+/* film grain — real noise, not a pattern. Fine enough to read as the stock
+   the page is printed on rather than as anything drawn on top of it. */
+body.grain::after,
+body.tex-grain::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: .34;
+}
+
+/* scan — a photocopy of a photocopy. One dark line every third. */
+body.tex-scan::after {
+  background-image: repeating-linear-gradient(
+    to bottom, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);
+}
+
+/* weave — the tooth of laid paper: two hatchings crossing at right angles. */
+body.tex-weave::after {
+  background-image:
+    repeating-linear-gradient(45deg,  rgba(0,0,0,.085) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.085) 0 1px, transparent 1px 5px);
+}
+
+/* dots — a newsprint screen, coarse enough that you can see it is dots. */
+body.tex-dots::after {
+  background-image: radial-gradient(rgba(0,0,0,.22) 32%, transparent 34%);
+  background-size: 4px 4px;
+}
 
 /* ---------------------------------------------------------------- taskbar */
 
@@ -260,10 +373,12 @@ a:visited { color: var(--olive); }
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding: .3rem .8rem;
+  /* The taskbar sits outside the folder, so nothing shrinks it -- this is
+     the real size on screen, and .64rem was a 10px caption. */
+  padding: .38rem .9rem;
   background: var(--paper-deep);
   border-top: 1px solid var(--rule);
-  font-size: .64rem;
+  font-size: .74rem;
   letter-spacing: .08em;
   text-transform: uppercase;
   overflow-x: auto;
@@ -276,7 +391,7 @@ a:visited { color: var(--olive); }
   display: inline-flex;
   align-items: center;
   gap: .35rem;
-  padding: .18rem .5rem;
+  padding: .2rem .55rem;
   border: 1px solid transparent;
   background: none;
   cursor: pointer;
@@ -289,7 +404,7 @@ a:visited { color: var(--olive); }
 .toggle:hover { color: var(--ink); }
 .toggle[aria-pressed="true"] { color: var(--ink); border-color: var(--rule); }
 .toggle .led {
-  width: 4px; height: 4px; border-radius: 50%;
+  width: 5px; height: 5px; border-radius: 50%;
   background: transparent;
   border: 1px solid var(--ink-faint);
 }
@@ -313,10 +428,10 @@ a:visited { color: var(--olive); }
   margin: 0;
   font-family: var(--serif);
   font-weight: 400;
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   color: var(--ink);
 }
-.gb-header p { margin: .35rem 0 0; font-size: .72rem; letter-spacing: .06em; color: var(--ink-faint); }
+.gb-header p { margin: .35rem 0 0; font-size: .8rem; letter-spacing: .06em; color: var(--ink-faint); }
 
 .guestbed > .win { max-width: 22rem; margin: 0 auto 1.5rem; }
 
@@ -326,8 +441,8 @@ a:visited { color: var(--olive); }
   background: var(--note-bg);
   border: 1px solid var(--rule);
   border-left: 2px solid var(--note-edge);
-  padding: .6rem .7rem .5rem;
-  font-size: .78rem;
+  padding: .65rem .75rem .55rem;
+  font-size: .86rem;
   line-height: 1.5;
   max-width: 15rem;
 }
@@ -338,25 +453,25 @@ a:visited { color: var(--olive); }
 
 .note .note-head {
   display: flex; justify-content: space-between; gap: .5rem;
-  font-size: .6rem; letter-spacing: .07em; text-transform: uppercase;
+  font-size: .68rem; letter-spacing: .07em; text-transform: uppercase;
   color: var(--ink-faint);
   margin-bottom: .35rem;
   cursor: grab;
 }
 .note .note-body { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--serif); }
-.note .note-foot { margin-top: .45rem; font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; }
+.note .note-foot { margin-top: .45rem; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
 .note .note-foot button {
   background: none; border: none; padding: 0; cursor: pointer;
   color: var(--ochre); font: inherit; letter-spacing: inherit; text-transform: inherit;
 }
 .note .replies { margin: .4rem 0 0; padding-left: .6rem; border-left: 1px solid var(--rule); }
-.note .replies .reply { margin-top: .3rem; font-size: .72rem; color: var(--ink-soft); }
+.note .replies .reply { margin-top: .3rem; font-size: .8rem; color: var(--ink-soft); }
 
 .gb-form { display: grid; gap: .5rem; }
 .gb-form input, .gb-form textarea {
   font: inherit;
-  font-size: .8rem;
-  padding: .4rem .5rem;
+  font-size: .88rem;
+  padding: .45rem .55rem;
   border: 1px solid var(--rule);
   background: var(--surface-2);
   color: var(--ink);
@@ -367,7 +482,7 @@ a:visited { color: var(--olive); }
 .gb-form button {
   justify-self: start;
   font: inherit;
-  font-size: .64rem;
+  font-size: .72rem;
   letter-spacing: .1em;
   text-transform: uppercase;
   padding: .35rem 1.1rem;
@@ -377,7 +492,7 @@ a:visited { color: var(--olive); }
   cursor: pointer;
 }
 .gb-form button:hover { background: var(--ink); color: var(--paper); }
-.gb-status { font-size: .66rem; letter-spacing: .05em; color: var(--ink-faint); min-height: 1em; }
+.gb-status { font-size: .74rem; letter-spacing: .05em; color: var(--ink-faint); min-height: 1em; }
 
 /* --------------------------------------------------------------- ticker */
 
@@ -387,10 +502,10 @@ a:visited { color: var(--olive); }
   border-top: 1px solid var(--rule-soft);
   border-bottom: 1px solid var(--rule-soft);
   color: var(--ink-faint);
-  font-size: .64rem;
+  font-size: .72rem;
   letter-spacing: .14em;
   text-transform: uppercase;
-  padding: .45rem 0;
+  padding: .5rem 0;
   margin-bottom: 2rem;
 }
 .marquee span { display: inline-block; padding-left: 100%; animation: slide 34s linear infinite; }
@@ -426,6 +541,72 @@ a:visited { color: var(--olive); }
 
 @media (prefers-reduced-motion: reduce) {
   .marquee span { animation: none; padding-left: 0; }
+  .item h3 a, .item .icon img, main { transition: none; }
+  .item:hover .icon img, .item.focused .icon img { transform: none; }
+}
+
+/* ------------------------------------------------------------- the feed
+
+   .garden.log is the site talking about itself: it regrew, it pushed, it
+   published, all day long. Everything else on this page is where Finder
+   put it, and this is the one deliberate exception -- a running feed wants
+   the right-hand margin, where you can watch it out of the corner of your
+   eye, not a spot in the middle of the folder where it lands on top of
+   whatever happens to be there.
+
+   The trick is HOW it gets there. The obvious `right: 0` on the item would
+   have poisoned the fit calculation in app.js: that measures the widest
+   item to decide how far to scale the folder down, so an item pinned to the
+   right edge always measures exactly as wide as the window, and the scale
+   would stick at whatever it reached first and never recover when the
+   window grew. Instead the item itself is dropped back into the flow at
+   zero size -- invisible to the measurement -- and its name and its body
+   are pinned to .plantbed directly. Same picture, no feedback loop, and it
+   rides the fit transform like everything else because it is still inside
+   the bed.
+   -------------------------------------------------------------------- */
+
+@media (min-width: 560px) {
+  .plantbed.freeform > .item[data-key=".garden.log"],
+  .plantbed.scattered > .item[data-key=".garden.log"] {
+    position: static;
+    width: 0;
+    height: 0;
+    margin: 0;
+    /* whatever a visitor dragged it to is stored as an inline left/top,
+       which a static box ignores -- so the pin always wins */
+  }
+
+  .plantbed > .item[data-key=".garden.log"] > h3,
+  .plantbed > .item[data-key=".garden.log"] > pre {
+    position: absolute;
+    right: 0;
+    width: 22rem;
+    max-width: 22rem;
+    /* on a narrow window the folder is wider than the page and items can
+       end up underneath this; paper behind it keeps the feed readable */
+    background: var(--paper);
+    z-index: 4;
+  }
+
+  .plantbed > .item[data-key=".garden.log"] > h3 {
+    top: 0;
+    text-align: right;
+    /* it does not move, so it should not offer to */
+    cursor: default;
+  }
+  .plantbed > .item[data-key=".garden.log"] > h3:active { cursor: default; }
+
+  .plantbed > .item[data-key=".garden.log"] > pre {
+    top: 1.7rem;
+    margin: 0;
+    padding-left: .8rem;
+    border-left: 1px solid var(--ochre);
+    /* The oldest lines dissolve back into the paper instead of stopping at
+       an edge. It is a feed: it has no beginning, only a right now. */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 3.2rem);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 3.2rem);
+  }
 }
 
 /* ------------------------------------------------------------ flip clock
@@ -543,7 +724,7 @@ a:visited { color: var(--olive); }
   flex: 1 1 auto;
   min-width: 0;
   font-family: var(--mono);
-  font-size: .68rem;
+  font-size: .78rem;
   color: var(--ink-soft);
   white-space: nowrap;
   overflow: hidden;
@@ -553,8 +734,8 @@ a:visited { color: var(--olive); }
 .viewer-out,
 .viewer-shut {
   flex: 0 0 auto;
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.3rem;
+  height: 1.3rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -563,7 +744,7 @@ a:visited { color: var(--olive); }
   border-radius: 2px;
   color: var(--ink-faint);
   font-family: var(--mono);
-  font-size: .7rem;
+  font-size: .8rem;
   line-height: 1;
   text-decoration: none;
   cursor: pointer;
@@ -594,7 +775,7 @@ a:visited { color: var(--olive); }
 .viewer-body pre {
   margin: 0;
   font-family: var(--mono);
-  font-size: .72rem;
+  font-size: .86rem;
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;

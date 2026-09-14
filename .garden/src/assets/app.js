@@ -370,21 +370,133 @@
   var drag = null;
   var pending = null;          // pressed, but not yet moved far enough to count
   var DRAG_SLOP = 4;           // px of travel before a press becomes a drag
+  var TOUCH_SLOP = 8;          // a finger resting is never as still as a mouse
+  var HOLD_MS = 420;           // press-and-hold, about the length iOS uses
+  var holdTimer = null;
+
+  /* The one width the whole page agrees on. Below it the Finder coordinates
+     are dropped and the items simply flow; everything that has to know asks
+     here rather than spelling the query out again. */
+  function wide() { return window.matchMedia('(min-width: 560px)').matches; }
+
+  /**
+   * Pin every item in a bed at the spot it is already occupying.
+   *
+   * Below the breakpoint the items are in normal flow, where `left` and `top`
+   * mean nothing to them -- which is why dragging used to be switched off on a
+   * phone altogether. This is what turns it back on: nothing moves, the stack
+   * just stops being a stack, and from here the phone bed is the same
+   * absolutely-positioned bed the desktop has.
+   *
+   * All of them at once, and never one at a time: lifting a single item out of
+   * the flow would reflow everything below it out from under the finger.
+   */
+  function freezeBed(bed) {
+    if (!bed || bed.hasAttribute('data-frozen')) return;
+
+    var items = bed.querySelectorAll(':scope > .item');
+    var base = bed.getBoundingClientRect();
+    var box = [];
+    var i, b;
+
+    for (i = 0; i < items.length; i++) {
+      b = items[i].getBoundingClientRect();
+      box.push({ x: b.left - base.left, y: b.top - base.top, w: b.width });
+    }
+
+    // The bed was only as tall as its flow contents, and it is about to have
+    // no flow left in it at all.
+    bed.style.minHeight = Math.ceil(base.height) + 'px';
+
+    for (i = 0; i < items.length; i++) {
+      // The width has to be carried over explicitly: a paragraph of writing
+      // that was filling the page would otherwise shrink to its longest word.
+      items[i].style.width = Math.ceil(box[i].w) + 'px';
+      items[i].style.position = 'absolute';
+      items[i].style.margin = '0';
+      items[i].style.left = Math.round(box[i].x) + 'px';
+      items[i].style.top = Math.round(box[i].y) + 'px';
+    }
+
+    bed.setAttribute('data-frozen', '');
+  }
+
+  /** A frozen bed holds no flow, so it has to be told how tall it now is. */
+  function growBed(bed) {
+    if (!bed || !bed.hasAttribute('data-frozen')) return;
+    var items = bed.querySelectorAll(':scope > .item');
+    var low = 0;
+    for (var i = 0; i < items.length; i++) {
+      low = Math.max(low, items[i].offsetTop + items[i].offsetHeight);
+    }
+    bed.style.minHeight = Math.ceil(low + 24) + 'px';
+  }
+
+  /** The bed an element is lying on, or null if it is furniture on top. */
+  function bedOf(el) {
+    var p = el.parentNode;
+    return p && p.classList && p.classList.contains('plantbed') ? p : null;
+  }
+
+  /**
+   * The moment a held press becomes a grab. A finger gets no cursor and no
+   * hover, so unless the item visibly answers the hold nobody can tell whether
+   * it took -- and they let go and try again.
+   */
+  function lift(p) {
+    p.held = true;
+    // Without this the browser is still free to decide the finger meant to
+    // scroll, and would cancel the drag the instant it moved.
+    p.el.style.touchAction = 'none';
+    p.el.style.transition = 'transform .12s ease-out';
+    p.el.style.transform = 'scale(1.06)';
+    p.el.classList.add('focused');
+    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (err) {} }
+  }
+
+  function drop(p) {
+    p.el.style.touchAction = '';
+    p.el.style.transition = '';
+    p.el.style.transform = '';
+    p.el.classList.remove('focused');
+  }
+
+  function beginDrag() {
+    drag = pending;
+    pending = null;
+    clearTimeout(holdTimer);
+
+    // On a phone the bed is still in flow, and a coordinate would mean
+    // nothing until it is pinned.
+    if (!wide()) freezeBed(bedOf(drag.el));
+
+    drag.el.style.left = drag.originX + 'px';
+    drag.el.style.top = drag.originY + 'px';
+    drag.el.style.zIndex = ++zTop;
+    drag.el.classList.add('focused');
+    if (drag.handle && drag.handle.setPointerCapture) {
+      try { drag.handle.setPointerCapture(drag.pointerId); } catch (err) {}
+    }
+  }
 
   function dragMove(e) {
     if (pending) {
-      if (Math.abs(e.clientX - pending.startX) < DRAG_SLOP &&
-          Math.abs(e.clientY - pending.startY) < DRAG_SLOP) return;
+      var slop = pending.touch ? TOUCH_SLOP : DRAG_SLOP;
+      var travelled = Math.abs(e.clientX - pending.startX) >= slop ||
+                      Math.abs(e.clientY - pending.startY) >= slop;
 
-      drag = pending;
-      pending = null;
-      drag.el.style.left = drag.originX + 'px';
-      drag.el.style.top = drag.originY + 'px';
-      drag.el.style.zIndex = ++zTop;
-      drag.el.classList.add('focused');
-      if (drag.handle && drag.handle.setPointerCapture) {
-        try { drag.handle.setPointerCapture(drag.pointerId); } catch (err) {}
+      if (pending.touch && !pending.held) {
+        // Travelled before the hold was up. This finger is reading the page,
+        // and the press was never a grab -- so get out of the way of it
+        // completely rather than competing with the scroll.
+        if (travelled) { clearTimeout(holdTimer); drop(pending); pending = null; }
+        return;
       }
+      // A lifted item follows the finger straight away; there is no second
+      // threshold to cross once the hold has already said what this is.
+      if (!pending.touch && !travelled) return;
+
+      beginDrag();
     }
     if (!drag) return;
 
@@ -397,6 +509,15 @@
     var k = bedScale || 1;
     var x = Math.max(0, drag.originX + (e.clientX - drag.startX) / k);
     var y = Math.max(0, drag.originY + (e.clientY - drag.startY) / k);
+
+    // A phone cannot pan sideways to go and fetch something back, so nothing
+    // may be pushed off the edge of it in the first place.
+    if (!wide() && drag.el.parentNode) {
+      var room = drag.el.parentNode.clientWidth - drag.el.offsetWidth;
+      if (room > 0 && x > room) x = room;
+      if (room <= 0) x = 0;
+    }
+
     drag.el.style.left = x + 'px';
     drag.el.style.top = y + 'px';
   }

@@ -135,8 +135,21 @@ function loadRules(root, config) {
 }
 
 function isIgnored(name, isDir, rules) {
+  const allowed = rules.allow ? rules.allow.some(r => r.re.test(name)) : false;
+
   if (rules.deny.some(r => (!r.dirOnly || isDir) && r.re.test(name))) return true;
-  if (rules.allow && !isDir && !rules.allow.some(r => r.re.test(name))) return true;
+
+  // Finder hides everything beginning with a dot, and this site is supposed to
+  // be the folder exactly as Finder shows it -- so a name the owner cannot see
+  // in Finder is a name he cannot delete from Finder either. Naming them one
+  // at a time was the hole: .Rhistory was never on the list, so an empty R
+  // console file sat on the front page with nothing he could do about it, and
+  // the next stray dotfile would have done the same. Some of what lands in a
+  // folder unasked (.env, credentials, editor droppings) should never be
+  // published at all, which makes this the safe default rather than a tidy-up.
+  if (name.charAt(0) === '.' && !allowed) return true;
+
+  if (rules.allow && !isDir && !allowed) return true;
   return false;
 }
 
@@ -268,6 +281,7 @@ function thumbFor(fullPath, root, width) {
 
   const rel = path.relative(root, fullPath);
   const out = path.join(root, THUMBS, rel);
+  thumbsClaimed.add(rel.split(path.sep).join('/'));
 
   try {
     const src = fs.statSync(fullPath);
@@ -281,6 +295,38 @@ function thumbFor(fullPath, root, width) {
   if (r.status !== 0 || !fs.existsSync(out)) return null;
 
   return THUMBS + '/' + rel.split(path.sep).join('/');
+}
+
+/* Which downsized copies this build actually asked for. Unlike the icons,
+   .thumbs/ is committed on purpose -- the published page points straight at
+   it -- so a photo that is deleted or moved into a subfolder leaves its
+   downsized copy behind in a public repo forever. Nothing else ever looks at
+   these files again, so nothing else would ever notice. */
+let thumbsClaimed = new Set();
+
+/** Drops any downsized copy this walk didn't ask for. */
+function sweepThumbs(root) {
+  // The same reasoning as sweepIcons: only a Mac can remake these, so a build
+  // anywhere else must not delete work it cannot redo.
+  if (process.platform !== 'darwin') return 0;
+
+  let removed = 0;
+  const walk = (dir, prefix) => {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const rel = prefix ? prefix + '/' + e.name : e.name;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        walk(full, rel);
+        try { fs.rmdirSync(full); } catch { /* still holds something */ }
+      } else if (!thumbsClaimed.has(rel)) {
+        try { fs.unlinkSync(full); removed++; } catch { /* already gone */ }
+      }
+    }
+  };
+  walk(path.join(root, THUMBS), '');
+  return removed;
 }
 
 /** Rough rendered height, used only to give the page something to scroll to. */
@@ -609,6 +655,30 @@ function renderPage({ siteName, title, files, positioned, description, socialIma
   // defined in the base stylesheet and wide screens get the Finder layout.
   let freeform = '';
 
+  /* The phone layout rides along in this same block rather than in the
+     stylesheet, because this block is the one the page owns: app.js swaps it
+     wholesale when a visitor walks into a folder, so whatever is written here
+     survives navigation the way the coordinates above it do.
+
+     A phone used to get one item per row. Four folders were four screens of
+     scrolling with the right two thirds of the display empty, which is not
+     what a folder looks like on anything. Icon items go three across -- close
+     to Finder's own grid at this width -- and anything with a body to read
+     (writing, a photograph, a text file) still gets the full width. */
+  const phone = `
+    @media (max-width: 559px) {
+      main { padding: 1.5rem 1rem 1.25rem; }
+      .plantbed { display: flex; flex-wrap: wrap; align-items: flex-start; }
+      .plantbed > .item { flex: 1 1 100%; min-width: 0; }
+      .plantbed > .item.as-icon {
+        flex: 0 0 33.333%; width: auto; margin: 0 0 1.1rem;
+      }
+      /* A phone cannot pan sideways to find the rest of a picture. Nothing
+         lying on the page may be wider than the page. */
+      .plantbed [data-resizable] { max-width: 100%; }
+      .plantbed img, .plantbed video { max-width: 100%; height: auto; }
+    }`;
+
   if (!positioned && files.length) {
     // Deterministic scatter: same names always land in the same places, so
     // the page doesn't reshuffle on every rebuild.
@@ -689,7 +759,7 @@ ${rules}
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamps, 'style.css')}">
 ${showMusic ? `  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamps, 'ipod.css')}">\n` : ''}\
-  <style id="page-style">${freeform}
+  <style id="page-style">${freeform}${phone}
   </style>
 </head>
 
@@ -877,6 +947,7 @@ export function growSite(opts = {}) {
 
   const assetStamps = copyAssets(root);
   beginIconRun();
+  thumbsClaimed = new Set();
 
   const ctx = {
     root,
@@ -912,7 +983,7 @@ export function growSite(opts = {}) {
   // Renamed and deleted files leave their thumbnails behind, and these are
   // committed -- so clear out whatever this walk didn't ask for. A dry run
   // promises to leave the folder exactly as it found it.
-  const swept = ctx.dryRun ? 0 : sweepIcons(root);
+  const swept = ctx.dryRun ? 0 : sweepIcons(root) + sweepThumbs(root);
 
   return {
     root,
