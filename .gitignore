@@ -1,0 +1,5 @@
+# .DS_Store holds the Finder layout, but the positions are already baked into
+# the generated HTML — no need to publish the metadata itself.
+.DS_Store
+node_modules/
+*.log

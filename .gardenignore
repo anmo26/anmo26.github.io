@@ -1,0 +1,6 @@
+# Files and folders that should not appear on the site.
+# One glob per line; a trailing slash means "directories only".
+.gitignore
+.git/
+node_modules/
+*.tmp
