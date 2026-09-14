@@ -6,7 +6,12 @@
  * if publishing is turned on in garden.config.json, commits and pushes so the
  * public site follows along a minute or so later.
  *
- * Usage:  node src/watch.js [--no-publish] [--serve]
+ * Dragging an icon is not a file change -- Finder keeps the new position in
+ * memory and only writes .DS_Store much later -- so fs.watch never hears about
+ * a rearranged folder. Alongside the watch we poll Finder for its live
+ * positions, which is the only way the layout follows the drag straight away.
+ *
+ * Usage:  node src/watch.js [--no-publish] [--serve] [--no-poll]
  */
 import fs from 'fs';
 import path from 'path';
@@ -14,6 +19,7 @@ import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 import { loadConfig } from './grow.js';
+import { liveSnapshot } from './finder.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT = path.join(__dirname, '..');

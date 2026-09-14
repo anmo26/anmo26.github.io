@@ -37,104 +37,24 @@
 
     <div class="plantbed scattered">
       <div class="item kind-text" id="p0" data-key="01 late night drives.txt">
+        <a class="icon" href="01%20late%20night%20drives.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-01-late-night-drives-txt.png" alt="" width="96" height="96"></a>
         <h3><a href="01%20late%20night%20drives.txt">01 late night drives.txt</a> <span class="meta">(103B)</span></h3>
-        <pre>spotify: https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6
-note: windows down, nothing to prove</pre>
+        <pre>undefined</pre>
       </div>
       <div class="item kind-text" id="p1" data-key="02 deep focus.txt">
+        <a class="icon" href="02%20deep%20focus.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-02-deep-focus-txt.png" alt="" width="96" height="96"></a>
         <h3><a href="02%20deep%20focus.txt">02 deep focus.txt</a> <span class="meta">(121B)</span></h3>
-        <pre>spotify: spotify:playlist:37i9dQZF1DWZeKCadgRdKQ
-cover: covers/deep-focus.jpg
-note: for the hours that need to disappear</pre>
+        <pre>undefined</pre>
       </div>
       <div class="item kind-text" id="p2" data-key="03 peaceful piano.txt">
+        <a class="icon" href="03%20peaceful%20piano.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-03-peaceful-piano-txt.png" alt="" width="96" height="96"></a>
         <h3><a href="03%20peaceful%20piano.txt">03 peaceful piano.txt</a> <span class="meta">(57B)</span></h3>
-        <pre>https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO</pre>
+        <pre>undefined</pre>
       </div>
       <div class="item kind-text" id="p3" data-key="README.txt">
+        <a class="icon" href="README.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-readme-txt.png" alt="" width="96" height="96"></a>
         <h3><a href="README.txt">README.txt</a> <span class="meta">(2.94kB)</span></h3>
-        <pre>this folder is the music player.
-================================
-
-Every .txt (or .md) file in here becomes one album tile on the iPod in the
-music window. The folder IS the playlist list — there is no config to edit,
-no database, nothing to rebuild by hand. Add a file, regrow the site, done.
-
-
-making a playlist
------------------
-
-1. In Spotify, right-click a playlist (or album, or single track)
-     -&gt; Share -&gt; Copy link to playlist
-2. Make a new text file in this folder. Name it whatever you want the tile
-   to say, for example:   late night drives.txt
-3. Paste the link into it. That is genuinely all you need:
-
-     https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6
-
-4. Re-run the generator (./serve.sh, or `node src/grow.js`).
-
-
-the longer form
----------------
-
-If you want a cover image or a little caption, use `key: value` lines:
-
-     spotify: https://open.spotify.com/playlist/37i9dQZF1DX0hvSv6cNiG3
-     cover: covers/dream-pop.jpg
-     note: for the train ride home
-
-  spotify   the link. A plain URL, a `spotify:playlist:ID` URI, or even just
-            the bare ID all work. Albums and single tracks work too --
-            paste an album or track link and it plays as an album or track.
-  cover     a picture, relative to this folder. Drop the file in covers/.
-            Square images look best; anything else gets cropped square.
-  note      one line under the tile. Optional.
-
-Any line you leave out is fine. No cover? The player invents one -- a
-colour gradient with the playlist's initials on it, always the same colours
-for the same name. No note? The tile just shows its name.
-
-
-naming and ordering
--------------------
-
-Tiles appear in filename order. To choose the order, put a number in front:
-
-     01 late night drives.txt
-     02 deep focus.txt
-     03 peaceful piano.txt
-
-The number and the .txt are stripped off for display, so those show up as
-&quot;late night drives&quot;, &quot;deep focus&quot;, &quot;peaceful piano&quot;.
-
-This README is ignored -- it never becomes a tile.
-
-
-cover images
-------------
-
-Put them in covers/. Two ways to attach one:
-
-  - name it after the playlist and it gets picked up automatically:
-        &quot;01 late night drives.txt&quot;  -&gt;  covers/late-night-drives.jpg
-  - or point at it explicitly with a `cover:` line.
-
-.jpg, .png, .webp and .gif all work. Keep them small -- 300x300 is plenty,
-and this whole site has to fit in a GitHub Pages repo.
-
-
-why there are no music files here
----------------------------------
-
-Playback runs through Spotify's own embedded player, so no audio is ever
-copied into this repo. That keeps the site small and keeps it legal --
-the music stays on Spotify, where the artists get paid for it.
-
-What visitors hear depends on them: anyone signed in to Spotify in the same
-browser gets the full tracks, and everyone else gets Spotify's 30-second
-previews. Nothing loads until somebody actually presses play, so having a
-hundred playlists in here costs the page nothing.</pre>
+        <pre>undefined</pre>
       </div>
     </div>
 

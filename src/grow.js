@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 import { parseDSStore } from './dsstore.js';
 import { imageSize, videoSize } from './imagesize.js';
 import { markdown, escapeHtml } from './markdown.js';
-import { folderIcon } from './icons.js';
+import { folderIcon, fileThumb } from './icons.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DEFAULT = path.join(__dirname, '..');
@@ -127,7 +127,19 @@ function countItems(dir, rules) {
 
 /* ------------------------------------------------------- describing a file */
 
-function describe(dir, entry, rules, root) {
+/**
+ * The box an icon is drawn in. Finder scales a thumbnail down to fit the
+ * icon square and never crops it, so a landscape photo ends up short and
+ * wide -- hence carrying the drawn size around rather than assuming a square.
+ */
+function iconBox(thumb) {
+  if (!thumb) return { iconOnly: true, icon: null };
+  const scale = ICON_PX / Math.max(thumb.w, thumb.h);
+  return { iconOnly: true, icon: thumb.href,
+           iconW: Math.round(thumb.w * scale), iconH: Math.round(thumb.h * scale) };
+}
+
+function describe(dir, entry, rules, root, isRoot) {
   const name = entry.name;
   const full = path.join(dir, name);
   const href = encodeURI(name + (entry.isDirectory() ? '/' : ''));
@@ -136,7 +148,7 @@ function describe(dir, entry, rules, root) {
     const n = countItems(full, rules);
     // The icon macOS itself draws for this folder, so a custom one or a tag
     // colour carries through. null off a Mac -- the name stands alone then.
-    return { name: name + '/', href, type: 'directory',
+    return { name: name + '/', href, type: 'directory', iconOnly: true,
              icon: folderIcon(full, root),
              contents: `${n} item${n === 1 ? '' : 's'}` };
   }
@@ -144,6 +156,12 @@ function describe(dir, entry, rules, root) {
   const stat = fs.statSync(full);
   const type = classify(name);
   const file = { name, href, type, size: prettyBytes(stat.size), bytes: stat.size };
+
+  // The front page is the desk: whatever is lying on it is shown lying on it.
+  // Inside a folder the site is a Finder window instead, so nothing is opened
+  // for you -- every item is an icon you click, and the thumbnail is the one
+  // QuickLook draws, so a photo still looks like that photo.
+  if (!isRoot) return { ...file, ...iconBox(fileThumb(full, root)) };
 
   if (type === 'image' || type === 'video') {
     const d = (type === 'image' ? imageSize(full) : videoSize(full)) ??
@@ -168,9 +186,17 @@ function describe(dir, entry, rules, root) {
 /** Rough rendered height, used only to give the page something to scroll to. */
 function estimateHeight(file) {
   const head = 26;                     // the filename line
+
+  // An icon item is Finder's stack: the picture, then the name wrapped under
+  // it in a column one icon wide. Long names take more than one line, and a
+  // folder adds its item count on a line of its own.
+  if (file.iconOnly) {
+    const lines = Math.max(1, Math.ceil(file.name.length / 15)) +
+                  (file.contents || file.size ? 1 : 0);
+    return (file.icon ? (file.iconH ?? ICON_PX) + 8 : 0) + lines * 18 + 12;
+  }
+
   switch (file.type) {
-    // A folder is its icon and the name under it, the way Finder stacks them.
-    case 'directory': return file.icon ? head + ICON_PX + 8 : head;
     case 'image':
     case 'video': return head + (file.drawnHeight ?? 200) + 6;
     case 'audio': return head + 48;
