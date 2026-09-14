@@ -13,7 +13,6 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="garden-assets/style.css?v=0cb8397e">
-  <link rel="stylesheet" href="garden-assets/ipod.css?v=701fb3e3">
   <style id="page-style">
     @media (min-width: 560px) {
       .plantbed { min-height: 1253px; margin-left: max(0px, calc(50% - 1065px - 13rem)); }
@@ -30,7 +29,7 @@
       #p10 { top: 108px; left: 1617px; }
       #p11 { top: 361px; left: 1005px; }
       #p12 { top: 110px; left: 1237px; }
-      #p13 { top: 80px; left: 288px; }
+      #p13 { top: 156px; left: 208px; }
     }
     @media (max-width: 559px) {
       main { padding: 1.5rem 1rem 1.25rem; }
@@ -59,56 +58,6 @@
     <pre id="clock"></pre>
     <p id="clock-date"></p>
   </div>
-  <div id="ipod-shell" class="ipod-shell">
-          <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
-               data-view="list" data-player="off">
-
-            <div class="ipod-screen">
-              <div class="ipod-bar">
-                <button class="ipod-back" type="button"
-                        aria-label="menu, back to the playlist list">&#8249; menu</button>
-                <span class="ipod-bar-title" aria-live="polite">playlists</span>
-                <span class="ipod-battery" aria-hidden="true"></span>
-              </div>
-
-              <div class="ipod-view ipod-view-list">
-                <div class="ipod-list" role="listbox" tabindex="0" aria-label="playlists"></div>
-              </div>
-
-              <div class="ipod-view ipod-view-player">
-                <div class="ipod-stage"></div>
-                <div class="ipod-paused">
-                  <strong class="ipod-paused-name">paused</strong>
-                  <span>press &#9654;&#10073;&#10073; to start it again</span>
-                </div>
-              </div>
-
-              <div class="ipod-view ipod-view-empty">
-                <div class="ipod-empty">
-                  <strong>no music yet</strong>
-                  <span>put a YouTube link in a text file in <code>music/</code> and regrow.</span>
-                </div>
-              </div>
-            </div>
-
-            <p class="ipod-ticker" aria-live="polite"></p>
-
-            <div class="ipod-wheel">
-              <button class="ipod-btn ipod-btn-menu" type="button" data-act="menu"
-                      aria-label="menu, back to the playlist list">menu</button>
-              <button class="ipod-btn ipod-btn-prev" type="button" data-act="prev"
-                      aria-label="previous playlist">&#8249;&#8249;</button>
-              <button class="ipod-btn ipod-btn-next" type="button" data-act="next"
-                      aria-label="next playlist">&#8250;&#8250;</button>
-              <button class="ipod-btn ipod-btn-play" type="button" data-act="play"
-                      aria-label="play or pause">&#9654;&#10073;&#10073;</button>
-              <button class="ipod-btn ipod-btn-select" type="button" data-act="select"
-                      aria-label="select, play the highlighted playlist"></button>
-            </div>
-
-            <p class="ipod-noscript">this player needs JavaScript.</p>
-          </div>
-  </div>
 
   <main>
     <header class="masthead">
@@ -119,28 +68,9 @@
     <div class="marquee"><span>welcome to anmo's garden  *  a folder on my laptop, broadcast live  *  drag things around  *  everything here is a real file  *  please help water my plants  *</span></div>
 
     <div class="plantbed freeform">
-      <div class="item kind-text" id="p0" data-key=".garden.log">
-        <h3><a href=".garden.log">.garden.log</a> <span class="meta">(19.7kB)</span></h3>
-        <pre>[11:59:22] regrew 1 of 25 pages
-[11:59:22] pushing...
-[11:59:26] published — live in ~1 min at https://anmo26.github.io
-[12:00:50] regrew 1 of 25 pages
-[12:00:50] pushing...
-[12:00:53] published — live in ~1 min at https://anmo26.github.io
-[12:01:24] regrew 2 of 25 pages
-[12:01:25] pushing...
-[12:01:27] published — live in ~1 min at https://anmo26.github.io
-[12:01:34] regrew 2 of 25 pages
-[12:01:34] pushing...
-[12:01:37] published — live in ~1 min at https://anmo26.github.io
-[12:01:47] regrew 1 of 25 pages
-[12:01:50] pushing...
-[12:01:53] published — live in ~1 min at https://anmo26.github.io
-[12:01:59] finder not answering — falling back to .DS_Store, will keep trying
-[12:02:06] regrew 1 of 25 pages
-[12:02:06] pushing...
-[12:02:09] published — live in ~1 min at https://anmo26.github.io
-[12:02:10] finder answering again</pre>
+      <div class="item kind-other" id="p0" data-key=".garden.log">
+        <h3><a href=".garden.log">.garden.log</a> <span class="meta">(21.6kB)</span></h3>
+        <a href=".garden.log">download</a>
       </div>
       <div class="item kind-markdown" id="p1" data-key="about.md">
         <h3><a href="about.md">about.md</a> <span class="meta">(468B)</span></h3>
@@ -155,11 +85,11 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
       </div>
       <div class="item kind-directory as-icon" id="p2" data-key="art/">
         <a class="icon" href="art/" tabindex="-1" aria-hidden="true"><img src="garden-assets/icons/art.png" alt="" width="72" height="72"></a>
-        <h3><a href="art/">art/</a> <span class="meta">(2 items, 2.35MB)</span></h3>
+        <h3><a href="art/">art/</a> <span class="meta">(4 items, 7.74MB)</span></h3>
       </div>
       <div class="item kind-directory as-icon" id="p3" data-key="gardeners log/">
         <a class="icon" href="gardeners%20log/" tabindex="-1" aria-hidden="true"><img src="garden-assets/icons/gardeners-log.png" alt="" width="72" height="72"></a>
-        <h3><a href="gardeners%20log/">gardeners log/</a> <span class="meta">(2 items, 3.21kB)</span></h3>
+        <h3><a href="gardeners%20log/">gardeners log/</a> <span class="meta">(2 items, 4.12kB)</span></h3>
       </div>
       <div class="item kind-image" id="p4" data-key="IMG_3427.JPG">
         <h3><a href="IMG_3427.JPG">IMG_3427.JPG</a> <span class="meta">(2.08MB)</span></h3>
@@ -175,7 +105,7 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
       </div>
       <div class="item kind-directory as-icon" id="p7" data-key="music/">
         <a class="icon" href="music/" tabindex="-1" aria-hidden="true"><img src="garden-assets/icons/music.png" alt="" width="72" height="72"></a>
-        <h3><a href="music/">music/</a> <span class="meta">(5 items, 4.74MB)</span></h3>
+        <h3><a href="music/">music/</a> <span class="meta">(3 items, 72.5MB)</span></h3>
       </div>
       <div class="item kind-directory as-icon" id="p8" data-key="notes/">
         <a class="icon" href="notes/" tabindex="-1" aria-hidden="true"><img src="garden-assets/icons/notes.png" alt="" width="72" height="72"></a>
@@ -214,8 +144,6 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
   <script src="garden-assets/app.js?v=4bc62940"></script>
-  <script>window.GARDEN_MUSIC = [{"name":"music","file":"01 music.txt","src":"youtube","kind":"playlist","id":"PLXWFWrURanY0","embed":"https://www.youtube.com/embed/videoseries?list=PLXWFWrURanY0","link":"https://www.youtube.com/playlist?list=PLXWFWrURanY0","cover":null,"note":""},{"name":"Music","file":"02 Music.txt","src":"spotify","kind":"playlist","id":"3b0KED083axyu4Gvnzq1iv","embed":"https://open.spotify.com/embed/playlist/3b0KED083axyu4Gvnzq1iv?utm_source=generator","link":"https://open.spotify.com/playlist/3b0KED083axyu4Gvnzq1iv","cover":null,"note":""},{"name":"spotify","file":"02 spotify.txt","src":"spotify","kind":"playlist","id":"7lVqHImUCZhbtj1modlNff","embed":"https://open.spotify.com/embed/playlist/7lVqHImUCZhbtj1modlNff?utm_source=generator","link":"https://open.spotify.com/playlist/7lVqHImUCZhbtj1modlNff","cover":null,"note":""}];</script>
-  <script src="garden-assets/ipod.js?v=fec2905e"></script>
 </body>
 <!--
 a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)

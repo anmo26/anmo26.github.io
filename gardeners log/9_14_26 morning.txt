@@ -7,16 +7,26 @@ Today you tried to fix bugs but there are other things you need to fix and you k
 
 
 1. Fix the bugs
-   1. Make movie player formated to the video, whenever i open a movie file, its always cropped and i have to scroll to see it, especially if i record on my iphone in vertical. 
-   2. Make sure this app is usable on iphone, its still really wierd rn. Like in vertical mode, everythign is squished on eachother. And i cannot even move any folders around because its stuck behind text. And also the dragging physics are still not working very well. Everything just seems ultra zoomed in on iphone. It would be nice if it could be the same look as the desktop app.
-   3. Make sure the site follows some sort of standardized physics. Like sometimes when i put certain files into certain folders, they dont show up on the site. I think theres some sort of issue here that needs to be fixed. And are we able to like compile all the files that wont show up on the site into a folder that is hidden away, so that any new files that i put into the site will be shown and i dont get confused. 
-   4. Fix the ipod, have it display images as an album cover that i place in with the album link. Also spotify is gltiched out?
-   5. Fix theme issues. On certain themes, things are harder to read.
+   1. Make movie player and photos are formated to its orginal size, whenever i open a vertical movie file, its always cropped and i have to scroll to see it, especially if i record on my iphone in vertical. 
+   2. Text files opened arent able to be rescaled right now.
+   3. Make sure this app is usable on iphone, its still really wierd rn. Like in vertical mode, everythign is squished on eachother. And i cannot even move any folders around because its stuck behind text. And also the dragging physics are still not working very well. Everything just seems ultra zoomed in on iphone. It would be nice if it could be the same look as the desktop app.
+   4. Make sure the site follows some sort of standardized physics. Like sometimes when i put certain files into certain folders, they dont show up on the site. I think theres some sort of issue here that needs to be fixed. And are we able to like compile all the files that wont show up on the site into a folder that is hidden away, so that any new files that i put into the site will be shown and i dont get confused. 
+   5. Fix the ipod, have it display images as an album cover that i place in with the album link. Also spotify is gltiched out? Also when i click a song to play in tracks, dont swithc it back to video mode, allow the song to be played in the tracks and for the song to be able to switch seamlessly
+   6. Fix theme issues. On certain themes, things are harder to read.
+   7. Fix the background (grain)issues, dont let background cover up the folders and images.
+   8. Fix the libary, why can’t it display these files properly? What type of files can it hold?
+   9. Why isnt the site continuously updating anymore? Did i run out of online storage? Did it crash?
+   10. Allow ipod to be dragged around
+   11. Create a method/Allow me to easily write a description in folders that i create (allow me to do this within the macbook folder)
+   12. Connect to cloudflare to have unlimited online file storage
 
 
-Thigns to add in future updates:
+
+
+Thigns to add in future updates (DONT DO THESE YET):
 2. Plants ppl can water and take care of, have it so that people can click on plants to turn it from brown to green. Make it impossible for a plant to die. But have it so that hwenever someone visits a page on the site, they can decide to click on the plant to water it. Put a prickly pear cactus letter field on the left of the clock and right of the tile card. (have it write water me at the bottom.
 
 
 3. In the future , we can do this. A place where people can leave messages anywhere on the site for other and me to read(be careful with this) maybe only allow this to be kept in a specialized folder.
 4. In the future, we can also make a tv player to play videos of my youtube channel: independent of the ipod. But serves similar service
+5. Create secret pages that can only be found if you know the method to enter it.

@@ -11,15 +11,12 @@
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../garden-assets/style.css?v=0cb8397e">
-  <link rel="stylesheet" href="../garden-assets/ipod.css?v=701fb3e3">
   <style id="page-style">
     @media (min-width: 560px) {
-      .plantbed { min-height: 461px; margin-left: max(0px, calc(50% - 224px - 13rem)); }
-      #p0 { top: 50px; left: 0px; }
-      #p1 { top: 293px; left: 181px; }
-      #p2 { top: 50px; left: 336px; }
-      #p3 { top: 50px; left: 448px; }
-      #p4 { top: 50px; left: 224px; }
+      .plantbed { min-height: 378px; margin-left: max(0px, calc(50% - 100px - 13rem)); }
+      #p0 { top: 170px; left: 0px; }
+      #p1 { top: 50px; left: 93px; }
+      #p2 { top: 210px; left: 199px; }
     }
     @media (max-width: 559px) {
       main { padding: 1.5rem 1rem 1.25rem; }
@@ -48,56 +45,6 @@
     <pre id="clock"></pre>
     <p id="clock-date"></p>
   </div>
-  <div id="ipod-shell" class="ipod-shell">
-          <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
-               data-view="list" data-player="off">
-
-            <div class="ipod-screen">
-              <div class="ipod-bar">
-                <button class="ipod-back" type="button"
-                        aria-label="menu, back to the playlist list">&#8249; menu</button>
-                <span class="ipod-bar-title" aria-live="polite">playlists</span>
-                <span class="ipod-battery" aria-hidden="true"></span>
-              </div>
-
-              <div class="ipod-view ipod-view-list">
-                <div class="ipod-list" role="listbox" tabindex="0" aria-label="playlists"></div>
-              </div>
-
-              <div class="ipod-view ipod-view-player">
-                <div class="ipod-stage"></div>
-                <div class="ipod-paused">
-                  <strong class="ipod-paused-name">paused</strong>
-                  <span>press &#9654;&#10073;&#10073; to start it again</span>
-                </div>
-              </div>
-
-              <div class="ipod-view ipod-view-empty">
-                <div class="ipod-empty">
-                  <strong>no music yet</strong>
-                  <span>put a YouTube link in a text file in <code>music/</code> and regrow.</span>
-                </div>
-              </div>
-            </div>
-
-            <p class="ipod-ticker" aria-live="polite"></p>
-
-            <div class="ipod-wheel">
-              <button class="ipod-btn ipod-btn-menu" type="button" data-act="menu"
-                      aria-label="menu, back to the playlist list">menu</button>
-              <button class="ipod-btn ipod-btn-prev" type="button" data-act="prev"
-                      aria-label="previous playlist">&#8249;&#8249;</button>
-              <button class="ipod-btn ipod-btn-next" type="button" data-act="next"
-                      aria-label="next playlist">&#8250;&#8250;</button>
-              <button class="ipod-btn ipod-btn-play" type="button" data-act="play"
-                      aria-label="play or pause">&#9654;&#10073;&#10073;</button>
-              <button class="ipod-btn ipod-btn-select" type="button" data-act="select"
-                      aria-label="select, play the highlighted playlist"></button>
-            </div>
-
-            <p class="ipod-noscript">this player needs JavaScript.</p>
-          </div>
-  </div>
 
   <main>
     <header class="masthead">
@@ -107,25 +54,17 @@
     </header>
 
     <div class="plantbed freeform">
-      <div class="item kind-text as-icon" id="p0" data-key="01 music.txt">
-        <a class="icon" href="01%20music.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-01-music-txt.png" alt="" width="72" height="72"></a>
-        <h3><a href="01%20music.txt">01 music.txt</a> <span class="meta">(52B)</span></h3>
+      <div class="item kind-directory as-icon" id="p0" data-key="IPOD/">
+        <a class="icon" href="IPOD/" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/music-ipod.png" alt="" width="72" height="72"></a>
+        <h3><a href="IPOD/">IPOD/</a> <span class="meta">(3 items, 188B)</span></h3>
       </div>
-      <div class="item kind-text as-icon" id="p1" data-key="02 Music.txt">
-        <a class="icon" href="02%20Music.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-02-music-txt.png" alt="" width="72" height="72"></a>
-        <h3><a href="02%20Music.txt">02 Music.txt</a> <span class="meta">(79B)</span></h3>
-      </div>
-      <div class="item kind-text as-icon" id="p2" data-key="02 spotify.txt">
-        <a class="icon" href="02%20spotify.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-02-spotify-txt.png" alt="" width="72" height="72"></a>
-        <h3><a href="02%20spotify.txt">02 spotify.txt</a> <span class="meta">(57B)</span></h3>
-      </div>
-      <div class="item kind-audio as-icon" id="p3" data-key="Crowded House - Fall At Your Feet.mp3">
-        <a class="icon" href="Crowded%20House%20-%20Fall%20At%20Your%20Feet.mp3" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-crowded-house-fall-at-your-feet-mp3.png" alt="" width="72" height="72"></a>
-        <h3><a href="Crowded%20House%20-%20Fall%20At%20Your%20Feet.mp3">Crowded House - Fall At Your Feet.mp3</a> <span class="meta">(4.74MB)</span></h3>
-      </div>
-      <div class="item kind-text as-icon" id="p4" data-key="README.txt">
+      <div class="item kind-text as-icon" id="p1" data-key="README.txt">
         <a class="icon" href="README.txt" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-music-readme-txt.png" alt="" width="72" height="72"></a>
         <h3><a href="README.txt">README.txt</a> <span class="meta">(3.75kB)</span></h3>
+      </div>
+      <div class="item kind-directory as-icon" id="p2" data-key="Records/">
+        <a class="icon" href="Records/" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/music-records.png" alt="" width="72" height="72"></a>
+        <h3><a href="Records/">Records/</a> <span class="meta">(12 items, 72.5MB)</span></h3>
       </div>
     </div>
 
@@ -140,8 +79,6 @@
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
   <script src="../garden-assets/app.js?v=4bc62940"></script>
-  <script>window.GARDEN_MUSIC = [{"name":"music","file":"01 music.txt","src":"youtube","kind":"playlist","id":"PLXWFWrURanY0","embed":"https://www.youtube.com/embed/videoseries?list=PLXWFWrURanY0","link":"https://www.youtube.com/playlist?list=PLXWFWrURanY0","cover":null,"note":""},{"name":"Music","file":"02 Music.txt","src":"spotify","kind":"playlist","id":"3b0KED083axyu4Gvnzq1iv","embed":"https://open.spotify.com/embed/playlist/3b0KED083axyu4Gvnzq1iv?utm_source=generator","link":"https://open.spotify.com/playlist/3b0KED083axyu4Gvnzq1iv","cover":null,"note":""},{"name":"spotify","file":"02 spotify.txt","src":"spotify","kind":"playlist","id":"7lVqHImUCZhbtj1modlNff","embed":"https://open.spotify.com/embed/playlist/7lVqHImUCZhbtj1modlNff?utm_source=generator","link":"https://open.spotify.com/playlist/7lVqHImUCZhbtj1modlNff","cover":null,"note":""}];</script>
-  <script src="../garden-assets/ipod.js?v=fec2905e"></script>
 </body>
 <!--
 a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)
