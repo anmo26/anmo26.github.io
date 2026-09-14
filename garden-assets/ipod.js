@@ -1169,6 +1169,21 @@
       hint = '';
       try { if (yt && yt.playVideo) yt.playVideo(); } catch (e) {}
       paint();
+
+      // Measured: on Chrome's ordinary setting this works, and the player is
+      // playing about ten milliseconds later. On the strictest setting there
+      // is, a click on the page is not enough — only a click inside the
+      // video's own frame counts. Say so, once, and then stop asking. The
+      // listener is never re-armed: one unheeded request is enough, and
+      // YouTube's own play button is right there in the picture.
+      setTimeout(function () {
+        if (hasPlayed || !autoPending) return;
+        var s = playerState();
+        if (s === 1 || s === 3) return;
+        autoPending = false;
+        hint = 'press \u25B6 on the video itself to start it';
+        paint();
+      }, 2500);
     }
 
     function disarmGesture() {
