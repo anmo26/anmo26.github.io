@@ -357,6 +357,114 @@
 
     buildDock(shell, root);
 
+    /* ------------------------------------------------- the rest of the list
+       A playlist is more than the one video playing. YouTube's player will
+       hand over the video ids it queued, but not their titles, so each is
+       asked for by name from YouTube's public oEmbed endpoint -- no key, and
+       it answers cross-origin. Titles are cached for the life of the page.
+
+       Spotify's own embed already shows its tracks, so the panel stays out
+       of the way there. */
+
+    var titleCache = {};
+
+    function videoTitle(id) {
+      if (titleCache[id]) return Promise.resolve(titleCache[id]);
+      if (!window.fetch) return Promise.resolve('');
+
+      return fetch('https://www.youtube.com/oembed?format=json&url=' +
+                   encodeURIComponent('https://www.youtube.com/watch?v=' + id))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          var t = j && j.title ? j.title : '';
+          if (t) titleCache[id] = t;
+          return t;
+        })
+        .catch(function () { return ''; });
+    }
+
+    var queue = el('div', 'ipod-queue');
+    queue.hidden = true;
+    var queueList = el('ol', 'ipod-queue-list');
+    queue.appendChild(queueList);
+    var screenEl = root.querySelector('.ipod-screen');
+    if (screenEl) screenEl.appendChild(queue);
+
+    var queueBtn = el('button', 'ipod-queuebtn');
+    queueBtn.type = 'button';
+    queueBtn.hidden = true;
+    queueBtn.title = 'show every track in this playlist';
+    queueBtn.setAttribute('aria-expanded', 'false');
+    queueBtn.textContent = 'tracks';
+    if (bar) bar.appendChild(queueBtn);
+
+    var queueIds = [];
+
+    /** Repaint which row is lit, without rebuilding the list. */
+    function markQueue() {
+      var at = -1;
+      try { at = yt && yt.getPlaylistIndex ? yt.getPlaylistIndex() : -1; } catch (e) {}
+      var rows = queueList.children;
+      for (var i = 0; i < rows.length; i++) {
+        if (i === at) rows[i].setAttribute('aria-current', 'true');
+        else rows[i].removeAttribute('aria-current');
+      }
+    }
+
+    function buildQueue() {
+      var ids = [];
+      try { ids = (yt && yt.getPlaylist && yt.getPlaylist()) || []; } catch (e) { ids = []; }
+
+      // A single video is not a playlist, and neither is Spotify.
+      if (!ids.length || stage.getAttribute('data-mode') !== 'yt') {
+        queueBtn.hidden = true;
+        queue.hidden = true;
+        queueBtn.setAttribute('aria-expanded', 'false');
+        return;
+      }
+      queueBtn.hidden = false;
+
+      // Same queue as last time: only the lit row can have moved.
+      if (ids.join(',') === queueIds.join(',')) { markQueue(); return; }
+      queueIds = ids;
+
+      queueList.innerHTML = '';
+      ids.forEach(function (id, i) {
+        var row = el('li', 'ipod-queue-row');
+        var btn = el('button', 'ipod-queue-name');
+        btn.type = 'button';
+        btn.textContent = String(i + 1) + '.';
+        btn.addEventListener('click', function () {
+          try { yt.playVideoAt(i); } catch (e) {}
+        });
+        row.appendChild(btn);
+        queueList.appendChild(row);
+
+        videoTitle(id).then(function (t) {
+          // textContent: this string came off the network.
+          btn.textContent = String(i + 1) + '.  ' + (t || id);
+        });
+      });
+      markQueue();
+    }
+
+    /**
+     * The queue is not there the instant the player is ready, and if autoplay
+     * is refused no state change ever arrives to ask again -- which left the
+     * track list permanently empty on any browser that blocks autoplay.
+     * Ask a few times over the first few seconds instead.
+     */
+    function queueSoon() {
+      [0, 400, 1200, 3000].forEach(function (ms) { setTimeout(buildQueue, ms); });
+    }
+
+    queueBtn.addEventListener('click', function () {
+      var open = queue.hidden;
+      queue.hidden = !open;
+      queueBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) markQueue();
+    });
+
     // The stage is an absolute layer, so it has to be told where the bar
     // ends. Measured rather than guessed — the bar grows with the font.
     function sizeStage() {
@@ -560,7 +668,7 @@
       loadYouTubeAPI().then(function (YT) {
         if (state.playing !== i) return;          // they moved on while it loaded
 
-        if (yt && yt.loadPlaylist) { ytLoadTrack(t); paint(); return; }
+        if (yt && yt.loadPlaylist) { ytLoadTrack(t); queueSoon(); paint(); return; }
 
         var opts = {
           width: '100%',
@@ -568,9 +676,13 @@
           playerVars: playerVars(t),
           events: {
             onReady: function (e) {
+              // The constructor has not returned yet, so the outer `yt` is
+              // still undefined at this point. Everything below needs it.
+              yt = e.target;
               try { e.target.playVideo(); } catch (err) {}
               if (stage.getAttribute('data-mode') !== 'yt') return;
               state.now = nowPlayingTitle();
+              queueSoon();
               paint();
             },
             onStateChange: function (e) {
@@ -585,6 +697,7 @@
               // 1 playing, 2 paused, 0 ended, 3 buffering, 5 cued
               playingNow(e.data === 1);
               state.now = nowPlayingTitle();
+              buildQueue();
               paint();
             },
             onError: function () {
@@ -648,6 +761,10 @@
         root.setAttribute('data-player', 'on');
       } else if (mode === 'sp' && yt) {
         try { yt.pauseVideo(); } catch (e) {}
+      }
+      if (mode !== 'yt' && typeof queueBtn !== 'undefined') {
+        queueBtn.hidden = true;
+        queue.hidden = true;
       }
     }
 

@@ -476,6 +476,16 @@ a:visited { color: var(--olive); }
 #clock-date .g { color: var(--ochre); opacity: .38; }
 #clock-date .f { color: var(--ink); }
 
+/* Above 899px the clock is lifted out of the flow into the top-right
+   corner, where it stops pushing anything and starts landing on things.
+   The masthead is centred, so a long tagline grows straight into it --
+   badly between about 900 and 1760px, which is most laptops. Reserve the
+   corner's height instead of guessing at widths. */
+@media (min-width: 900px) {
+  main { padding-top: 13.5rem; }   /* the clock's own bottom edge is 185px */
+  .masthead p { max-width: 36rem; margin-left: auto; margin-right: auto; }
+}
+
 @media (max-width: 899px) {
   #clock-shell { position: static; margin: 0 auto 2rem; text-align: center; }
   #clock { font-size: 8px; }

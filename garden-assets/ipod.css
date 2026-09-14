@@ -625,3 +625,72 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
 @media (prefers-reduced-motion: reduce) {
   .ipod-shell { transition: none; }
 }
+
+/* ------------------------------------------------------------ the queue
+   The rest of the playlist, over the video rather than instead of it: the
+   iframe keeps playing underneath, which is the whole point. */
+
+.ipod-queuebtn {
+  flex: 0 0 auto;
+  margin-left: auto;
+  height: 15px;
+  padding: 0 .35rem;
+  background: none;
+  border: 1px solid var(--rule, rgba(38, 36, 31, .16));
+  border-radius: 2px;
+  color: var(--ipod-ink, #26241F);
+  font: inherit;
+  font-size: .6rem;
+  letter-spacing: .04em;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ipod-queuebtn[hidden] { display: none; }
+.ipod-queuebtn:hover { color: var(--ipod-mark, #A9752F); border-color: var(--ipod-mark, #A9752F); }
+.ipod-queuebtn[aria-expanded="true"] {
+  color: var(--ipod-mark, #A9752F);
+  border-color: var(--ipod-mark, #A9752F);
+}
+
+.ipod-queue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--ipod-bar-h, 18px);
+  bottom: 0;
+  z-index: 3;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--ipod-screen, #F7F5F0);
+}
+
+.ipod-queue[hidden] { display: none; }
+
+.ipod-queue-list { margin: 0; padding: 0; list-style: none; }
+
+.ipod-queue-row { margin: 0; border-bottom: 1px solid var(--rule-soft, rgba(38, 36, 31, .08)); }
+
+.ipod-queue-name {
+  display: block;
+  width: 100%;
+  padding: .38rem .5rem;
+  background: none;
+  border: 0;
+  color: var(--ipod-ink, #26241F);
+  font-family: var(--mono, Menlo, monospace);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ipod-queue-name:hover { background: var(--ipod-hover, rgba(38, 36, 31, .05)); }
+
+/* the one that is actually sounding */
+.ipod-queue-row[aria-current="true"] .ipod-queue-name {
+  color: var(--ipod-mark, #A9752F);
+}
+.ipod-queue-row[aria-current="true"] .ipod-queue-name::before {
+  content: "\25B8\00a0";
+}
