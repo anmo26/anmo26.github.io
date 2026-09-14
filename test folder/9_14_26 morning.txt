@@ -1,0 +1,22 @@
+﻿day 2 building anmo’s garden: post morning session.
+
+
+Today you tried to fix bugs but there are other things you need to fix and you keep getting new ideas. That is ok! Help me fix these issues in the order i provided. 
+
+
+
+
+1. Fix the bugs
+   1. Make movie player formated to the video, whenever i open a movie file, its always cropped and i have to scroll to see it, especially if i record on my iphone in vertical. 
+   2. Make sure this app is usable on iphone, its still really wierd rn. Like in vertical mode, everythign is squished on eachother. And i cannot even move any folders around because its stuck behind text. And also the dragging physics are still not working very well. Everything just seems ultra zoomed in on iphone. It would be nice if it could be the same look as the desktop app.
+   3. Make sure the site follows some sort of standardized physics. Like sometimes when i put certain files into certain folders, they dont show up on the site. I think theres some sort of issue here that needs to be fixed. And are we able to like compile all the files that wont show up on the site into a folder that is hidden away, so that any new files that i put into the site will be shown and i dont get confused. 
+   4. Fix the ipod, have it display images as an album cover that i place in with the album link. Also spotify is gltiched out?
+   5. Fix theme issues. On certain themes, things are harder to read.
+
+
+Thigns to add in future updates:
+2. Plants ppl can water and take care of, have it so that people can click on plants to turn it from brown to green. Make it impossible for a plant to die. But have it so that hwenever someone visits a page on the site, they can decide to click on the plant to water it. Put a prickly pear cactus letter field on the left of the clock and right of the tile card. (have it write water me at the bottom.
+
+
+3. In the future , we can do this. A place where people can leave messages anywhere on the site for other and me to read(be careful with this) maybe only allow this to be kept in a specialized folder.
+4. In the future, we can also make a tv player to play videos of my youtube channel: independent of the ipod. But serves similar service
