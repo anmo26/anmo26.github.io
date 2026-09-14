@@ -269,7 +269,9 @@
     if (!host) return;
 
     var state = {
-      seconds: get('clock.seconds', true),
+      // Seconds cost three more cards, and the field is already as wide as a
+      // phone will take. A visitor who wants them back taps the clock.
+      seconds: get('clock.seconds', wide()),
       hour24: get('clock.hour24', false)
     };
 
@@ -875,7 +877,11 @@
   /* ============================================================== TOGGLES */
 
   var TOGGLES = [
+    // Nothing to fit on a phone: the arrangement is dropped below the
+    // breakpoint, so this scaled nothing and only ate room in a bar that has
+    // none to spare.
     { id: 'fit', label: 'fit', def: true,
+      only: function () { return wide(); },
       apply: function () { fitSoon(); } },
     { id: 'grain', label: 'grain',
       apply: function (on) { document.body.classList.toggle('grain', on); } },
@@ -1385,7 +1391,9 @@
 
     document.body.appendChild(panel);
     panel.addEventListener('pointerdown', function () { panel.style.zIndex = ++zTop; });
-    makeDraggable(panel, bar, null);
+    // Nowhere to drag it to when it already fills the screen, and a hold on
+    // the title bar would only be a way to lose it off an edge.
+    if (wide()) makeDraggable(panel, bar, null);
     shut.focus();
     return panel;
   }

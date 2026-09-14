@@ -875,7 +875,11 @@
   /* ============================================================== TOGGLES */
 
   var TOGGLES = [
+    // Nothing to fit on a phone: the arrangement is dropped below the
+    // breakpoint, so this scaled nothing and only ate room in a bar that has
+    // none to spare.
     { id: 'fit', label: 'fit', def: true,
+      only: function () { return wide(); },
       apply: function () { fitSoon(); } },
     { id: 'grain', label: 'grain',
       apply: function (on) { document.body.classList.toggle('grain', on); } },
@@ -1304,10 +1308,15 @@
     var panel = document.createElement('div');
     panel.className = 'viewer';
 
-    // Cascade, so a second one does not land exactly on the first.
-    var step = (openViewers % 6) * 26;
-    panel.style.left = (70 + step) + 'px';
-    panel.style.top = (70 + step) + 'px';
+    // Cascade, so a second one does not land exactly on the first. Only where
+    // there is room to cascade into: on a phone the stylesheet pins the panel
+    // to the four edges of the screen, and an inline coordinate written here
+    // beats that rule and leaves the panel hanging off the side instead.
+    if (wide()) {
+      var step = (openViewers % 6) * 26;
+      panel.style.left = (70 + step) + 'px';
+      panel.style.top = (70 + step) + 'px';
+    }
     panel.style.zIndex = ++zTop;
     openViewers++;
 
@@ -1380,7 +1389,9 @@
 
     document.body.appendChild(panel);
     panel.addEventListener('pointerdown', function () { panel.style.zIndex = ++zTop; });
-    makeDraggable(panel, bar, null);
+    // Nowhere to drag it to when it already fills the screen, and a hold on
+    // the title bar would only be a way to lose it off an edge.
+    if (wide()) makeDraggable(panel, bar, null);
     shut.focus();
     return panel;
   }
