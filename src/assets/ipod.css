@@ -503,9 +503,12 @@ body.theme-ink .ipod-tile-art.is-generated {
   transition: transform .22s ease;
 }
 
-/* Docked: slid left until only the tab is showing. */
+/* Docked: gone off the left edge entirely. Nothing of the device is left
+   peeking, because a 26px sliver of a click wheel is just a mess -- the tab
+   below is the whole of what stays behind. Still a transform, so the iframe
+   inside is still loaded and still playing. */
 .ipod-shell[data-docked="on"] {
-  transform: translateX(calc(-100% + 26px));
+  transform: translateX(-110%);
 }
 
 /* Parked: off entirely, from the taskbar toggle. `visibility` takes it out
@@ -516,14 +519,23 @@ body.music-off .ipod-shell {
   visibility: hidden;
   pointer-events: none;
 }
+/* The tab sits on <body>, so it has to be parked separately. */
+body.music-off .ipod-tab { display: none; }
 
-/* The grab tab. Only drawn when docked; ipod.js hides it otherwise. */
+/* The grab tab: a short stub against the left edge, the only thing a docked
+   player leaves on the page. It is fixed to the viewport in its own right
+   and lives on <body>, NOT inside the shell -- a transformed ancestor
+   becomes the containing block for a fixed child, so a tab inside the shell
+   would slide off the screen along with it. ipod.js hides it when the
+   player is open. */
 .ipod-tab {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   width: 26px;
+  height: 7.5rem;
+  z-index: 9997;
   margin: 0;
   padding: 0;
   display: flex;
@@ -551,7 +563,7 @@ body.music-off .ipod-shell {
 .ipod-tab::after {
   content: "";
   position: absolute;
-  top: 6px;
+  top: 8px;
   left: 50%;
   transform: translateX(-50%);
   width: 4px;

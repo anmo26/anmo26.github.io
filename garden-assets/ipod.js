@@ -303,7 +303,10 @@
     tab.setAttribute('aria-label', 'bring the music player back');
     tab.title = 'bring the music player back';
     tab.appendChild(el('span', 'ipod-tab-label')).textContent = 'music';
-    shell.appendChild(tab);
+    // On <body>, not in the shell: docking transforms the shell, and a
+    // transformed ancestor is the containing block for a position:fixed
+    // child -- a tab inside would ride off the screen with it.
+    document.body.appendChild(tab);
 
     var dock = el('button', 'ipod-dock');
     dock.type = 'button';
