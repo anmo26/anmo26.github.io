@@ -52,6 +52,8 @@ body {
   /* A Finder window scrolls when the icons are spread wider than it is.
      Clipping here would hide items at coordinates the owner chose. */
   overflow-x: auto;
+  /* the clock anchors to the page, so the page has to be its frame */
+  position: relative;
   padding-bottom: 40px;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
@@ -403,8 +405,11 @@ a:visited { color: var(--olive); }
    the digits are built out of letterforms, not blocks.
    ------------------------------------------------------------------------ */
 
+/* Anchored to the top of the page, not to the viewport. It was `fixed`, so
+   it rode along on every scroll and sat on top of whatever you scrolled to.
+   It belongs at the top of the site and should leave when you leave. */
 #clock-shell {
-  position: fixed;
+  position: absolute;
   top: 1.4rem;
   right: 1.6rem;
   z-index: 9996;
