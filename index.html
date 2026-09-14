@@ -12,11 +12,23 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="garden-assets/style.css">
   <style>
+    @media (min-width: 760px) {
+      .plantbed { min-height: 640px; margin-left: max(0px, calc(50% - 447px - 13rem)); }
+      #p0 { top: 120px; left: 404px; }
+      #p1 { top: 50px; left: 694px; }
+      #p2 { top: 580px; left: 74px; }
+      #p3 { top: 450px; left: 894px; }
+      #p4 { top: 128px; left: 672px; }
+      #p5 { top: 240px; left: 0px; }
+    }
   </style>
 </head>
 
 <body>
-  <div id="clock-shell" title="click to change format"><pre id="clock"></pre></div>
+  <div id="clock-shell" title="click to change format">
+    <pre id="clock"></pre>
+    <p id="clock-date"></p>
+  </div>
 
   <main>
     <header class="masthead">
@@ -26,7 +38,7 @@
     </header>
     <div class="marquee"><span>welcome to my garden  *  drag the windows around  *  sign the guestbook  *  best viewed with curiosity  *</span></div>
 
-    <div class="plantbed">
+    <div class="plantbed freeform">
       <div class="win kind-markdown" id="p0" data-key="about.md">
         <div class="win-bar">
           <span class="win-title">about.md</span>
@@ -50,34 +62,63 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
           <button class="win-btn js-collapse" type="button" title="roll up">_</button>
           <button class="win-btn js-close" type="button" title="close">x</button>
         </div>
-        <div class="win-body"><span class="folder">📁</span><a href="art/">open</a></div>
+        <div class="win-body"><span class="folder">┌───┐
+│    └─────┐
+│              │
+│              │
+└─────────────┘</span><a href="art/">open</a></div>
       </div>
-      <div class="win kind-directory" id="p2" data-key="notes/">
+      <div class="win kind-directory" id="p2" data-key="music/">
+        <div class="win-bar">
+          <span class="win-title"><a href="music/">music/</a></span>
+          <span class="win-meta">5 items</span>
+          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
+          <button class="win-btn js-close" type="button" title="close">x</button>
+        </div>
+        <div class="win-body"><span class="folder">┌───┐
+│    └─────┐
+│              │
+│              │
+└─────────────┘</span><a href="music/">open</a></div>
+      </div>
+      <div class="win kind-directory" id="p3" data-key="notes/">
         <div class="win-bar">
           <span class="win-title"><a href="notes/">notes/</a></span>
           <span class="win-meta">2 items</span>
           <button class="win-btn js-collapse" type="button" title="roll up">_</button>
           <button class="win-btn js-close" type="button" title="close">x</button>
         </div>
-        <div class="win-body"><span class="folder">📁</span><a href="notes/">open</a></div>
+        <div class="win-body"><span class="folder">┌───┐
+│    └─────┐
+│              │
+│              │
+└─────────────┘</span><a href="notes/">open</a></div>
       </div>
-      <div class="win kind-directory" id="p3" data-key="thoughts/">
+      <div class="win kind-directory" id="p4" data-key="thoughts/">
         <div class="win-bar">
           <span class="win-title"><a href="thoughts/">thoughts/</a></span>
           <span class="win-meta">1 item</span>
           <button class="win-btn js-collapse" type="button" title="roll up">_</button>
           <button class="win-btn js-close" type="button" title="close">x</button>
         </div>
-        <div class="win-body"><span class="folder">📁</span><a href="thoughts/">open</a></div>
+        <div class="win-body"><span class="folder">┌───┐
+│    └─────┐
+│              │
+│              │
+└─────────────┘</span><a href="thoughts/">open</a></div>
       </div>
-      <div class="win kind-directory" id="p4" data-key="writings/">
+      <div class="win kind-directory" id="p5" data-key="writings/">
         <div class="win-bar">
           <span class="win-title"><a href="writings/">writings/</a></span>
           <span class="win-meta">1 item</span>
           <button class="win-btn js-collapse" type="button" title="roll up">_</button>
           <button class="win-btn js-close" type="button" title="close">x</button>
         </div>
-        <div class="win-body"><span class="folder">📁</span><a href="writings/">open</a></div>
+        <div class="win-body"><span class="folder">┌───┐
+│    └─────┐
+│              │
+│              │
+└─────────────┘</span><a href="writings/">open</a></div>
       </div>
     </div>
 
@@ -88,8 +129,8 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
       </div>
       <div class="win kind-guestbook" data-key="__guestbook" id="guestbook">
         <div class="win-bar">
-          <span class="win-title">guestbook.exe</span>
-          <span class="win-meta">leave a note</span>
+          <span class="win-title">leave a note</span>
+          <span class="win-meta">guestbook</span>
           <button class="win-btn js-collapse" type="button" title="roll up">_</button>
         </div>
         <div class="win-body">

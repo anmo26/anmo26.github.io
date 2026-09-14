@@ -174,7 +174,13 @@ function estimateHeight(file) {
 
 /* ----------------------------------------------------------------- the page */
 
-const FOLDER_GLYPH = '\u{1F4C1}';
+const FOLDER_GLYPH = [
+  '\u250C\u2500\u2500\u2500\u2510',
+  '\u2502    \u2514\u2500\u2500\u2500\u2500\u2500\u2510',
+  '\u2502              \u2502',
+  '\u2502              \u2502',
+  '\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518'
+].join('\n');
 
 function renderBody(f) {
   switch (f.type) {
@@ -218,8 +224,8 @@ function renderWindow(f, i) {
 function guestbookWindow() {
   return `      <div class="win kind-guestbook" data-key="__guestbook" id="guestbook">
         <div class="win-bar">
-          <span class="win-title">guestbook.exe</span>
-          <span class="win-meta">leave a note</span>
+          <span class="win-title">leave a note</span>
+          <span class="win-meta">guestbook</span>
           <button class="win-btn js-collapse" type="button" title="roll up">_</button>
         </div>
         <div class="win-body">
@@ -234,12 +240,38 @@ function guestbookWindow() {
 }
 
 function renderPage({ siteName, title, files, positioned, description, socialImage,
-                      assetPrefix, isRoot, tagline, marquee }) {
+                      assetPrefix, isRoot, tagline, marquee, guestbook }) {
   const windows = files.map(renderWindow).join('\n');
 
   // Freeform positions live in a media query so phones get the plain stack
   // defined in the base stylesheet and wide screens get the Finder layout.
   let freeform = '';
+
+  if (!positioned && files.length) {
+    // Deterministic scatter: same names always land in the same places, so
+    // the page doesn't reshuffle on every rebuild.
+    let hash = (str) => {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return (h >>> 0) / 4294967295;
+    };
+    let y = 0;
+    const laid = files.map((f, i) => {
+      const x = Math.round(hash(f.name) * 620);
+      const row = Math.floor(i / 3);
+      const jitter = Math.round(hash(f.name + '#y') * 90);
+      return { i, x, y: row * 300 + jitter };
+    });
+    const maxY = Math.max(...laid.map(l => l.y + 260));
+    const rules = laid.map(l =>
+      `      #p${l.i} { top: ${l.y}px; left: ${l.x}px; }`).join('\n');
+    freeform = `
+    @media (min-width: 760px) {
+      .plantbed { min-height: ${maxY}px; max-width: 68rem; margin: 0 auto; }
+${rules}
+    }`;
+  }
+
   if (positioned) {
     const xs = files.map(f => f.x);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
@@ -298,11 +330,14 @@ ${rules}
 </head>
 
 <body>
-  <div id="clock-shell" title="click to change format"><pre id="clock"></pre></div>
+  <div id="clock-shell" title="click to change format">
+    <pre id="clock"></pre>
+    <p id="clock-date"></p>
+  </div>
 
   <main>
 ${head}
-    <div class="plantbed${positioned ? ' freeform' : ''}">
+    <div class="plantbed${positioned ? ' freeform' : ' scattered'}">
 ${windows}
     </div>
 ${isRoot ? `
@@ -322,7 +357,7 @@ ${guestbookWindow()}
     <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
   </nav>
 
-  <script>window.GARDEN_CONFIG = ${JSON.stringify({ siteName })};</script>
+  <script>window.GARDEN_CONFIG = ${JSON.stringify({ siteName, guestbook })};</script>
   <script src="${assetPrefix}garden-assets/app.js"></script>
 </body>
 <!--
@@ -389,6 +424,7 @@ function grow(dir, ctx) {
     isRoot: depthFromRoot === 0,
     tagline: ctx.tagline,
     marquee: ctx.marquee,
+    guestbook: ctx.guestbook,
   });
 
   const out = path.join(dir, 'index.html');
@@ -462,6 +498,10 @@ export function growSite(opts = {}) {
       'welcome to my garden  *  drag the windows around  *  sign the guestbook  *  best viewed with curiosity  *',
     siteName: opts.title ?? config.title ?? path.basename(root),
     description: config.description,
+
+    // Handed straight to window.GARDEN_CONFIG so app.js can find the
+    // guestbook backend: { "mode": "remote", "url": "https://..." }.
+    guestbook: config.guestbook,
     depth: 0,
     maxDepth: opts.depth ?? config.depth ?? 3,
     dryRun: opts.dryRun ?? false,

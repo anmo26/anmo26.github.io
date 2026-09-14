@@ -24,116 +24,197 @@
   }
 
   /* =========================================================== FLIP CLOCK
-     A Twemco-style split-flap clock, rendered entirely in ASCII. Each digit
-     is a 5x5 grid of '#', sliced across the middle by the flap seam.
+     A Twemco split-flap clock drawn as a field of characters. The digits are
+     not blocks — they are letterforms packed together, ink figures standing
+     out of an ochre ground, with a seam across the middle where the flap
+     folds. When a digit turns over, its ground churns for a moment.
      ------------------------------------------------------------------- */
 
+  // 5 x 7 letterform digits
   var GLYPH = {
-    '0': ['#####', '#   #', '#   #', '#   #', '#####'],
-    '1': ['  ## ', '   # ', '   # ', '   # ', '  ###'],
-    '2': ['#####', '    #', '#####', '#    ', '#####'],
-    '3': ['#####', '    #', '#####', '    #', '#####'],
-    '4': ['#   #', '#   #', '#####', '    #', '    #'],
-    '5': ['#####', '#    ', '#####', '    #', '#####'],
-    '6': ['#####', '#    ', '#####', '#   #', '#####'],
-    '7': ['#####', '    #', '   # ', '  #  ', '  #  '],
-    '8': ['#####', '#   #', '#####', '#   #', '#####'],
-    '9': ['#####', '#   #', '#####', '    #', '    #']
+    '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+    '1': ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+    '2': ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+    '3': ['11111', '00010', '00100', '00010', '00001', '10001', '01110'],
+    '4': ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+    '5': ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+    '6': ['00110', '01000', '10000', '11110', '10001', '10001', '01110'],
+    '7': ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+    '8': ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+    '9': ['01110', '10001', '10001', '01111', '00001', '00010', '01100']
   };
 
-  var CARD_W = 5;
-  var TOP_ROWS = 3;   // rows above the flap seam
+  var GROUND = 'vwvvwvwvvwwvvwvw';  // the ochre texture
+  var FIGURE = 'Q@QQ0@QOQ@';      // the ink letterforms
+  var SEAM   = 'xxxxxxxxxxxxx';
+
+  var PAD_X = 1;                  // ground columns either side of a glyph
+  var PAD_Y = 1;                  // ground rows above and below
+  var GAP   = 2;                  // ground columns between two cards
+  var CARD_W = 5 + PAD_X * 2;
+  var CARD_H = 7 + PAD_Y * 2;
+  var SEAM_AFTER = 4;             // the flap folds below this glyph row
+
+  function pick(set, seed) { return set.charAt(Math.abs(seed) % set.length); }
 
   /**
-   * Renders a run of digits as a row of flip cards.
-   * Returns an array of text lines.
+   * Builds the whole clock as a grid of { ch, cls } cells.
+   * `churn` is a map of card index -> true for cards mid-flip.
    */
-  function cards(text) {
-    var lines = [];
-    var top = '+' + rep('-', CARD_W) + '+';
+  function field(text, churn, tick) {
+    var rows = [];
+    var totalRows = CARD_H + 1;            // +1 for the seam line
+    var r, c, i;
 
-    function rowFor(i) {
-      var out = [];
-      for (var c = 0; c < text.length; c++) {
-        var ch = text[c];
-        if (ch === ':') { out.push(i === 1 || i === 3 ? ' o ' : '   '); continue; }
-        var g = GLYPH[ch] || ['     ', '     ', '     ', '     ', '     '];
-        out.push('|' + g[i] + '|');
+    for (r = 0; r < totalRows; r++) rows.push([]);
+
+    for (i = 0; i < text.length; i++) {
+      var ch = text.charAt(i);
+      var isColon = ch === ':';
+      var glyph = GLYPH[ch] || null;
+      var width = isColon ? 3 : CARD_W;
+      var churning = churn[i];
+
+      for (r = 0; r < totalRows; r++) {
+        var glyphRow = r <= SEAM_AFTER ? r - PAD_Y : r - PAD_Y - 1;
+        var isSeam = r === SEAM_AFTER + 1;
+
+        for (c = 0; c < width; c++) {
+          var seed = (i * 31 + r * 17 + c * 7 + (churning ? tick * 13 : 0));
+
+          if (isColon) {
+            // the colon reads as two punched dots in the ground
+            var dot = (r === 3 || r === 7) && c === 1;
+            rows[r].push(dot
+              ? { ch: 'O', cls: 'f' }
+              : { ch: pick(GROUND, seed), cls: 'g' });
+            continue;
+          }
+
+          if (isSeam) {
+            rows[r].push({ ch: SEAM.charAt(c % SEAM.length), cls: 's' });
+            continue;
+          }
+
+          var on = false;
+          if (glyph && glyphRow >= 0 && glyphRow < 7) {
+            var gc = c - PAD_X;
+            if (gc >= 0 && gc < 5) on = glyph[glyphRow].charAt(gc) === '1';
+          }
+
+          // A churning card loses its figure and thrashes its ground.
+          if (churning) {
+            rows[r].push({ ch: pick(GROUND, seed * 3 + 1), cls: 'g' });
+          } else {
+            rows[r].push(on
+              ? { ch: pick(FIGURE, seed), cls: 'f' }
+              : { ch: pick(GROUND, seed), cls: 'g' });
+          }
+        }
+
+        if (i < text.length - 1) {
+          for (c = 0; c < GAP; c++) {
+            rows[r].push({ ch: pick(GROUND, i * 5 + r * 3 + c), cls: 'g' });
+          }
+        }
       }
-      return out.join('');
     }
-
-    function edge() {
-      var out = [];
-      for (var c = 0; c < text.length; c++) {
-        out.push(text[c] === ':' ? '   ' : top);
-      }
-      return out.join('');
-    }
-
-    lines.push(edge());
-    for (var i = 0; i < TOP_ROWS; i++) lines.push(rowFor(i));
-    lines.push(edge());                       // the flap seam
-    for (var j = TOP_ROWS; j < 5; j++) lines.push(rowFor(j));
-    lines.push(edge());
-    return lines;
+    return rows;
   }
 
-  function rep(s, n) { return new Array(n + 1).join(s); }
+  /** Collapses the cell grid into spans, one per run of same colour. */
+  function paint(rows) {
+    var html = '';
+    for (var r = 0; r < rows.length; r++) {
+      var row = rows[r], run = '', cls = null;
+      for (var c = 0; c < row.length; c++) {
+        if (row[c].cls !== cls) {
+          if (run) html += '<span class="' + cls + '">' + run + '</span>';
+          run = ''; cls = row[c].cls;
+        }
+        run += row[c].ch;
+      }
+      if (run) html += '<span class="' + cls + '">' + run + '</span>';
+      if (r < rows.length - 1) html += '\n';
+    }
+    return html;
+  }
+
   function pad(n) { return n < 10 ? '0' + n : String(n); }
 
   var DAYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-  var MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-
-  function centre(text, width) {
-    if (text.length >= width) return text;
-    var left = Math.floor((width - text.length) / 2);
-    return rep(' ', left) + text + rep(' ', width - text.length - left);
-  }
-
-  function clockFrame(showSeconds, hour24) {
-    var d = new Date();
-    var h = d.getHours();
-    var suffix = '';
-    if (!hour24) {
-      suffix = h < 12 ? 'AM' : 'PM';
-      h = h % 12;
-      if (h === 0) h = 12;
-    }
-
-    var time = pad(h) + ':' + pad(d.getMinutes()) + (showSeconds ? ':' + pad(d.getSeconds()) : '');
-    var lines = cards(time);
-    var width = lines[0].length;
-
-    var date = DAYS[d.getDay()] + '  ' + MONTHS[d.getMonth()] + ' ' + pad(d.getDate()) +
-               '  ' + d.getFullYear();
-
-    var out = lines.slice();
-    if (suffix) out.push(centre('[ ' + suffix + ' ]', width));
-    out.push(rep('=', width));
-    out.push(centre(date, width));
-    return out.join('\n');
-  }
+  var MONTHS = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY',
+                'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
 
   function mountClock() {
     var host = document.getElementById('clock');
+    var dateHost = document.getElementById('clock-date');
     if (!host) return;
 
     var state = {
-      seconds: get('clock.seconds', true),
+      seconds: get('clock.seconds', false),
       hour24: get('clock.hour24', false)
     };
 
-    function draw() { host.textContent = clockFrame(state.seconds, state.hour24); }
+    var previous = '';
+    var churn = {};
+    var tick = 0;
+    var churnTimer = null;
 
-    // Click the clock to cycle 12h -> 24h -> no seconds.
-    host.addEventListener('click', function () {
+    function timeText() {
+      var d = new Date();
+      var h = d.getHours();
+      if (!state.hour24) { h = h % 12; if (h === 0) h = 12; }
+      return pad(h) + ':' + pad(d.getMinutes()) + (state.seconds ? ':' + pad(d.getSeconds()) : '');
+    }
+
+    function render(text) { host.innerHTML = paint(field(text, churn, tick)); }
+
+    function draw() {
+      var text = timeText();
+      var d = new Date();
+
+      if (dateHost) {
+        dateHost.textContent = DAYS[d.getDay()] + ' · ' +
+          MONTHS[d.getMonth()] + ' ' + d.getDate() + ' · ' + d.getFullYear() +
+          (state.hour24 ? '' : ' · ' + (d.getHours() < 12 ? 'AM' : 'PM'));
+      }
+
+      // Which cards turned over since last time?
+      churn = {};
+      if (previous.length === text.length) {
+        for (var i = 0; i < text.length; i++) {
+          if (previous.charAt(i) !== text.charAt(i)) churn[i] = true;
+        }
+      }
+      previous = text;
+
+      var flipping = Object.keys(churn).length > 0;
+      render(text);
+
+      clearTimeout(churnTimer);
+      if (flipping && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        // let the flap tumble for a couple of frames, then settle
+        tick = 0;
+        var churnStep = function () {
+          tick++;
+          if (tick > 2) { churn = {}; render(text); return; }
+          render(text);
+          churnTimer = setTimeout(churnStep, 55);
+        };
+        churnTimer = setTimeout(churnStep, 55);
+      }
+    }
+
+    // Click to cycle 12h -> 24h -> hours and minutes only.
+    var shell = document.getElementById('clock-shell');
+    (shell || host).addEventListener('click', function () {
       if (!state.hour24) { state.hour24 = true; }
       else if (state.seconds) { state.seconds = false; }
       else { state.hour24 = false; state.seconds = true; }
       set('clock.hour24', state.hour24);
       set('clock.seconds', state.seconds);
+      previous = '';
       draw();
     });
 
@@ -262,15 +343,15 @@
   /* ============================================================== TOGGLES */
 
   var TOGGLES = [
-    { id: 'crt',     label: 'CRT',      apply: function (on) { document.body.classList.toggle('crt', on); } },
-    { id: 'sparkle', label: 'sparkles', apply: function (on) { sparkleOn = on; } },
-    { id: 'clock',   label: 'clock',    def: true,
+    { id: 'grain', label: 'grain',
+      apply: function (on) { document.body.classList.toggle('grain', on); } },
+    { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
                              if (c) c.style.display = on ? '' : 'none'; } }
   ];
 
-  var THEMES = ['', 'theme-bubblegum', 'theme-matrix', 'theme-noon'];
-  var THEME_NAMES = ['midnight', 'bubblegum', 'matrix', 'noon'];
+  var THEMES = ['', 'theme-clean', 'theme-olive', 'theme-ink'];
+  var THEME_NAMES = ['bone', 'paper', 'olive', 'ink'];
 
   function mountToggles() {
     var bar = document.getElementById('taskbar-toggles');
@@ -316,7 +397,7 @@
     var reset = document.createElement('button');
     reset.className = 'toggle';
     reset.type = 'button';
-    reset.innerHTML = '<span class="led"></span>reset layout';
+    reset.innerHTML = '<span class="led"></span>reset';
     reset.addEventListener('click', function () {
       set('moved', {});
       set('collapsed', {});
@@ -325,26 +406,6 @@
     });
     bar.appendChild(reset);
   }
-
-  /* ============================================================ SPARKLES */
-
-  var sparkleOn = false;
-  var lastSparkle = 0;
-
-  document.addEventListener('pointermove', function (e) {
-    if (!sparkleOn) return;
-    var now = Date.now();
-    if (now - lastSparkle < 40) return;
-    lastSparkle = now;
-
-    var s = document.createElement('div');
-    s.className = 'sparkle';
-    s.style.left = (e.clientX - 3) + 'px';
-    s.style.top = (e.clientY - 3) + 'px';
-    s.style.background = ['#00ffff', '#ff00cc', '#00ff66', '#ffe600'][Math.floor(Math.random() * 4)];
-    document.body.appendChild(s);
-    setTimeout(function () { s.remove(); }, 700);
-  });
 
   /* ============================================================ GUESTBOOK
      Storage goes through a small adapter. `local` keeps notes in this

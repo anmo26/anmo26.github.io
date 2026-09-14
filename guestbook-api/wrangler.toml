@@ -1,0 +1,57 @@
+# ============================================================================
+# guestbook-api — Cloudflare Worker config
+#
+# Everything marked REPLACE_ME has to be filled in before the first deploy.
+# The README walks through where each value comes from.
+# ============================================================================
+
+name = "garden-guestbook"
+main = "worker.js"
+
+# Any date in the past is fine; it pins the Workers runtime's behaviour so a
+# future platform change cannot alter this Worker underneath you.
+compatibility_date = "2025-09-01"
+
+# ---------------------------------------------------------------- database
+# `npx wrangler d1 create garden-guestbook` prints these two lines — paste the
+# database_id it gives you over the REPLACE_ME below.
+[[d1_databases]]
+binding = "DB"                      # must stay "DB"; worker.js reads env.DB
+database_name = "garden-guestbook"
+database_id = "REPLACE_ME"          # e.g. "f0e1d2c3-4b5a-6789-0abc-def123456789"
+
+# ------------------------------------------------------------------- config
+# Public, non-secret settings. These are visible in the Cloudflare dashboard.
+[vars]
+# Exact origins allowed to call this API, comma separated, no trailing slash.
+# Include every hostname the site is served from — the apex domain, the
+# github.io address, and http://localhost:8000 while you are testing locally.
+ALLOWED_ORIGINS = "REPLACE_ME"      # e.g. "https://anmo.garden,http://localhost:8000"
+
+# Hard ceiling on how many notes the guestbook will ever hold.
+MAX_NOTES = "500"
+
+# ------------------------------------------------------------------ secrets
+# NOT set here — anything in this file ends up in git. Set them once with:
+#
+#   npx wrangler secret put ADMIN_TOKEN    # your moderation password
+#   npx wrangler secret put RATE_SALT      # any long random string
+#
+# ADMIN_TOKEN gates DELETE and the hidden flag.
+# RATE_SALT is mixed into the IP hash so the stored tokens cannot be reversed
+# back into addresses by anyone who gets a copy of the database.
+
+# ------------------------------------------------------------ custom domain
+# Optional. By default the Worker answers at
+# https://garden-guestbook.<your-subdomain>.workers.dev, which is enough.
+# To serve it from your own domain instead (the domain must be on Cloudflare),
+# uncomment these and replace the placeholders:
+#
+# [[routes]]
+# pattern = "REPLACE_ME"            # e.g. "guestbook.anmo.garden"
+# custom_domain = true
+
+# ------------------------------------------------------------------ logging
+# Lets `npx wrangler tail` show console.error output from a live Worker.
+[observability]
+enabled = true
