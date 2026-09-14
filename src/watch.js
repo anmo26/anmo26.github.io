@@ -26,11 +26,21 @@ const PROJECT = path.join(__dirname, '..');
 
 const argv = process.argv.slice(2);
 const noPublish = argv.includes('--no-publish');
+const noPoll = argv.includes('--no-poll') || argv.includes('--no-polling');
 
 const config = loadConfig(path.join(PROJECT, 'garden.config.json'));
 const root = path.resolve((config.source ?? PROJECT).replace(/^~/, process.env.HOME ?? '~'));
 
 const DEBOUNCE_MS = config.debounceMs ?? 2000;
+
+// Each poll is a blocking osascript round trip of roughly a third of a second,
+// so this is a tradeoff between how fast a drag shows up and how much of the
+// event loop we hand to Finder. 1.5s reads as immediate without being greedy.
+const POLL_MS = Math.max(250, config.finderPollMs ?? 1500);
+// When Finder cannot answer at all we back off rather than spawning osascript
+// once a second forever -- on a machine with Finder quit that would be pure
+// waste until the watcher is killed.
+const POLL_BACKOFF_MAX_MS = 60_000;
 
 /* ------------------------------------------------------------------ helpers */
 

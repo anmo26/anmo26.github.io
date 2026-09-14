@@ -210,10 +210,11 @@ function estimateHeight(file) {
 /* ----------------------------------------------------------------- the page */
 
 function renderBody(f) {
+  // An icon stands for the file rather than opening it, so there is no body
+  // to draw -- you click it, and the real file opens.
+  if (f.iconOnly) return '';
+
   switch (f.type) {
-    // A folder is one line: its name and how much is inside. The point is
-    // that it reads like a row in a Finder window, not a card.
-    case 'directory': return '';
     case 'image':
       return `<a href="${f.href}"><img src="${f.href}" alt="${escapeHtml(f.name)}" ` +
              `width="${f.width}" height="${f.height}" loading="lazy"></a>`;
