@@ -417,6 +417,35 @@
     return e.clientX > r.right - GRIP && e.clientY > r.bottom - GRIP;
   }
 
+  /**
+   * A picture is wrapped in a link, so letting go of the resize corner still
+   * counts as a click on that link and the file would open. Pulling a corner
+   * is not asking to open anything, so the click that follows is dropped.
+   *
+   * Armed on the press rather than the release: by the time the pointer
+   * comes up the browser has already decided a click is on its way.
+   */
+  document.addEventListener('pointerdown', function (e) {
+    if (!inResizeGrip(e)) return;
+
+    var box = e.target.closest('[data-resizable]');
+    if (!box || box.hasAttribute('data-gripped')) return;
+    box.setAttribute('data-gripped', '');
+
+    var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
+    box.addEventListener('click', kill, true);
+
+    window.addEventListener('pointerup', function stop() {
+      window.removeEventListener('pointerup', stop, true);
+      // One tick of slack: the click lands immediately after pointerup, and
+      // the guard has to still be there when it does.
+      setTimeout(function () {
+        box.removeEventListener('click', kill, true);
+        box.removeAttribute('data-gripped');
+      }, 0);
+    }, true);
+  }, true);
+
   /** A press that turned into a drag must not also open the link under it. */
   function swallowNextClick(el) {
     var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
