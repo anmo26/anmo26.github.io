@@ -16,6 +16,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { parseDSStore } from './dsstore.js';
+import { liveSnapshot, positionsFor } from './finder.js';
 import { imageSize, videoSize } from './imagesize.js';
 import { markdown, escapeHtml } from './markdown.js';
 import { folderIcon, fileThumb, beginIconRun, sweepIcons } from './icons.js';
@@ -604,7 +605,9 @@ function grow(dir, ctx) {
     .filter(e => !isIgnored(e.name, e.isDirectory(), rules))
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
 
-  const positions = parseDSStore(path.join(dir, '.DS_Store'));
+  // Finder's in-memory positions beat .DS_Store, which it only flushes when
+  // the window closes -- that lag is why a drag used to not show up here.
+  const positions = positionsFor(ctx.live, dir) ?? parseDSStore(path.join(dir, '.DS_Store'));
   const rel = path.relative(root, dir);
   const depthFromRoot = rel ? rel.split(path.sep).length : 0;
 
@@ -723,6 +726,10 @@ export function growSite(opts = {}) {
     // until it is { "enabled": true, "mode": "remote", "url": "https://..." }
     // pointing at a real backend -- GitHub Pages cannot store visitor notes.
     guestbook: config.guestbook,
+
+    // One snapshot of Finder's live layout per build, not one call per
+    // folder -- each osascript round trip costs about a third of a second.
+    live: liveSnapshot(),
 
     // One text file per playlist in music/; the player is drawn from these.
     music: readMusic(path.join(root, 'music')),
