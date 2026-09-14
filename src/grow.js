@@ -159,10 +159,9 @@ function describe(dir, entry, rules) {
 
 /** Rough rendered height, used only to give the page something to scroll to. */
 function estimateHeight(file) {
-  const head = 20;
+  const head = 26;                     // the filename line
   switch (file.type) {
-    // A folder window draws the five-line glyph plus its "open" link.
-    case 'directory': return head + 138;
+    case 'directory': return head;     // a folder is only ever that line
     case 'image':
     case 'video': return head + (file.drawnHeight ?? 200) + 6;
     case 'audio': return head + 48;
@@ -175,18 +174,11 @@ function estimateHeight(file) {
 
 /* ----------------------------------------------------------------- the page */
 
-const FOLDER_GLYPH = [
-  '\u250C\u2500\u2500\u2500\u2510',
-  '\u2502    \u2514\u2500\u2500\u2500\u2500\u2500\u2510',
-  '\u2502              \u2502',
-  '\u2502              \u2502',
-  '\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518'
-].join('\n');
-
 function renderBody(f) {
   switch (f.type) {
-    case 'directory':
-      return `<span class="folder">${FOLDER_GLYPH}</span><a href="${f.href}">open</a>`;
+    // A folder is one line: its name and how much is inside. The point is
+    // that it reads like a row in a Finder window, not a card.
+    case 'directory': return '';
     case 'image':
       return `<a href="${f.href}"><img src="${f.href}" alt="${escapeHtml(f.name)}" ` +
              `width="${f.width}" height="${f.height}" loading="lazy"></a>`;
@@ -205,20 +197,19 @@ function renderBody(f) {
   }
 }
 
-function renderWindow(f, i) {
+/**
+ * One item: the filename, clickable through to the real file, what it
+ * weighs, and then the thing itself. No frame around it -- the page is the
+ * folder, and the items are lying on it.
+ */
+function renderItem(f, i) {
   const meta = f.type === 'directory' ? f.contents : (f.size ?? '');
-  const titleLink = f.type === 'directory' || f.type === 'other'
-    ? `<a href="${f.href}">${escapeHtml(f.name)}</a>`
-    : escapeHtml(f.name);
+  const body = renderBody(f);
 
-  return `      <div class="win kind-${f.type}" id="p${i}" data-key="${escapeHtml(f.name)}">
-        <div class="win-bar">
-          <span class="win-title">${titleLink}</span>
-          <span class="win-meta">${escapeHtml(meta)}</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body">${renderBody(f)}</div>
+  return `      <div class="item kind-${f.type}" id="p${i}" data-key="${escapeHtml(f.name)}">
+        <h3><a href="${f.href}">${escapeHtml(f.name)}</a>` +
+          (meta ? ` <span class="meta">(${escapeHtml(meta)})</span>` : '') + `</h3>` +
+          (body ? `\n        ${body}` : '') + `
       </div>`;
 }
 
@@ -327,13 +318,8 @@ function readMusic(dir) {
 
 function musicWindow(music) {
   const n = music.length;
-  return `      <div class="win kind-ipod" id="music" data-key="__music">
-        <div class="win-bar">
-          <span class="win-title">music</span>
-          <span class="win-meta">${n} playlist${n === 1 ? '' : 's'}</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-        </div>
-        <div class="win-body">
+  return `      <div class="item kind-ipod" id="music" data-key="__music">
+        <h3>music <span class="meta">(${n} playlist${n === 1 ? '' : 's'})</span></h3>
           <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
                data-view="list" data-player="off">
 
@@ -382,7 +368,6 @@ function musicWindow(music) {
 
             <p class="ipod-noscript">this player needs JavaScript.</p>
           </div>
-        </div>
       </div>`;
 }
 
@@ -406,7 +391,7 @@ function guestbookWindow() {
 
 function renderPage({ siteName, title, files, positioned, description, socialImage,
                       assetPrefix, isRoot, tagline, marquee, guestbook, music }) {
-  const windows = files.map(renderWindow).join('\n');
+  const items = files.map(renderItem).join('\n');
 
   // A guestbook needs a server to hold visitor notes, which GitHub Pages
   // cannot do. Off until there is a backend; flip "enabled" in the config.
@@ -447,7 +432,7 @@ function renderPage({ siteName, title, files, positioned, description, socialIma
     const bedHeight = showMusic ? maxY + 560 : maxY;
 
     freeform = `
-    @media (min-width: 760px) {
+    @media (min-width: 560px) {
       .plantbed { min-height: ${bedHeight}px; max-width: 68rem; margin: 0 auto; }
 ${rules}${musicRule}
     }`;
@@ -471,7 +456,7 @@ ${rules}${musicRule}
     const bedHeight = showMusic ? height + 560 : height;
 
     freeform = `
-    @media (min-width: 760px) {
+    @media (min-width: 560px) {
       .plantbed { min-height: ${bedHeight}px; margin-left: max(0px, calc(50% - ${halfWidth}px - 13rem)); }
 ${rules}${musicRule}
     }`;
@@ -526,7 +511,7 @@ ${showMusic ? `  <link rel="stylesheet" href="${assetPrefix}garden-assets/ipod.c
   <main>
 ${head}
     <div class="plantbed${positioned ? ' freeform' : ' scattered'}">
-${windows}${showMusic ? '\n' + musicWindow(musicData) : ''}
+${items}${showMusic ? '\n' + musicWindow(musicData) : ''}
     </div>
 ${showGuestbook ? `
     <section class="guestbed" id="gb-notes">
@@ -542,7 +527,7 @@ ${guestbookWindow()}
     <span class="start">${escapeHtml(siteName)}</span>
     <span id="taskbar-toggles" style="display:contents"></span>
     <span class="spacer"></span>
-    <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
+    <span class="clock" id="taskbar-clock">drag things around &rarr;</span>
   </nav>
 
   <script>window.GARDEN_CONFIG = ${JSON.stringify({ siteName, guestbook })};</script>
@@ -686,7 +671,7 @@ export function growSite(opts = {}) {
     rules: loadRules(root, config),
     tagline: config.tagline,
     marquee: config.marquee ??
-      'welcome to my garden  *  drag the windows around  *  everything here is a real file  *  best viewed with curiosity  *',
+      'welcome to my garden  *  drag things around  *  everything here is a real file  *  best viewed with curiosity  *',
     siteName: opts.title ?? config.title ?? path.basename(root),
     description: config.description,
 

@@ -12,7 +12,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../garden-assets/style.css">
   <style>
-    @media (min-width: 760px) {
+    @media (min-width: 560px) {
       .plantbed { min-height: 338px; max-width: 68rem; margin: 0 auto; }
       #p0 { top: 78px; left: 323px; }
       #p1 { top: 66px; left: 217px; }
@@ -35,37 +35,22 @@
     </header>
 
     <div class="plantbed scattered">
-      <div class="win kind-text" id="p0" data-key="README.txt">
-        <div class="win-bar">
-          <span class="win-title">README.txt</span>
-          <span class="win-meta">246B</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><pre>Drop images in this folder — jpg, png, gif, webp, avif, svg.
+      <div class="item kind-text" id="p0" data-key="README.txt">
+        <h3><a href="README.txt">README.txt</a> <span class="meta">(246B)</span></h3>
+        <pre>Drop images in this folder — jpg, png, gif, webp, avif, svg.
 
 They appear on the site at full size (capped to a readable width).
 
 HEIC from an iPhone will NOT display in browsers. Convert first:
-  sips -s format jpeg photo.heic --out photo.jpg</pre></div>
+  sips -s format jpeg photo.heic --out photo.jpg</pre>
       </div>
-      <div class="win kind-image" id="p1" data-key="sample-a-field.png">
-        <div class="win-bar">
-          <span class="win-title">sample-a-field.png</span>
-          <span class="win-meta">298.1kB</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><a href="sample-a-field.png"><img src="sample-a-field.png" alt="sample-a-field.png" width="400" height="300" loading="lazy"></a></div>
+      <div class="item kind-image" id="p1" data-key="sample-a-field.png">
+        <h3><a href="sample-a-field.png">sample-a-field.png</a> <span class="meta">(298.1kB)</span></h3>
+        <a href="sample-a-field.png"><img src="sample-a-field.png" alt="sample-a-field.png" width="400" height="300" loading="lazy"></a>
       </div>
-      <div class="win kind-image" id="p2" data-key="sample-b-light.png">
-        <div class="win-bar">
-          <span class="win-title">sample-b-light.png</span>
-          <span class="win-meta">39.8kB</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><a href="sample-b-light.png"><img src="sample-b-light.png" alt="sample-b-light.png" width="320" height="420" loading="lazy"></a></div>
+      <div class="item kind-image" id="p2" data-key="sample-b-light.png">
+        <h3><a href="sample-b-light.png">sample-b-light.png</a> <span class="meta">(39.8kB)</span></h3>
+        <a href="sample-b-light.png"><img src="sample-b-light.png" alt="sample-b-light.png" width="320" height="420" loading="lazy"></a>
       </div>
     </div>
 
@@ -75,7 +60,7 @@ HEIC from an iPhone will NOT display in browsers. Convert first:
     <span class="start">anmo.garden</span>
     <span id="taskbar-toggles" style="display:contents"></span>
     <span class="spacer"></span>
-    <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
+    <span class="clock" id="taskbar-clock">drag things around &rarr;</span>
   </nav>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>

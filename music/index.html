@@ -12,7 +12,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../garden-assets/style.css">
   <style>
-    @media (min-width: 760px) {
+    @media (min-width: 560px) {
       .plantbed { min-height: 638px; max-width: 68rem; margin: 0 auto; }
       #p0 { top: 25px; left: 257px; }
       #p1 { top: 38px; left: 439px; }
@@ -36,44 +36,24 @@
     </header>
 
     <div class="plantbed scattered">
-      <div class="win kind-text" id="p0" data-key="01 late night drives.txt">
-        <div class="win-bar">
-          <span class="win-title">01 late night drives.txt</span>
-          <span class="win-meta">103B</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><pre>spotify: https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6
-note: windows down, nothing to prove</pre></div>
+      <div class="item kind-text" id="p0" data-key="01 late night drives.txt">
+        <h3><a href="01%20late%20night%20drives.txt">01 late night drives.txt</a> <span class="meta">(103B)</span></h3>
+        <pre>spotify: https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6
+note: windows down, nothing to prove</pre>
       </div>
-      <div class="win kind-text" id="p1" data-key="02 deep focus.txt">
-        <div class="win-bar">
-          <span class="win-title">02 deep focus.txt</span>
-          <span class="win-meta">121B</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><pre>spotify: spotify:playlist:37i9dQZF1DWZeKCadgRdKQ
+      <div class="item kind-text" id="p1" data-key="02 deep focus.txt">
+        <h3><a href="02%20deep%20focus.txt">02 deep focus.txt</a> <span class="meta">(121B)</span></h3>
+        <pre>spotify: spotify:playlist:37i9dQZF1DWZeKCadgRdKQ
 cover: covers/deep-focus.jpg
-note: for the hours that need to disappear</pre></div>
+note: for the hours that need to disappear</pre>
       </div>
-      <div class="win kind-text" id="p2" data-key="03 peaceful piano.txt">
-        <div class="win-bar">
-          <span class="win-title">03 peaceful piano.txt</span>
-          <span class="win-meta">57B</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><pre>https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO</pre></div>
+      <div class="item kind-text" id="p2" data-key="03 peaceful piano.txt">
+        <h3><a href="03%20peaceful%20piano.txt">03 peaceful piano.txt</a> <span class="meta">(57B)</span></h3>
+        <pre>https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO</pre>
       </div>
-      <div class="win kind-text" id="p3" data-key="README.txt">
-        <div class="win-bar">
-          <span class="win-title">README.txt</span>
-          <span class="win-meta">2.94kB</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><pre>this folder is the music player.
+      <div class="item kind-text" id="p3" data-key="README.txt">
+        <h3><a href="README.txt">README.txt</a> <span class="meta">(2.94kB)</span></h3>
+        <pre>this folder is the music player.
 ================================
 
 Every .txt (or .md) file in here becomes one album tile on the iPod in the
@@ -154,7 +134,7 @@ the music stays on Spotify, where the artists get paid for it.
 What visitors hear depends on them: anyone signed in to Spotify in the same
 browser gets the full tracks, and everyone else gets Spotify's 30-second
 previews. Nothing loads until somebody actually presses play, so having a
-hundred playlists in here costs the page nothing.</pre></div>
+hundred playlists in here costs the page nothing.</pre>
       </div>
     </div>
 
@@ -164,7 +144,7 @@ hundred playlists in here costs the page nothing.</pre></div>
     <span class="start">anmo.garden</span>
     <span id="taskbar-toggles" style="display:contents"></span>
     <span class="spacer"></span>
-    <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
+    <span class="clock" id="taskbar-clock">drag things around &rarr;</span>
   </nav>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>

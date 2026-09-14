@@ -232,7 +232,7 @@
 
     function down(e) {
       if (e.target.closest('a, button, input, textarea, select')) return;
-      if (!window.matchMedia('(min-width: 760px)').matches) return;
+      if (!window.matchMedia('(min-width: 560px)').matches) return;
 
       dragging = true;
       var rect = el.getBoundingClientRect();
@@ -285,11 +285,11 @@
   }
 
   function restorePositions() {
-    if (!window.matchMedia('(min-width: 760px)').matches) return;
+    if (!window.matchMedia('(min-width: 560px)').matches) return;
     var moved = get('moved', {});
     Object.keys(moved).forEach(function (key) {
       if (key.indexOf('note:') === 0) return;   // notes carry their own x/y
-      var el = document.querySelector('.win[data-key="' + CSS.escape(key) + '"]');
+      var el = document.querySelector('.item[data-key="' + CSS.escape(key) + '"]');
       if (!el) return;
       el.style.left = moved[key].x + 'px';
       el.style.top = moved[key].y + 'px';
@@ -299,44 +299,13 @@
 
   /* ============================================================== WINDOWS */
 
-  function mountWindows() {
-    var collapsed = get('collapsed', {});
+  function mountItems() {
+    document.querySelectorAll('.plantbed > .item').forEach(function (item) {
+      var handle = item.querySelector('h3');
+      if (!handle) return;
 
-    document.querySelectorAll('.win').forEach(function (win) {
-      var key = win.dataset.key;
-      var bar = win.querySelector('.win-bar');
-
-      if (collapsed[key]) win.classList.add('collapsed');
-
-      var roll = win.querySelector('.js-collapse');
-      if (roll) {
-        roll.addEventListener('click', function () {
-          win.classList.toggle('collapsed');
-          collapsed[key] = win.classList.contains('collapsed');
-          set('collapsed', collapsed);
-          roll.textContent = win.classList.contains('collapsed') ? '+' : '_';
-        });
-        roll.textContent = win.classList.contains('collapsed') ? '+' : '_';
-      }
-
-      var close = win.querySelector('.js-close');
-      if (close) {
-        close.addEventListener('click', function () {
-          win.style.display = 'none';
-          var hidden = get('hidden', {});
-          hidden[key] = true;
-          set('hidden', hidden);
-        });
-      }
-
-      win.addEventListener('pointerdown', function () { win.style.zIndex = ++zTop; });
-      if (bar) makeDraggable(win, bar, key);
-    });
-
-    var hidden = get('hidden', {});
-    Object.keys(hidden).forEach(function (key) {
-      var el = document.querySelector('.win[data-key="' + CSS.escape(key) + '"]');
-      if (el && hidden[key]) el.style.display = 'none';
+      item.addEventListener('pointerdown', function () { item.style.zIndex = ++zTop; });
+      makeDraggable(item, handle, item.dataset.key);
     });
   }
 
@@ -400,8 +369,6 @@
     reset.innerHTML = '<span class="led"></span>reset';
     reset.addEventListener('click', function () {
       set('moved', {});
-      set('collapsed', {});
-      set('hidden', {});
       location.reload();
     });
     bar.appendChild(reset);
@@ -488,7 +455,7 @@
       replies.appendChild(d);
     });
 
-    if (window.matchMedia('(min-width: 760px)').matches && note.x != null) {
+    if (window.matchMedia('(min-width: 560px)').matches && note.x != null) {
       el.style.left = note.x + 'px';
       el.style.top = note.y + 'px';
     }
@@ -554,7 +521,7 @@
 
   function boot() {
     mountClock();
-    mountWindows();
+    mountItems();
     mountToggles();
     mountGuestbook();
     restorePositions();

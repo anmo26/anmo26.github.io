@@ -49,7 +49,9 @@ body {
     radial-gradient(circle at 15% 12%, rgba(169,117,47,.045) 0, transparent 38%),
     radial-gradient(circle at 85% 78%, rgba(94,101,82,.05) 0, transparent 42%);
   background-attachment: fixed;
-  overflow-x: hidden;
+  /* A Finder window scrolls when the icons are spread wider than it is.
+     Clipping here would hide items at coordinates the owner chose. */
+  overflow-x: auto;
   padding-bottom: 40px;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
@@ -116,76 +118,62 @@ main { padding: 2.5rem 1.5rem 1.5rem; }
 
 .plantbed { position: relative; }
 
-.win {
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  margin: 0 0 1.25rem;
+/* An item has no frame. It is a filename, and then the thing itself, lying
+   on the page wherever Finder says it lies. Anything heavier than this reads
+   as a card in a layout instead of a file in a folder. */
+
+.item {
+  margin: 0 0 1.5rem;
   max-width: 100%;
 }
 
-.win.focused { border-color: var(--ochre); }
-
-.win-bar {
-  display: flex;
-  align-items: baseline;
-  gap: .6rem;
-  padding: .4rem .6rem;
-  background: var(--paper-deep);
-  border-bottom: 1px solid var(--rule-soft);
-  font-size: .68rem;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+.item h3 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: .72rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: .01em;
+  white-space: nowrap;
   cursor: grab;
   user-select: none;
 }
-.win-bar:active { cursor: grabbing; }
-.win.collapsed .win-bar { border-bottom-color: transparent; }
+.item h3:active { cursor: grabbing; }
 
-.win-title {
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ink);
+.item h3 a {
+  color: var(--ochre);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
 }
-.win-title a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--ochre-pale); }
-.win-title a:hover { border-bottom-color: var(--ochre); }
+.item h3 a:visited { color: var(--ochre); }
+.item h3 a:hover { border-bottom-color: var(--ochre); }
 
-.win-meta {
-  flex: 0 0 auto;
+/* Folders read olive, files read ochre — the one way the eye can sort the
+   page into "places to go" and "things to look at" without any chrome. */
+.item.kind-directory h3 a,
+.item.kind-directory h3 a:visited { color: var(--olive); }
+.item.kind-directory h3 a:hover { border-bottom-color: var(--olive); }
+
+.item .meta {
   color: var(--ink-faint);
-  font-size: .62rem;
-  letter-spacing: .06em;
+  font-size: .66rem;
   font-variant-numeric: tabular-nums;
 }
 
-.win-btn {
-  flex: 0 0 auto;
-  width: 15px; height: 15px;
-  display: grid; place-items: center;
-  background: none;
-  border: 1px solid var(--rule);
-  color: var(--ink-faint);
-  font: 400 9px/1 var(--mono);
-  cursor: pointer;
-  padding: 0;
-}
-.win-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+.item.focused h3 a { border-bottom-color: currentColor; }
 
-.win-body { padding: .85rem .9rem; overflow-wrap: anywhere; }
-.win.collapsed .win-body { display: none; }
-
-.win-body img, .win-body video { display: block; max-width: 100%; height: auto; }
-.win-body audio { width: 100%; }
-.win-body pre {
-  margin: 0;
+.item img, .item video { display: block; max-width: 100%; height: auto; margin-top: .3rem; }
+.item audio { width: 100%; margin-top: .3rem; }
+.item pre {
+  margin: .3rem 0 0;
   font-family: var(--mono);
   font-size: .74rem;
   line-height: 1.6;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   color: var(--ink-soft);
 }
+.item .md { margin-top: .35rem; }
 
 a { color: var(--ochre); text-underline-offset: 2px; }
 a:visited { color: var(--olive); }
@@ -215,18 +203,6 @@ a:visited { color: var(--olive); }
 }
 .md img { max-width: 100%; }
 .md hr { border: none; border-top: 1px solid var(--rule); margin: 1.5rem 0; }
-
-/* folders */
-.win.kind-directory .win-body { padding: 1.1rem .9rem; text-align: center; }
-.win.kind-directory .folder {
-  display: block;
-  font-family: var(--mono);
-  font-size: .68rem;
-  line-height: 1.15;
-  white-space: pre;
-  color: var(--ochre);
-  margin-bottom: .5rem;
-}
 
 /* ---------------------------------------------------------------- taskbar */
 
@@ -377,19 +353,23 @@ a:visited { color: var(--olive); }
 
 .plantbed > * { position: static; }
 
-@media (min-width: 760px) {
+/* 560px, not 760: a Safari window that isn't maximised is routinely 700-900
+   wide, and anyone in one was getting the phone stack — full-width blocks,
+   no arrangement, nothing draggable. Only real phones should see that. */
+@media (min-width: 560px) {
   main { padding: 3rem 2.5rem 2rem; }
   .plantbed { position: relative; }
-  .win-body pre { max-width: 26rem; }
 
-  /* Only folders Finder gave coordinates for get absolute layout. */
-  .plantbed.freeform > .win,
+  /* Folders Finder gave coordinates for get laid out at those coordinates. */
+  .plantbed.freeform > .item,
   .guestbed > .note {
     position: absolute; margin: 0; width: max-content; max-width: 26rem;
   }
 
   /* An unarranged folder still scatters — it should never look like a grid. */
-  .plantbed.scattered > .win { position: absolute; margin: 0; width: max-content; max-width: 24rem; }
+  .plantbed.scattered > .item { position: absolute; margin: 0; width: max-content; max-width: 24rem; }
+
+  .item pre { max-width: 26rem; }
 
   .guestbed { min-height: 28rem; }
 }

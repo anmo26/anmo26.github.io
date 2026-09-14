@@ -12,7 +12,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../garden-assets/style.css">
   <style>
-    @media (min-width: 760px) {
+    @media (min-width: 560px) {
       .plantbed { min-height: 326px; max-width: 68rem; margin: 0 auto; }
       #p0 { top: 58px; left: 233px; }
       #p1 { top: 66px; left: 32px; }
@@ -34,27 +34,17 @@
     </header>
 
     <div class="plantbed scattered">
-      <div class="win kind-text" id="p0" data-key="colophon.txt">
-        <div class="win-bar">
-          <span class="win-title">colophon.txt</span>
-          <span class="win-meta">143B</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><pre>no build step. no dependencies. no framework.
+      <div class="item kind-text" id="p0" data-key="colophon.txt">
+        <h3><a href="colophon.txt">colophon.txt</a> <span class="meta">(143B)</span></h3>
+        <pre>no build step. no dependencies. no framework.
 node reads a folder, node writes html.
 
-the only clever part is .DS_Store, and apple wrote that.</pre></div>
+the only clever part is .DS_Store, and apple wrote that.</pre>
       </div>
-      <div class="win kind-markdown" id="p1" data-key="todo.md">
-        <div class="win-bar">
-          <span class="win-title">todo.md</span>
-          <span class="win-meta">178B</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><div class="md"><h1>todo</h1>
-<ul><li>[ ] point the garden at a folder with actual photos in it</li><li>[ ] arrange the icons in Finder so the page looks like something</li><li>[ ] decide whether this ever goes online</li></ul></div></div>
+      <div class="item kind-markdown" id="p1" data-key="todo.md">
+        <h3><a href="todo.md">todo.md</a> <span class="meta">(178B)</span></h3>
+        <div class="md"><h1>todo</h1>
+<ul><li>[ ] point the garden at a folder with actual photos in it</li><li>[ ] arrange the icons in Finder so the page looks like something</li><li>[ ] decide whether this ever goes online</li></ul></div>
       </div>
     </div>
 
@@ -64,7 +54,7 @@ the only clever part is .DS_Store, and apple wrote that.</pre></div>
     <span class="start">anmo.garden</span>
     <span id="taskbar-toggles" style="display:contents"></span>
     <span class="spacer"></span>
-    <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
+    <span class="clock" id="taskbar-clock">drag things around &rarr;</span>
   </nav>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>

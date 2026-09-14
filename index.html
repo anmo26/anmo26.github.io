@@ -13,15 +13,15 @@
   <link rel="stylesheet" href="garden-assets/style.css">
   <link rel="stylesheet" href="garden-assets/ipod.css">
   <style>
-    @media (min-width: 760px) {
-      .plantbed { min-height: 1338px; margin-left: max(0px, calc(50% - 447px - 13rem)); }
+    @media (min-width: 560px) {
+      .plantbed { min-height: 1206px; margin-left: max(0px, calc(50% - 447px - 13rem)); }
       #p0 { top: 120px; left: 404px; }
       #p1 { top: 50px; left: 694px; }
       #p2 { top: 580px; left: 74px; }
       #p3 { top: 450px; left: 894px; }
       #p4 { top: 443px; left: 467px; }
       #p5 { top: 240px; left: 0px; }
-      #music { top: 778px; left: 0px; }
+      #music { top: 646px; left: 0px; }
     }
   </style>
 </head>
@@ -38,97 +38,37 @@
       <p>a file gallery. a mirror of a folder.</p>
       <div class="rule"></div>
     </header>
-    <div class="marquee"><span>welcome to my garden  *  drag the windows around  *  everything here is a real file  *  best viewed with curiosity  *</span></div>
+    <div class="marquee"><span>welcome to my garden  *  drag things around  *  everything here is a real file  *  best viewed with curiosity  *</span></div>
 
     <div class="plantbed freeform">
-      <div class="win kind-markdown" id="p0" data-key="about.md">
-        <div class="win-bar">
-          <span class="win-title">about.md</span>
-          <span class="win-meta">468B</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><div class="md"><h1>anmo.garden</h1>
+      <div class="item kind-markdown" id="p0" data-key="about.md">
+        <h3><a href="about.md">about.md</a> <span class="meta">(468B)</span></h3>
+        <div class="md"><h1>anmo.garden</h1>
 <p>this is a file gallery. it is a mirror of the folder that hosts it.</p>
 <p>every page here was written by <code>src/grow.js</code>, which walks the folder,
 looks at each file, and reads the icon positions that Finder stores in
 the invisible <code>.DS_Store</code> file sitting in each directory.</p>
 <p>so the way things are scattered on this page is not a design decision
 made in CSS. it is wherever i dragged the icons in a Finder window.</p>
-<p>to rearrange the site, rearrange the folder.</p></div></div>
+<p>to rearrange the site, rearrange the folder.</p></div>
       </div>
-      <div class="win kind-directory" id="p1" data-key="art/">
-        <div class="win-bar">
-          <span class="win-title"><a href="art/">art/</a></span>
-          <span class="win-meta">3 items</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><span class="folder">┌───┐
-│    └─────┐
-│              │
-│              │
-└─────────────┘</span><a href="art/">open</a></div>
+      <div class="item kind-directory" id="p1" data-key="art/">
+        <h3><a href="art/">art/</a> <span class="meta">(3 items)</span></h3>
       </div>
-      <div class="win kind-directory" id="p2" data-key="music/">
-        <div class="win-bar">
-          <span class="win-title"><a href="music/">music/</a></span>
-          <span class="win-meta">4 items</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><span class="folder">┌───┐
-│    └─────┐
-│              │
-│              │
-└─────────────┘</span><a href="music/">open</a></div>
+      <div class="item kind-directory" id="p2" data-key="music/">
+        <h3><a href="music/">music/</a> <span class="meta">(4 items)</span></h3>
       </div>
-      <div class="win kind-directory" id="p3" data-key="notes/">
-        <div class="win-bar">
-          <span class="win-title"><a href="notes/">notes/</a></span>
-          <span class="win-meta">2 items</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><span class="folder">┌───┐
-│    └─────┐
-│              │
-│              │
-└─────────────┘</span><a href="notes/">open</a></div>
+      <div class="item kind-directory" id="p3" data-key="notes/">
+        <h3><a href="notes/">notes/</a> <span class="meta">(2 items)</span></h3>
       </div>
-      <div class="win kind-directory" id="p4" data-key="thoughts/">
-        <div class="win-bar">
-          <span class="win-title"><a href="thoughts/">thoughts/</a></span>
-          <span class="win-meta">1 item</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><span class="folder">┌───┐
-│    └─────┐
-│              │
-│              │
-└─────────────┘</span><a href="thoughts/">open</a></div>
+      <div class="item kind-directory" id="p4" data-key="thoughts/">
+        <h3><a href="thoughts/">thoughts/</a> <span class="meta">(1 item)</span></h3>
       </div>
-      <div class="win kind-directory" id="p5" data-key="writings/">
-        <div class="win-bar">
-          <span class="win-title"><a href="writings/">writings/</a></span>
-          <span class="win-meta">1 item</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-          <button class="win-btn js-close" type="button" title="close">x</button>
-        </div>
-        <div class="win-body"><span class="folder">┌───┐
-│    └─────┐
-│              │
-│              │
-└─────────────┘</span><a href="writings/">open</a></div>
+      <div class="item kind-directory" id="p5" data-key="writings/">
+        <h3><a href="writings/">writings/</a> <span class="meta">(1 item)</span></h3>
       </div>
-      <div class="win kind-ipod" id="music" data-key="__music">
-        <div class="win-bar">
-          <span class="win-title">music</span>
-          <span class="win-meta">3 playlists</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-        </div>
-        <div class="win-body">
+      <div class="item kind-ipod" id="music" data-key="__music">
+        <h3>music <span class="meta">(3 playlists)</span></h3>
           <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
                data-view="list" data-player="off">
 
@@ -177,7 +117,6 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
 
             <p class="ipod-noscript">this player needs JavaScript.</p>
           </div>
-        </div>
       </div>
     </div>
 
@@ -187,7 +126,7 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
     <span class="start">anmo.garden</span>
     <span id="taskbar-toggles" style="display:contents"></span>
     <span class="spacer"></span>
-    <span class="clock" id="taskbar-clock">drag the windows &rarr;</span>
+    <span class="clock" id="taskbar-clock">drag things around &rarr;</span>
   </nav>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
