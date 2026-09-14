@@ -32,7 +32,7 @@ const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore',
                        'node_modules', 'garden-assets', 'src', '*.sh',
                        'garden.config.json', '.nojekyll', '.gitignore',
                        '.garden-cache', '.thumbs', '.originals', '.garden',
-                       '.epubs'];
+                       '.epubs', '.clippings'];
 
 // The one dotfile that is content rather than clutter. .garden.log is the
 // site's own running feed -- it regrew, it pushed, it published -- and it is
@@ -63,6 +63,13 @@ const NEEDS_PREVIEW = ['.heic', '.heif', '.tif', '.tiff'];
 // item instead: never walked into, packed back into one real file to link to.
 const BUNDLE_EXT = ['.epub'];
 const EPUB_CACHE = '.epubs';
+
+// A .textClipping isn't text on disk -- it's a binary property list a browser
+// has no idea what to do with, so a click used to hand back unreadable bytes.
+// The real text lives inside it (see textClippingText) and gets written out
+// to a plain .txt once, the same cache-and-reuse trick as the epub packer
+// above, so there's something an actual click can actually open.
+const CLIPPING_CACHE = '.clippings';
 
 // The plain-text convention for a folder's description (see readFolderDescription
 // below): any of these names, any case, dropped inside a folder in Finder.
@@ -294,11 +301,20 @@ function describe(dir, entry, rules, root, isRoot) {
   // property list -- so reading it takes decoding rather than a plain read.
   // Shown as a snippet next to the size, the same place every other item's
   // size sits, rather than as a body: everything inside a folder is an icon
-  // here, and a clipping is no exception.
+  // here, and a clipping is no exception. The link itself used to point at
+  // the raw .textClipping -- clickable, but nothing a browser could open --
+  // so it's repointed at the packed .txt (see packClipping) whenever the text
+  // came out cleanly, same as an epub bundle gets repointed at its zip.
   if (ext === '.textclipping') {
     const text = textClippingText(full);
-    const snippet = text && text.length > 200 ? text.slice(0, 200).trim() + '…' : text;
-    const clip = snippet ? { ...file, type: 'clipping', contents: snippet } : { ...file, type: 'other' };
+    if (!text) return isRoot ? { ...file, type: 'other' } : { ...file, type: 'other', ...iconBox(fileThumb(full, root)) };
+
+    const snippet = text.length > 200 ? text.slice(0, 200).trim() + '…' : text;
+    const packed = packClipping(full, root, text);
+    const clipHref = packed
+      ? encodeURI(path.relative(dir, path.join(root, packed)).split(path.sep).join('/'))
+      : href;   // packing failed -- fall back to the original, at least it's a link
+    const clip = { ...file, href: clipHref, type: 'clipping', contents: snippet };
     return isRoot ? clip : { ...clip, ...iconBox(fileThumb(full, root)) };
   }
 
