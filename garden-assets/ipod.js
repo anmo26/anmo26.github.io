@@ -567,10 +567,19 @@
           events: {
             onReady: function (e) {
               try { e.target.playVideo(); } catch (err) {}
+              if (stage.getAttribute('data-mode') !== 'yt') return;
               state.now = nowPlayingTitle();
               paint();
             },
             onStateChange: function (e) {
+              // Switching to a Spotify playlist pauses this player rather
+              // than destroying it, and the pause arrives here a moment
+              // later -- after the screen has already been repainted for
+              // Spotify. Without this guard that late event would put the
+              // YouTube track's name back in the bar and blank the
+              // "playing" light while Spotify was audibly playing.
+              if (stage.getAttribute('data-mode') !== 'yt') return;
+
               // 1 playing, 2 paused, 0 ended, 3 buffering, 5 cued
               playingNow(e.data === 1);
               state.now = nowPlayingTitle();
