@@ -7,6 +7,10 @@ node_modules/
 # the compiled icon helper and its cache — rebuilt on demand, never published
 .garden-cache/
 
-# generated image derivatives and the untouched originals they came from
-.thumbs/
+# The full-quality photos, kept after conversion. Big, and the site never
+# points at them, so they stay out of the repo.
 .originals/
+
+# .thumbs/ is deliberately NOT ignored. The page points at it, so a visitor
+# gets a broken image if it is not published -- and a thumbnail that only
+# exists on this Mac makes nothing faster for anyone.
