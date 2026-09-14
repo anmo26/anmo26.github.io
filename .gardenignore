@@ -6,6 +6,8 @@ node_modules/
 *.tmp
 README.md
 publish-setup.sh
+PUBLISHING.md
+preflight.sh
 
 # cover art is material for the player, not a gallery item
 covers/

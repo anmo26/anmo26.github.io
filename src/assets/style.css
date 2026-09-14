@@ -409,17 +409,22 @@ a:visited { color: var(--olive); }
 #clock .s  { color: var(--olive); opacity: .55; }   /* flap seam */
 #clock .d  { color: var(--ink-faint); }             /* date / caption */
 
+/* the date and meridiem: the same character field on a tighter cell */
 #clock-date {
-  margin: .5rem 0 0;
-  font-family: var(--sans);
-  font-size: .58rem;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
+  margin: .45rem 0 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 7px;
+  line-height: 0.94;
+  letter-spacing: .04em;
+  font-weight: 700;
 }
+
+#clock-date .g { color: var(--ochre); opacity: .32; }
+#clock-date .f { color: var(--ink); }
 
 @media (max-width: 899px) {
   #clock-shell { position: static; margin: 0 auto 2rem; text-align: center; }
   #clock { font-size: 8px; }
-  #clock-date { letter-spacing: .12em; }
+  #clock-date { font-size: 5px; letter-spacing: .02em; }
 }

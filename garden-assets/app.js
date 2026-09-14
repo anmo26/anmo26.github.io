@@ -41,7 +41,36 @@
     '6': ['00110', '01000', '10000', '11110', '10001', '10001', '01110'],
     '7': ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
     '8': ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
-    '9': ['01110', '10001', '10001', '01111', '00001', '00010', '01100']
+    '9': ['01110', '10001', '10001', '01111', '00001', '00010', '01100'],
+
+    // the alphabet, cut in the same 5 x 7 stroke as the digits, so the date
+    // line is the same kind of object as the time
+    'A': ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+    'B': ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+    'C': ['01110', '10001', '10000', '10000', '10000', '10001', '01110'],
+    'D': ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+    'E': ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+    'F': ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+    'G': ['01110', '10001', '10000', '10111', '10001', '10001', '01111'],
+    'H': ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+    'I': ['01110', '00100', '00100', '00100', '00100', '00100', '01110'],
+    'J': ['00111', '00010', '00010', '00010', '00010', '10010', '01100'],
+    'K': ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
+    'L': ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+    'M': ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+    'N': ['10001', '11001', '10101', '10101', '10011', '10001', '10001'],
+    'O': ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+    'P': ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+    'Q': ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+    'R': ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+    'S': ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+    'T': ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+    'U': ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+    'V': ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+    'W': ['10001', '10001', '10001', '10101', '10101', '11011', '01010'],
+    'X': ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
+    'Y': ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+    'Z': ['11111', '00001', '00010', '00100', '01000', '10000', '11111']
   };
 
   var GROUND = 'vwvvwvwvvwwvvwvw';  // the ochre texture
@@ -140,6 +169,51 @@
     return html;
   }
 
+  /**
+   * The date and the meridiem, built out of the same letterforms but on a
+   * tighter cell: no card padding, no seam, a single ground column between
+   * letters. Set smaller in CSS so the time still reads as the big thing.
+   */
+  var MICRO_GAP = 1;              // ground columns between two letters
+  var SEP_W = 3;                  // width of the separator / space cell
+  var DOT = '·';
+
+  function smallField(text) {
+    var rows = [];
+    var r, c, i;
+
+    for (r = 0; r < 7; r++) rows.push([]);
+
+    for (i = 0; i < text.length; i++) {
+      var ch = text.charAt(i);
+      var glyph = GLYPH[ch] || null;
+      var width = glyph ? 5 : SEP_W;
+
+      for (r = 0; r < 7; r++) {
+        for (c = 0; c < width; c++) {
+          var seed = i * 29 + r * 13 + c * 5;
+          var on = false;
+          if (glyph) {
+            on = glyph[r].charAt(c) === '1';
+          } else if (ch === DOT) {
+            // the separator is a single punched dot in the ground
+            on = r === 3 && c === 1;
+          }
+          rows[r].push(on
+            ? { ch: pick(FIGURE, seed), cls: 'f' }
+            : { ch: pick(GROUND, seed), cls: 'g' });
+        }
+
+        if (i < text.length - 1) {
+          for (c = 0; c < MICRO_GAP; c++) {
+            rows[r].push({ ch: pick(GROUND, i * 11 + r * 7 + c + 3), cls: 'g' });
+          }
+        }
+      }
+    }
+    return rows;
+  }
+
   function pad(n) { return n < 10 ? '0' + n : String(n); }
 
   var DAYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -152,11 +226,12 @@
     if (!host) return;
 
     var state = {
-      seconds: get('clock.seconds', false),
+      seconds: get('clock.seconds', true),
       hour24: get('clock.hour24', false)
     };
 
     var previous = '';
+    var dateLine = '';
     var churn = {};
     var tick = 0;
     var churnTimer = null;
@@ -175,9 +250,13 @@
       var d = new Date();
 
       if (dateHost) {
-        dateHost.textContent = DAYS[d.getDay()] + ' · ' +
-          MONTHS[d.getMonth()] + ' ' + d.getDate() + ' · ' + d.getFullYear() +
-          (state.hour24 ? '' : ' · ' + (d.getHours() < 12 ? 'AM' : 'PM'));
+        var line = DAYS[d.getDay()] + DOT +
+          MONTHS[d.getMonth()].slice(0, 3) + ' ' + d.getDate() + DOT + d.getFullYear() +
+          (state.hour24 ? '' : DOT + (d.getHours() < 12 ? 'AM' : 'PM'));
+        if (line !== dateLine) {
+          dateLine = line;
+          dateHost.innerHTML = paint(smallField(line));
+        }
       }
 
       // Which cards turned over since last time?
@@ -206,12 +285,24 @@
       }
     }
 
-    // Click to cycle 12h -> 24h -> hours and minutes only.
+    // Click to cycle 12h -> 24h -> 12h without seconds -> 24h without seconds.
+    var MODES = [
+      { hour24: false, seconds: true },
+      { hour24: true, seconds: true },
+      { hour24: false, seconds: false },
+      { hour24: true, seconds: false }
+    ];
+
     var shell = document.getElementById('clock-shell');
     (shell || host).addEventListener('click', function () {
-      if (!state.hour24) { state.hour24 = true; }
-      else if (state.seconds) { state.seconds = false; }
-      else { state.hour24 = false; state.seconds = true; }
+      var at = 0, m;
+      for (m = 0; m < MODES.length; m++) {
+        if (MODES[m].hour24 === state.hour24 && MODES[m].seconds === state.seconds) at = m;
+      }
+      var next = MODES[(at + 1) % MODES.length];
+      state.hour24 = next.hour24;
+      state.seconds = next.seconds;
+      dateLine = '';
       set('clock.hour24', state.hour24);
       set('clock.seconds', state.seconds);
       previous = '';
