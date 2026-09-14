@@ -31,7 +31,8 @@ const ROOT_DEFAULT = path.join(__dirname, '..');
 const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore',
                        'node_modules', 'garden-assets', 'src', '*.sh',
                        'garden.config.json', '.nojekyll', '.gitignore',
-                       '.garden-cache', '.thumbs', '.originals', '.garden'];
+                       '.garden-cache', '.thumbs', '.originals', '.garden',
+                       '.epubs'];
 
 // The one dotfile that is content rather than clutter. .garden.log is the
 // site's own running feed -- it regrew, it pushed, it published -- and it is
@@ -54,6 +55,18 @@ const EXT = {
 // Pictures a browser will not draw. macOS writes HEIC by default, so these
 // arrive constantly from an iPhone; each gets a web-safe copy made for it.
 const NEEDS_PREVIEW = ['.heic', '.heif', '.tif', '.tiff'];
+
+// Some "files" are directories on disk -- an unzipped .epub is a folder full
+// of HTML, images and metadata that happens to carry a document's extension.
+// Walked normally it produces a page per internal folder, which is not a book,
+// it's the book's guts spread across the site. These are treated as a single
+// item instead: never walked into, packed back into one real file to link to.
+const BUNDLE_EXT = ['.epub'];
+const EPUB_CACHE = '.epubs';
+
+// The plain-text convention for a folder's description (see readFolderDescription
+// below): any of these names, any case, dropped inside a folder in Finder.
+const DESCRIPTION_RE = /^description\.(txt|md|markdown|mdown)$/i;
 
 // Anything wider than this gets a smaller copy made for it. The page shows
 // that copy and links to the full file, so a 4000px photo does not have to
@@ -145,6 +158,11 @@ function loadRules(root, config) {
 function isIgnored(name, isDir, rules) {
   const allowed = rules.allow ? rules.allow.some(r => r.re.test(name)) : false;
 
+  // A description.txt (or .md) is meta about the folder it sits in, not
+  // content of its own -- it never appears as an item, on this folder's page
+  // or anyone else's. See readFolderDescription.
+  if (!isDir && DESCRIPTION_RE.test(name)) return true;
+
   if (rules.deny.some(r => (!r.dirOnly || isDir) && r.re.test(name))) return true;
 
   // Finder hides everything beginning with a dot, and this site is supposed to
@@ -162,6 +180,31 @@ function isIgnored(name, isDir, rules) {
 }
 
 /**
+ * A symlink's own Dirent says neither isDirectory() nor isFile() -- that
+ * describes the link, not what it points at -- so every reader downstream
+ * treated a symlink as neither and dropped it without a word. A file dragged
+ * in as an alias is still a file the owner put in the folder; it belongs on
+ * the site exactly like a real one. Resolved here, once, into a plain object
+ * every caller already knows how to read (same .name/.isDirectory()/.isFile()
+ * shape as a real Dirent). A link that points at nothing (moved or deleted
+ * target) resolves to nothing and is the one honest case left to drop --
+ * there is no file behind it to show.
+ */
+function resolveEntries(dir, entries) {
+  return entries.map(e => {
+    if (!e.isSymbolicLink()) return e;
+    try {
+      const st = fs.statSync(path.join(dir, e.name));
+      if (!st.isDirectory() && !st.isFile()) return null;
+      const isDir = st.isDirectory();
+      return { name: e.name, isDirectory: () => isDir, isFile: () => !isDir };
+    } catch {
+      return null;   // broken alias -- points at nothing
+    }
+  }).filter(Boolean);
+}
+
+/**
  * How much a folder actually holds, counted all the way down. Finder puts a
  * size on a folder and so should the page -- "4 items" tells you nothing
  * about whether opening it costs a megabyte or a gigabyte.
@@ -174,7 +217,7 @@ function folderBytes(dir, rules, depth = 0) {
   let total = 0;
 
   let entries = [];
-  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return 0; }
+  try { entries = resolveEntries(dir, fs.readdirSync(dir, { withFileTypes: true })); } catch { return 0; }
 
   for (const e of entries) {
     if (isIgnored(e.name, e.isDirectory(), rules)) continue;
@@ -190,7 +233,7 @@ function folderBytes(dir, rules, depth = 0) {
 
 function countItems(dir, rules) {
   try {
-    return fs.readdirSync(dir, { withFileTypes: true })
+    return resolveEntries(dir, fs.readdirSync(dir, { withFileTypes: true }))
       .filter(d => !isIgnored(d.name, d.isDirectory(), rules)).length;
   } catch { return 0; }
 }
@@ -212,6 +255,23 @@ function iconBox(thumb) {
 function describe(dir, entry, rules, root, isRoot) {
   const name = entry.name;
   const full = path.join(dir, name);
+  const ext = path.extname(name).toLowerCase();
+
+  if (entry.isDirectory() && BUNDLE_EXT.includes(ext)) {
+    // A book, not a folder: see the BUNDLE_EXT comment above. Counted like a
+    // file (its whole weight, walked once) and never descended into.
+    const packed = packBundle(full, root, ext);
+    // packBundle hands back a path from the site root (like a thumbnail
+    // does); every other href on a page is relative to that page's own
+    // folder, so it has to be re-based the same way before it can be used.
+    const href = encodeURI(packed
+      ? path.relative(dir, path.join(root, packed)).split(path.sep).join('/')
+      : name + '/');
+    const bytes = folderBytes(full, rules);
+    const file = { name, href, type: 'book', size: prettyBytes(bytes), bytes };
+    return isRoot ? file : { ...file, ...iconBox(fileThumb(full, root)) };
+  }
+
   const href = encodeURI(name + (entry.isDirectory() ? '/' : ''));
 
   if (entry.isDirectory()) {
@@ -228,6 +288,19 @@ function describe(dir, entry, rules, root, isRoot) {
   const stat = fs.statSync(full);
   const type = classify(name);
   const file = { name, href, type, size: prettyBytes(stat.size), bytes: stat.size };
+
+  // A Finder clipping: dragging a text selection out of an app writes one of
+  // these. The text inside is not stored as text -- it's a field in a binary
+  // property list -- so reading it takes decoding rather than a plain read.
+  // Shown as a snippet next to the size, the same place every other item's
+  // size sits, rather than as a body: everything inside a folder is an icon
+  // here, and a clipping is no exception.
+  if (ext === '.textclipping') {
+    const text = textClippingText(full);
+    const snippet = text && text.length > 200 ? text.slice(0, 200).trim() + '…' : text;
+    const clip = snippet ? { ...file, type: 'clipping', contents: snippet } : { ...file, type: 'other' };
+    return isRoot ? clip : { ...clip, ...iconBox(fileThumb(full, root)) };
+  }
 
   // The front page is the desk: whatever is lying on it is shown lying on it.
   // Inside a folder the site is a Finder window instead, so nothing is opened
@@ -274,6 +347,125 @@ function describe(dir, entry, rules, root, isRoot) {
   }
 
   return file;
+}
+
+/**
+ * The text behind a Finder clipping. A .textClipping is a binary property
+ * list, not text on disk -- `plutil -extract` pulls the one field that holds
+ * it back out as plain UTF-8. Returns null (never throws) when this isn't a
+ * Mac, the file isn't actually a clipping, or the field just isn't there.
+ */
+function textClippingText(fullPath) {
+  if (process.platform !== 'darwin') return null;
+  const r = spawnSync('plutil',
+    ['-extract', 'UTI-Data.public\\.utf8-plain-text', 'raw', '-o', '-', fullPath],
+    { encoding: 'utf8', timeout: 10000 });
+  if (r.status !== 0) return null;
+  const text = r.stdout.replace(/\s+$/, '');
+  return text || null;
+}
+
+/**
+ * Repacks a directory that is actually an unzipped .epub (see BUNDLE_EXT)
+ * back into one real file, so there is something a visitor can click and
+ * actually receive. Written into <root>/.epubs/, mirroring the source path,
+ * and reused across builds the same way a thumbnail is -- only remade when
+ * something inside is newer than the last packed copy.
+ *
+ * Returns the packed file's path relative to the site root, or null when
+ * packing isn't possible here (no `zip`, no `mimetype` entry, not a Mac) --
+ * the caller falls back to linking the folder itself.
+ */
+let bundleClaimed = new Set();
+
+function newestMtime(dir) {
+  let latest = 0;
+  const walk = (d) => {
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const full = path.join(d, e.name);
+      if (e.isDirectory()) walk(full);
+      else { try { latest = Math.max(latest, fs.statSync(full).mtimeMs); } catch {} }
+    }
+  };
+  walk(dir);
+  return latest;
+}
+
+/**
+ * A book folder that got walked into by an older build has an index.html (or
+ * several, one per level) sitting inside it that do not belong there -- pages
+ * this generator wrote for folders that no longer exist as folders. Those are
+ * this tool's own leftovers, not the owner's content (the exception the
+ * "never touch his files" rule already carves out), so they're the one thing
+ * safe to clear out of a bundle before packing it.
+ */
+function cleanStrayIndexes(dir) {
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) cleanStrayIndexes(full);
+    else if (e.isFile() && e.name === 'index.html') {
+      // Only ever remove a page this generator wrote itself -- checked by the
+      // signature comment every page carries, never by the name alone. A
+      // real book could legitimately ship its own index.html; that one is
+      // owner content and must not be touched.
+      try {
+        const head = fs.readFileSync(full, 'utf8').slice(0, 200);
+        if (head.includes('generated by src/grow.js')) fs.unlinkSync(full);
+      } catch {}
+    }
+  }
+}
+
+function packBundle(fullDir, root, ext) {
+  cleanStrayIndexes(fullDir);
+  const rel = path.relative(root, fullDir);
+  const relSlash = rel.split(path.sep).join('/');
+  bundleClaimed.add(relSlash);
+  const out = path.join(root, EPUB_CACHE, rel);
+
+  if (process.platform !== 'darwin' && process.platform !== 'linux') return null;
+  if (!fs.existsSync(path.join(fullDir, 'mimetype'))) return null;   // not really an epub
+
+  try {
+    const src = newestMtime(fullDir);
+    const dst = fs.statSync(out).mtimeMs;
+    if (dst >= src) return EPUB_CACHE + '/' + relSlash;
+  } catch { /* not packed yet */ }
+
+  try { fs.mkdirSync(path.dirname(out), { recursive: true }); } catch { return null; }
+  try { fs.rmSync(out, { force: true }); } catch {}
+
+  // The epub spec requires "mimetype" first and stored uncompressed -- that's
+  // what lets a reader identify the format before unzipping anything else.
+  const zip1 = spawnSync('zip', ['-X', '-0', out, 'mimetype'],
+    { cwd: fullDir, encoding: 'utf8', timeout: 60000 });
+  if (zip1.status !== 0) return null;
+  const zip2 = spawnSync('zip', ['-X', '-r', '-g', out, '.', '-x', 'mimetype', '-x', '.DS_Store'],
+    { cwd: fullDir, encoding: 'utf8', timeout: 120000 });
+  if (zip2.status !== 0 || !fs.existsSync(out)) return null;
+
+  return EPUB_CACHE + '/' + relSlash;
+}
+
+/** Drops any packed epub this walk didn't ask for -- same idea as sweepThumbs. */
+function sweepBundles(root) {
+  let removed = 0;
+  const walk = (dir, prefix) => {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const rel = prefix ? prefix + '/' + e.name : e.name;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) { walk(full, rel); try { fs.rmdirSync(full); } catch {} }
+      else if (!bundleClaimed.has(rel)) { try { fs.unlinkSync(full); removed++; } catch {} }
+    }
+  };
+  walk(path.join(root, EPUB_CACHE), '');
+  return removed;
 }
 
 /**
@@ -398,7 +590,9 @@ function renderBody(f, assetPrefix = '') {
  * folder, and the items are lying on it.
  */
 function renderItem(f, i, assetPrefix = '') {
-  const meta = f.type === 'directory' ? f.contents : (f.size ?? '');
+  const meta = f.type === 'directory' ? f.contents
+    : f.type === 'clipping' && f.contents ? `${f.size} — “${f.contents}”`
+    : (f.size ?? '');
   const body = renderBody(f, assetPrefix);
 
   // The icon and the name are one link, because in Finder they are one thing.
@@ -494,17 +688,51 @@ const slug = (str) => String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').repl
  * isn't there, which is the signal not to draw the player at all. Covers come
  * back relative to the site root, e.g. "music/covers/x.jpg".
  */
-function readMusic(dir) {
+function readMusic(root) {
+  // The playlists used to have to sit loose at the top of music/. The owner
+  // tidied his into music/IPOD/ and the player silently vanished from every
+  // page -- readMusic found nothing and the whole device stopped being drawn.
+  // So the folder is scanned one level down as well: music/ itself, then each
+  // folder inside it. That is deep enough for any tidying he is likely to do
+  // and shallow enough that a folder of mp3s does not turn into a playlist.
+  const out = [];
+  scanMusicDir(root, 'music', out);
+
+  let subs = [];
+  try {
+    subs = fs.readdirSync(root, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'covers')
+      .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
+  } catch { /* no music/ at all */ }
+
+  for (const d of subs) {
+    scanMusicDir(path.join(root, d.name), `music/${d.name}`, out);
+  }
+  return out;
+}
+
+/**
+ * Reads one folder of playlist files. `relDir` is that folder's path relative
+ * to the site root, which is what a cover has to be addressed by.
+ */
+function scanMusicDir(dir, relDir, out) {
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
-    return [];
+    return;
   }
 
-  const base = path.basename(dir);
-
-  // Index covers/ once so a cover can be matched by name alone.
+  // Two ways to give a tile a cover, indexed by name:
+  //
+  //   1. an image in covers/ named after the playlist -- the original way;
+  //   2. an image sitting RIGHT BESIDE the text file and sharing its name,
+  //      which is what the owner actually asked for ("display images as an
+  //      album cover that i place in with the album link"). Dropping the
+  //      picture next to the link is the obvious gesture, so it is the one
+  //      that should work.
+  //
+  // A same-folder image wins over covers/, being the more deliberate act.
   const covers = new Map();
   try {
     for (const c of fs.readdirSync(path.join(dir, 'covers'))) {
@@ -513,6 +741,13 @@ function readMusic(dir) {
     }
   } catch { /* no covers/, which is fine */ }
 
+  for (const e of entries) {
+    if (!e.isFile() || e.name.startsWith('.')) continue;
+    const ext = path.extname(e.name).toLowerCase();
+    if (!COVER_EXT.includes(ext)) continue;
+    covers.set(slug(path.basename(e.name, ext)), e.name);
+  }
+
   const musicFiles = entries
     .filter(e => e.isFile() &&
                  MUSIC_EXT.includes(path.extname(e.name).toLowerCase()) &&
@@ -520,7 +755,6 @@ function readMusic(dir) {
                  !/^readme\b/i.test(e.name))
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
 
-  const out = [];
   for (const e of musicFiles) {
     let body;
     try { body = fs.readFileSync(path.join(dir, e.name), 'utf8'); } catch { continue; }
@@ -546,22 +780,21 @@ function readMusic(dir) {
     const stem = path.basename(e.name, path.extname(e.name));
     const name = stem.replace(/^\d{1,3}[\s._)-]+\s*/, '').trim() || stem;
 
-    const rel = (fields.cover || covers.get(slug(name)) || covers.get(slug(stem)) || '')
+    const rel = (fields.cover || covers.get(slug(stem)) || covers.get(slug(name)) || '')
       .replace(/^\.\//, '');
 
     out.push({
       name,
-      file: e.name,
+      file: relDir === 'music' ? e.name : `${relDir.slice('music/'.length)}/${e.name}`,
       src: found.src,
       kind: found.kind,
       id: found.id,
       embed: embedUrl(found),
       link: openUrl(found),
-      cover: rel ? encodeURI(`${base}/${rel}`) : null,
+      cover: rel ? encodeURI(`${relDir}/${rel}`) : null,
       note: fields.note || fields.caption || '',
     });
   }
-  return out;
 }
 
 /**
@@ -642,8 +875,8 @@ function guestbookWindow() {
       </div>`;
 }
 
-function renderPage({ siteName, title, files, positioned, description, socialImage,
-                      assetPrefix, isRoot, tagline, marquee, guestbook, music,
+function renderPage({ siteName, title, files, positioned, description, folderDescription,
+                      socialImage, assetPrefix, isRoot, tagline, marquee, guestbook, music,
                       assetStamps }) {
   const items = files.map((f, i) => renderItem(f, i, assetPrefix)).join('\n');
 
@@ -748,6 +981,7 @@ ${rules}
 `
     : `    <header class="masthead">
       <h1>${escapeHtml(title.replace(/\/$/, ''))}</h1>
+${folderDescription ? `      <p class="folder-description" style="white-space:pre-line">${escapeHtml(folderDescription)}</p>\n` : ''}\
       <p><a href="..">&larr; back to ${escapeHtml(siteName)}</a></p>
       <div class="rule"></div>
     </header>
@@ -833,8 +1067,18 @@ function grow(dir, ctx) {
     return;
   }
 
-  entries = entries
-    .filter(e => e.isDirectory() || e.isFile())
+  // A description.txt (see DESCRIPTION_RE) is read here, off the raw listing,
+  // before it's filtered out of the page's items below -- it describes this
+  // folder rather than sitting in it. Case- and extension-forgiving on
+  // purpose: the whole point is that it takes no care to get right.
+  let description;
+  const descEntry = entries.find(e => e.isFile() && DESCRIPTION_RE.test(e.name));
+  if (descEntry) {
+    try { description = fs.readFileSync(path.join(dir, descEntry.name), 'utf8').trim() || undefined; }
+    catch { /* unreadable -- fall back to the site default below */ }
+  }
+
+  entries = resolveEntries(dir, entries)
     .filter(e => !isIgnored(e.name, e.isDirectory(), rules))
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
 
@@ -845,7 +1089,20 @@ function grow(dir, ctx) {
   const depthFromRoot = rel ? rel.split(path.sep).length : 0;
 
   const files = entries.map(e => {
-    const f = describe(dir, e, rules, ctx.root, depthFromRoot === 0);
+    let f;
+    try {
+      f = describe(dir, e, rules, ctx.root, depthFromRoot === 0);
+    } catch (err) {
+      // One unreadable or unusual file must not take the whole folder's page
+      // down with it -- that would hide everything else in it too, which is
+      // worse than showing this one item plainly. It still gets a name and,
+      // where possible, a size; a click just downloads whatever it is.
+      if (!ctx.quiet) console.warn(`  ! ${path.join(dir, e.name)}: ${err.message}`);
+      let size = '';
+      try { size = prettyBytes(fs.statSync(path.join(dir, e.name)).size); } catch {}
+      f = { name: e.name, href: encodeURI(e.name + (e.isDirectory() ? '/' : '')),
+            type: 'other', size };
+    }
     const loc = positions[e.name]?.Iloc;
     if (loc) { f.x = loc.x; f.y = loc.y; }
     return f;
@@ -872,7 +1129,8 @@ function grow(dir, ctx) {
     title: rel ? rel + '/' : null,
     files,
     positioned,
-    description: ctx.description,
+    description: description ?? ctx.description,
+    folderDescription: description,
     // The converted copy when there is one -- a link preview cannot show HEIC.
     socialImage: rel ? null : (firstImage?.previewHref ?? firstImage?.href),
     assetStamps: ctx.assetStamps,
@@ -905,7 +1163,12 @@ function grow(dir, ctx) {
 
   if (depth < maxDepth) {
     for (const e of entries) {
-      if (e.isDirectory()) grow(path.join(dir, e.name), { ...ctx, depth: depth + 1 });
+      // A bundle (see BUNDLE_EXT) is a directory on disk but a single item on
+      // the site -- packed above, never walked into, so it never grows a page
+      // per internal folder the way the original epub bug did.
+      if (e.isDirectory() && !BUNDLE_EXT.includes(path.extname(e.name).toLowerCase())) {
+        grow(path.join(dir, e.name), { ...ctx, depth: depth + 1 });
+      }
     }
   }
 }
@@ -963,6 +1226,7 @@ export function growSite(opts = {}) {
   const assetStamps = copyAssets(root);
   beginIconRun();
   thumbsClaimed = new Set();
+  bundleClaimed = new Set();
 
   const ctx = {
     root,
@@ -987,7 +1251,12 @@ export function growSite(opts = {}) {
     // One text file per playlist in music/; the player is drawn from these.
     music: readMusic(path.join(root, 'music')),
     depth: 0,
-    maxDepth: opts.depth ?? config.depth ?? 3,
+    // A folder nested past this never gets its own page -- it still shows up
+    // as an item one level up (describe() doesn't know about the cap), so it
+    // used to look like a live folder that 404s the moment you open it. Set
+    // high enough that a real folder tree never hits it; the actual backstop
+    // against a runaway (a symlink loop) lives in folderBytes' own depth check.
+    maxDepth: opts.depth ?? config.depth ?? 20,
     dryRun: opts.dryRun ?? false,
     quiet: opts.quiet ?? false,
     written: { count: 0 },
@@ -998,7 +1267,7 @@ export function growSite(opts = {}) {
   // Renamed and deleted files leave their thumbnails behind, and these are
   // committed -- so clear out whatever this walk didn't ask for. A dry run
   // promises to leave the folder exactly as it found it.
-  const swept = ctx.dryRun ? 0 : sweepIcons(root) + sweepThumbs(root);
+  const swept = ctx.dryRun ? 0 : sweepIcons(root) + sweepThumbs(root) + sweepBundles(root);
 
   return {
     root,

@@ -797,11 +797,95 @@
      There is a floor: past a point the filenames stop being readable, and a
      page you cannot read is worse than a page you have to scroll. Below that
      floor it scrolls, just less than it did.
+
+     A phone used to drop the arrangement altogether below the 560px
+     breakpoint and stack everything in a plain column instead -- which is
+     also why the type in this file reads oversized on a phone: it was
+     always chosen for how it looks AFTER the fit transform shrinks it, and
+     a phone was the one place that transform never ran. `mobilizeBed` pins
+     a phone's items back at the exact coordinates Finder gave them (the
+     generator still writes those into a `@media (min-width: 560px)` block
+     even though a phone never matches it -- this reads them out of that
+     rule rather than off the rendered, stacked page), and then fitBed scales
+     that real canvas down exactly the way it already does on a laptop.
      --------------------------------------------------------------------- */
 
   var bedScale = 1;
   var MIN_SCALE = 0.62;
+  // Only a safety net against a pathologically wide arrangement -- a phone
+  // fits by width alone (below), and a canvas a laptop finds merely wide
+  // can be four or five times a phone's own width.
+  var MOBILE_MIN_SCALE = 0.14;
   var TASKBAR_H = 44;
+
+  function taskbarHeight() {
+    var bar = document.getElementById('taskbar-toggles');
+    var tb = bar ? bar.closest('.taskbar') : document.querySelector('.taskbar');
+    return (tb && tb.offsetHeight) || TASKBAR_H;
+  }
+
+  /**
+   * The Finder coordinates for this page, read straight out of the
+   * `@media (min-width: 560px)` rule the generator writes per-page --
+   * whether or not that media query currently matches. One `{ top, left }`
+   * per item id ("p0", "p1", ...), or null if this page carries none (a
+   * plain flowed listing, with nothing to recreate).
+   */
+  function pageCoords() {
+    var style = pageStyle(document);
+    if (!style || !style.sheet) return null;
+    var rules;
+    try { rules = style.sheet.cssRules; } catch (e) { return null; }
+    if (!rules) return null;
+
+    var map = null;
+    for (var i = 0; i < rules.length; i++) {
+      var r = rules[i];
+      if (!r.media || !/min-width/.test(r.media.mediaText)) continue;
+      for (var j = 0; j < r.cssRules.length; j++) {
+        var rr = r.cssRules[j];
+        if (!rr.selectorText || rr.selectorText.charAt(0) !== '#') continue;
+        if (!rr.style.left && !rr.style.top) continue;
+        map = map || {};
+        map[rr.selectorText.slice(1)] = { top: rr.style.top, left: rr.style.left };
+      }
+    }
+    return map;
+  }
+
+  /**
+   * On a phone, pin a freeform bed's items at their real Finder coordinates
+   * instead of leaving them in the flowed column the stylesheet falls back
+   * to below 560px. Safe to call as often as fitBed likes: a bed only ever
+   * does this once, the same way freezeBed only ever freezes once.
+   */
+  function mobilizeBed(bed) {
+    if (wide() || !bed || bed.hasAttribute('data-frozen')) return;
+    if (!bed.classList.contains('freeform')) return;
+
+    var coords = pageCoords();
+    if (!coords) return;
+
+    var items = bed.querySelectorAll(':scope > .item');
+    var used = 0;
+    for (var i = 0; i < items.length; i++) {
+      var c = items[i].id && coords[items[i].id];
+      if (!c) continue;
+      items[i].style.position = 'absolute';
+      items[i].style.margin = '0';
+      items[i].style.left = c.left;
+      items[i].style.top = c.top;
+      used++;
+    }
+    if (!used) return;
+
+    // The class carries the same freeform sizing rules style.css already
+    // gives a desktop item (width: max-content, the icon column, the log's
+    // margin), just without that rule's own 560px gate.
+    bed.classList.add('mobile-freeform');
+    bed.setAttribute('data-frozen', '');
+    growBed(bed);
+  }
 
   function bedContent(bed) {
     var items = bed.querySelectorAll(':scope > .item');
@@ -823,8 +907,10 @@
     var bed = document.querySelector('.plantbed');
     if (!bed) return;
 
-    var on = get('toggle.fit', true) && wide() &&
-             bed.classList.contains('freeform');
+    mobilizeBed(bed);
+
+    var on = get('toggle.fit', true) && bed.classList.contains('freeform') &&
+             (wide() || bed.hasAttribute('data-frozen'));
 
     if (!on) {
       bedScale = 1;
@@ -843,13 +929,34 @@
     var size = bedContent(bed);
     if (!size.w || !size.h) return;
 
-    var availW = bed.parentNode.clientWidth;
-    var top = bed.getBoundingClientRect().top + window.pageYOffset - bedOffsetY(bed);
-    var availH = window.innerHeight - top - TASKBAR_H;
-    if (availW < 80 || availH < 160) return;
+    // clientWidth is <main>'s padding box; the bed lives inside its content
+    // box, inset by that padding on both sides. Measuring the padding box
+    // itself was a few percent too generous about how much room there
+    // really was -- barely visible on a laptop's wide margins, but on a
+    // phone's much narrower ones it was enough to leave the bed's own right
+    // edge hanging past the screen.
+    var mainCs = window.getComputedStyle(bed.parentNode);
+    var availW = bed.parentNode.clientWidth -
+      (parseFloat(mainCs.paddingLeft) || 0) - (parseFloat(mainCs.paddingRight) || 0);
+    if (availW < 80) return;
 
-    var k = Math.min(1, availW / size.w, availH / size.h);
-    if (k < MIN_SCALE) k = MIN_SCALE;
+    var k;
+    if (wide()) {
+      var top = bed.getBoundingClientRect().top + window.pageYOffset - bedOffsetY(bed);
+      var availH = window.innerHeight - top - taskbarHeight();
+      if (availH < 160) return;
+      k = Math.min(1, availW / size.w, availH / size.h);
+      if (k < MIN_SCALE) k = MIN_SCALE;
+    } else {
+      // A phone already scrolls vertically the way any page does -- fitting
+      // height too would only shrink everything further than the one thing
+      // that actually has to fit does. Only the width is real here: past
+      // it a folder needs a sideways scroll to read at all, which is the
+      // exact complaint this whole thing exists to fix. The floor is just a
+      // safety net against a filename shrinking to nothing, not a target.
+      k = Math.min(1, availW / size.w);
+      if (k < MOBILE_MIN_SCALE) k = MOBILE_MIN_SCALE;
+    }
 
     bedScale = k;
     if (k === 1) {
@@ -896,11 +1003,9 @@
   /* ============================================================== TOGGLES */
 
   var TOGGLES = [
-    // Nothing to fit on a phone: the arrangement is dropped below the
-    // breakpoint, so this scaled nothing and only ate room in a bar that has
-    // none to spare.
+    // A phone gets the same scaled-down arrangement a laptop does now, so
+    // the same switch turns it off there too.
     { id: 'fit', label: 'fit', def: true,
-      only: function () { return wide(); },
       apply: function () { fitSoon(); } },
     { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
@@ -1437,9 +1542,71 @@
     panel.addEventListener('pointerdown', function () { panel.style.zIndex = ++zTop; });
     // Nowhere to drag it to when it already fills the screen, and a hold on
     // the title bar would only be a way to lose it off an edge.
-    if (wide()) makeDraggable(panel, bar, null);
+    if (wide()) {
+      makeDraggable(panel, bar, null);
+      mountViewerGrip(panel);
+    }
     shut.focus();
     return panel;
+  }
+
+  /**
+   * Drives the panel's corner by hand instead of leaning on the browser's
+   * own `resize`. That built-in resize only ever worked for pictures: a
+   * text file's own scrollbar and a PDF's iframe both sit flush with the
+   * same corner and catch the mousedown before the browser's resize logic
+   * gets a look at it, which is exactly why those panels read as stuck.
+   * A real element, appended after everything else in the panel, sits on
+   * top of all of it by DOM order alone and answers the drag itself --
+   * so every kind of file resizes the same way.
+   */
+  function mountViewerGrip(panel) {
+    var grip = document.createElement('div');
+    grip.className = 'viewer-grip';
+    panel.appendChild(grip);
+
+    grip.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      panel.style.zIndex = ++zTop;
+
+      var rect = panel.getBoundingClientRect();
+      var startX = e.clientX, startY = e.clientY;
+      var startW = rect.width, startH = rect.height;
+      var cs = window.getComputedStyle(panel);
+      var minW = parseFloat(cs.minWidth) || 0;
+      var minH = parseFloat(cs.minHeight) || 0;
+      var capW = parseFloat(cs.maxWidth);
+      var maxW = isNaN(capW) ? Infinity : capW;
+      if (panel.parentNode) {
+        maxW = Math.min(maxW, panel.parentNode.clientWidth - rect.left - 4);
+      }
+
+      // Pin the width down before the first move: it has been shrink-to-fit
+      // until now, and a stray pointermove must not have it jump back there.
+      panel.style.width = startW + 'px';
+      panel.style.height = startH + 'px';
+      grip.classList.add('gripping');
+      try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+
+      function move(ev) {
+        var w = Math.max(minW, Math.min(maxW, startW + (ev.clientX - startX)));
+        var h = Math.max(minH, startH + (ev.clientY - startY));
+        panel.style.width = w + 'px';
+        panel.style.height = h + 'px';
+      }
+      function up() {
+        grip.classList.remove('gripping');
+        grip.removeEventListener('pointermove', move);
+        grip.removeEventListener('pointerup', up);
+        grip.removeEventListener('pointercancel', up);
+      }
+      grip.addEventListener('pointermove', move);
+      grip.addEventListener('pointerup', up);
+      grip.addEventListener('pointercancel', up);
+    });
   }
 
   function mountViewers() {
@@ -1502,6 +1669,12 @@
   function bootPage() {
     mountItems();
     mountGuestbook();
+    // Ahead of restorePositions: a returning visitor who has already moved
+    // something would otherwise have their phone bed frozen at the flowed,
+    // stacked layout first (restorePositions freezes it too, to have
+    // somewhere to write a remembered x/y into), and the real Finder
+    // coordinates would arrive one call too late to matter.
+    mobilizeBed(document.querySelector('.plantbed'));
     restorePositions();
     fitBed();
     // Pictures settle after they load, and the bed is only as big as what is

@@ -16,16 +16,32 @@
   /* ink */
   --ink:        #26241F;
   --ink-soft:   #55514A;
-  --ink-faint:  #8A8477;
+  /* Was #8A8477 -- under 3.1:1 on this paper, which is below reading for
+     the size the meta text, the taskbar and the ticker all set it at.
+     Darkened without changing its hue, so it is still the same warm grey. */
+  --ink-faint:  #6A655C;
 
   /* the only two colours in the building */
-  --ochre:      #A9752F;
+  /* Was #A9752F -- 3.3:1 on this paper, under the 4.5:1 a filename in this
+     colour needs to actually read as text rather than as a hint of one.
+     Same ochre, darkened until it clears that bar. */
+  --ochre:      #8A5A1F;
   --ochre-pale: #D9BE8F;
   --olive:      #5E6552;
   --olive-pale: #A8AE9A;
 
   --rule:       rgba(38, 36, 31, .16);
   --rule-soft:  rgba(38, 36, 31, .08);
+
+  /* the paper's texture -- see the "surface" section below. Slotted into
+     the page's own background rather than drawn as a layer on top of it,
+     so it can never sit over a folder or a photo, only under one. */
+  --tex-image-1: none;
+  --tex-image-2: none;
+  --tex-size-1:  auto;
+  --tex-size-2:  auto;
+  --tex-blend:   multiply;
+  --tex-shade:   0, 0, 0;
 
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -49,10 +65,16 @@ body {
   line-height: 1.5;
   color: var(--ink);
   background-color: var(--paper);
-  /* a faint tooth, so the bone doesn't read as flat #fff */
+  /* a faint tooth, so the bone doesn't read as flat #fff -- with the paper
+     texture (if one is on) slotted in ahead of it as two more layers, so
+     it blends against the paper itself rather than against the folder
+     lying on top of it. See the "surface" section below. */
   background-image:
+    var(--tex-image-1), var(--tex-image-2),
     radial-gradient(circle at 15% 12%, rgba(169,117,47,.045) 0, transparent 38%),
     radial-gradient(circle at 85% 78%, rgba(94,101,82,.05) 0, transparent 42%);
+  background-size: var(--tex-size-1), var(--tex-size-2), auto, auto;
+  background-blend-mode: var(--tex-blend), var(--tex-blend), normal, normal;
   background-attachment: fixed;
   /* A Finder window scrolls when the icons are spread wider than it is.
      Clipping here would hide items at coordinates the owner chose. */
@@ -69,9 +91,15 @@ body {
 body.theme-olive  { --paper: #E2E4DC; --paper-deep: #D7DACE; }
 body.theme-ink    {
   --paper: #23231F; --paper-deep: #1B1B18; --surface: #2C2C27; --surface-2: #333330;
-  --ink: #E8E4DA; --ink-soft: #B0AA9C; --ink-faint: #7E7869;
+  /* --ink-faint was #7E7869, 3.6:1 on this paper -- readable as a heading,
+     not as the small print it is actually used for. Lightened. */
+  --ink: #E8E4DA; --ink-soft: #B0AA9C; --ink-faint: #948D7B;
   --rule: rgba(232,228,218,.18); --rule-soft: rgba(232,228,218,.09);
   --ochre: #C99A55; --olive: #9AA487;
+  /* On paper this dark, a texture drawn in black would multiply into a
+     no-op -- black into near-black changes nothing. Screened white instead,
+     the same four patterns come back as light on dark. */
+  --tex-blend: screen; --tex-shade: 255, 255, 255;
 }
 body.theme-clean  { --paper: #F4F2EC; --paper-deep: #EAE7DF; }
 
@@ -79,15 +107,19 @@ body.theme-clean  { --paper: #F4F2EC; --paper-deep: #EAE7DF; }
    the greys pulled blue so nothing on the page reads warm. */
 body.theme-pocari {
   --paper: #F3F8FC; --paper-deep: #E3EDF7; --surface: #FAFCFE; --surface-2: #FFFFFF;
-  --ink: #10243A; --ink-soft: #3C566F; --ink-faint: #7E93A8;
+  /* --ink-faint was #7E93A8 (under 3:1) and --olive was #3E8FD6 (3.2:1) --
+     both read fine as accents but not as the folder names and captions
+     they are actually set on against this paper. Both darkened, same hue. */
+  --ink: #10243A; --ink-soft: #3C566F; --ink-faint: #4F6B86;
   --ochre: #005EB8; --ochre-pale: #A8CBEA;
-  --olive: #3E8FD6; --olive-pale: #BCD9F0;
+  --olive: #175E9E; --olive-pale: #BCD9F0;
   --rule: rgba(16,36,58,.15); --rule-soft: rgba(16,36,58,.07);
 }
 /* The tooth on the body is painted in warm rgba, which left this theme
    reading brown however cold the paper underneath it was. */
 body.theme-pocari {
   background-image:
+    var(--tex-image-1), var(--tex-image-2),
     radial-gradient(circle at 15% 12%, rgba(0,94,184,.06) 0, transparent 38%),
     radial-gradient(circle at 85% 78%, rgba(62,143,214,.07) 0, transparent 42%);
 }
@@ -298,70 +330,58 @@ a:visited { color: var(--olive); }
 
 /* --------------------------------------------------------------- surface
 
-   The paper can be given a texture. These are one overlay across the whole
-   window rather than a background on any element, so the texture belongs to
-   the light in the room and not to the folder -- it does not slide when the
-   page scrolls and it does not tile differently on a long page.
+   The paper can be given a texture. Each one used to be drawn as a single
+   overlay `div`-like layer stacked ON TOP of the whole window -- above the
+   folder, above every photo in it, above the whole page. A `mix-blend-mode`
+   there reads as faint at a glance, but it is still a layer sitting over
+   the content, and on a photo especially it printed as a visible film
+   instead of texture in the paper behind it.
 
-   Every pattern is drawn in flat black on nothing and then multiplied into
-   whatever paper is underneath, so it takes the theme's own colour and can
-   never introduce one of its own. On the dark paper that would be a no-op
-   -- black into near-black changes nothing -- so there the layer is
-   inverted and screened instead, and the same four patterns come back as
-   light on dark.
+   These are drawn into the PAGE'S OWN background instead, two more layers
+   behind the existing paper tooth (see `body` above) -- background always
+   paints under an element's content, no exceptions, so there is no z-index
+   or blend-mode setting that can ever put it over a folder or a photo
+   again. `background-blend-mode` (not `mix-blend-mode`) blends these
+   background layers with each other and with the paper colour only; it has
+   nothing to do with what is drawn on top of the page.
+
+   Every pattern is drawn in flat black and blended into whatever paper is
+   underneath, so it takes the theme's own colour and can never introduce
+   one of its own. On the dark paper that would be a no-op -- black into
+   near-black changes nothing -- so there `--tex-shade` and `--tex-blend`
+   swap to white-on-screen instead (set on body.theme-ink, above), and the
+   same four patterns come back as light on dark.
 
    `grain` is also the class app.js already toggles, so the taskbar button
    works as-is. The other three want a cycler; see the note in the handover.
    ---------------------------------------------------------------------- */
 
-:root      { --tex-blend: multiply; --tex-flip: none; }
-body.theme-ink { --tex-blend: screen; --tex-flip: invert(1); }
-
-body::after {
-  content: '';
-  display: none;
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  /* over the page and over an open file, but under the clock and the
-     taskbar: a texture is on the paper, not on the controls */
-  z-index: 9994;
-  mix-blend-mode: var(--tex-blend);
-  filter: var(--tex-flip);
-}
-
-body.grain::after,
-body.tex-grain::after,
-body.tex-scan::after,
-body.tex-weave::after,
-body.tex-dots::after { display: block; }
-
 /* film grain — real noise, not a pattern. Fine enough to read as the stock
-   the page is printed on rather than as anything drawn on top of it. */
-body.grain::after,
-body.tex-grain::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-  opacity: .34;
+   the page is printed on rather than as anything drawn on top of it. The
+   .34 opacity is baked into the svg itself (a plain CSS `opacity` would
+   fade the whole page, texture and folder together, not just this layer). */
+body.grain,
+body.tex-grain {
+  --tex-image-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.34'/%3E%3C/svg%3E");
+  --tex-size-1: 200px 200px;
 }
 
 /* scan — a photocopy of a photocopy. One dark line every third. */
-body.tex-scan::after {
-  background-image: repeating-linear-gradient(
-    to bottom, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);
+body.tex-scan {
+  --tex-image-1: repeating-linear-gradient(
+    to bottom, rgba(var(--tex-shade), .16) 0 1px, transparent 1px 3px);
 }
 
 /* weave — the tooth of laid paper: two hatchings crossing at right angles. */
-body.tex-weave::after {
-  background-image:
-    repeating-linear-gradient(45deg,  rgba(0,0,0,.085) 0 1px, transparent 1px 5px),
-    repeating-linear-gradient(-45deg, rgba(0,0,0,.085) 0 1px, transparent 1px 5px);
+body.tex-weave {
+  --tex-image-1: repeating-linear-gradient(45deg,  rgba(var(--tex-shade), .085) 0 1px, transparent 1px 5px);
+  --tex-image-2: repeating-linear-gradient(-45deg, rgba(var(--tex-shade), .085) 0 1px, transparent 1px 5px);
 }
 
 /* dots — a newsprint screen, coarse enough that you can see it is dots. */
-body.tex-dots::after {
-  background-image: radial-gradient(rgba(0,0,0,.22) 32%, transparent 34%);
-  background-size: 4px 4px;
+body.tex-dots {
+  --tex-image-1: radial-gradient(rgba(var(--tex-shade), .22) 32%, transparent 34%);
+  --tex-size-1: 4px 4px;
 }
 
 /* ---------------------------------------------------------------- taskbar */
@@ -551,6 +571,18 @@ body.tex-dots::after {
   .guestbed { min-height: 28rem; }
 }
 
+/* A phone earns this same freeform sizing by JS decision (app.js, once it
+   has pinned every item at its real Finder coordinates) rather than by
+   width, so it cannot wait for the breakpoint above. `body` on the front of
+   each selector is only there to outrank the per-page `@media (max-width:
+   559px)` rule the generator writes for the plain phone stack -- both are
+   otherwise the same specificity, and that one loads second. */
+body .plantbed.mobile-freeform > .item {
+  position: absolute; margin: 0; width: max-content; max-width: 26rem;
+}
+body .plantbed.mobile-freeform > .item.as-icon { width: 7rem; }
+body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
+
 @media (prefers-reduced-motion: reduce) {
   .marquee span { animation: none; padding-left: 0; }
   .item h3 a, .item .icon img, main { transition: none; }
@@ -720,7 +752,16 @@ body.tex-dots::after {
 /* 8px is below reading. The field drops its seconds on a phone, so it is
    five cards wide instead of eight and there is room to grow. */
 @media (max-width: 559px) {
-  #clock-shell { margin: 0 auto 1.25rem; }
+  #clock-shell {
+    margin: 0 auto 1.25rem;
+    /* The five-card field above assumes app.js caught the phone in time to
+       drop the seconds; a device slow to settle its own viewport can still
+       hand it eight for one frame. This is a clip, not a design choice --
+       whatever the field draws, it may never be the thing that forces the
+       whole page to scroll sideways to be read. */
+    max-width: 100%;
+    overflow: hidden;
+  }
   #clock, #clock-date { font-size: 10px; }
 }
 
@@ -736,13 +777,43 @@ body.tex-dots::after {
   background: var(--surface-2);
   border: 1px solid var(--rule);
   box-shadow: 0 8px 28px rgba(38, 36, 31, .13);
-  resize: both;
+  /* The corner is now a real element (.viewer-grip) that app.js drives by
+     hand instead of the browser's own `resize`. A scrolling text file or a
+     PDF's iframe sits flush with that same corner and would otherwise catch
+     the mousedown before the browser's built-in resize logic ever saw it --
+     which is why only pictures, which rarely scroll, used to be resizable. */
   overflow: hidden;
   display: flex;
   flex-direction: column;
   min-width: 14rem;
   min-height: 7rem;
 }
+
+/* The corner grip. Layered above the panel's own content by DOM order alone
+   -- no z-index tug of war needed with an iframe or a scrollbar -- so it
+   always gets the pointer first, on every kind of file. */
+.viewer-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.viewer-grip::before {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--ink-faint);
+  border-bottom: 2px solid var(--ink-faint);
+  opacity: .55;
+}
+.viewer-grip:hover::before,
+.viewer-grip.gripping::before { border-color: var(--ochre); opacity: 1; }
 
 .viewer-bar {
   flex: 0 0 auto;
@@ -796,10 +867,29 @@ body.tex-dots::after {
   overflow: auto;
   padding: .5rem;
   max-height: 70vh;
+  /* Image and video panels centre their frame in the body rather than
+     pinning it to the top-left corner, so a portrait picture sits in the
+     middle of the panel instead of jammed against one edge. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* The old rule only capped width, so a portrait phone video -- narrow but
+   very tall -- scaled to fill the panel's width and then ran on for a
+   screen and a half of height, cropped by the panel and only reachable by
+   scrolling. Capping height as well as width, both against the space the
+   panel actually has, lets the browser pick whichever side binds first and
+   the whole frame always lands inside the panel, landscape or portrait. */
 .viewer-body img,
-.viewer-body video { display: block; max-width: 100%; height: auto; }
+.viewer-body video {
+  display: block;
+  max-width: 100%;
+  max-height: calc(70vh - 1rem);
+  width: auto;
+  height: auto;
+  margin: auto;
+}
 .viewer-body audio { width: 100%; }
 
 .viewer-body iframe {
@@ -822,7 +912,8 @@ body.tex-dots::after {
 
 /* A phone has no room for floating panels; let the file just open. */
 @media (max-width: 559px) {
-  .viewer { position: fixed; inset: 1rem; max-width: none; resize: none; }
+  .viewer { position: fixed; inset: 1rem; max-width: none; }
+  .viewer-grip { display: none; }
 
   /* 18px of button is a miss with a fingertip, and the control beside it
      opens a new tab -- so a miss does not merely fail, it takes you off the

@@ -194,6 +194,10 @@
   scrollbar-width: thin;
   scrollbar-color: var(--rule, rgba(38, 36, 31, .16)) transparent;
 }
+/* Not a drag handle — it has its own scroll and its own clicks (see
+   isExcluded() in ipod.js's buildDrag) — so it should not wear the
+   shell's "grab" cursor either. */
+.ipod-list { cursor: default; }
 .ipod-list:focus { outline: none; }
 .ipod-list:focus-visible { outline: 1px solid var(--ipod-mark); outline-offset: -1px; }
 
@@ -306,9 +310,15 @@
   overflow: hidden;
   background: #121212;              /* a dark backdrop, so neither embed seams */
 }
-/* Covered, not removed. */
+/* Covered, not removed -- except Spotify, which has no other way to pause
+   than to be unmounted (see playSpotify/unloadSpotify in ipod.js). When
+   that happens data-view stays "player" (the visitor never left the
+   screen), so without the third selector below the stage's own dark
+   backdrop was left sitting over the "paused" card: a plain black
+   rectangle where a legible message should have been. */
 .ipod[data-view="list"]  .ipod-stage,
-.ipod[data-view="empty"] .ipod-stage {
+.ipod[data-view="empty"] .ipod-stage,
+.ipod[data-view="player"][data-player="off"] .ipod-stage {
   z-index: 0;
   opacity: 0;
   pointer-events: none;
@@ -560,21 +570,48 @@ body.theme-ink .ipod-tile-art.is-generated {
   padding-left: 1.1rem;         /* the inset lives here so the dock transform
                                    can be a plain -100% and land flush */
   transition: transform .22s ease;
+  /* Furniture: it can be picked up. ipod.js is what actually moves it —
+     see buildDrag() — this just says so before anyone tries. Buttons,
+     links and the two scrolling lists keep their own cursor further down
+     this file, which wins over this because it is more specific. */
+  cursor: grab;
+}
+.ipod-shell:active { cursor: grabbing; }
+
+/* The moment a held press becomes a grab — set by ipod.js, not by :active,
+   because a touch hold has no ":active" of its own worth trusting. Same
+   idea as .item.focused elsewhere on the site: a lift the visitor can see
+   is the only way a held finger can tell it worked. Dropped instantly
+   (transition: none) rather than eased, because by the time it is dropped
+   the position is already final. */
+.ipod-shell.is-dragging {
+  cursor: grabbing;
+  transition: none;
+  transform: scale(1.03);
+  filter: drop-shadow(0 6px 14px rgba(38, 36, 31, .22));
 }
 
 /* Docked: gone off the left edge entirely. Nothing of the device is left
    peeking, because a 26px sliver of a click wheel is just a mess -- the tab
    below is the whole of what stays behind. Still a transform, so the iframe
-   inside is still loaded and still playing. */
+   inside is still loaded and still playing.
+
+   The distance is --ipod-offscreen-x, not a flat -110% — ipod.js keeps
+   that custom property equal to "however far left of HERE the viewport's
+   left edge is", recomputed after every drag. A plain -110% only ever
+   cleared the screen because the shell used to always start at the left
+   edge; once it can be dragged anywhere, "left by 110% of my own width"
+   can land it still fully on screen. The percentage is kept as the
+   fallback for the one instant before ipod.js's first paint. */
 .ipod-shell[data-docked="on"] {
-  transform: translateX(-110%);
+  transform: translateX(var(--ipod-offscreen-x, -110%));
 }
 
 /* Parked: off entirely, from the taskbar toggle. `visibility` takes it out
    of the tab order without unloading anything — an iframe keeps playing
-   through both of these. */
+   through both of these. Same --ipod-offscreen-x as docking, same reason. */
 body.music-off .ipod-shell {
-  transform: translateX(-130%);
+  transform: translateX(var(--ipod-offscreen-x, -130%));
   visibility: hidden;
   pointer-events: none;
 }
@@ -770,6 +807,7 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
 }
 
 .ipod-queue {
+  cursor: default;      /* not a drag handle — see .ipod-list above */
   position: absolute;
   left: 0;
   right: 0;

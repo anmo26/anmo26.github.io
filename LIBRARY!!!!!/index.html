@@ -10,7 +10,8 @@
   <meta property="og:description" content="a file gallery. a mirror of a folder.">
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="../garden-assets/style.css?v=0cb8397e">
+  <link rel="stylesheet" href="../garden-assets/style.css?v=4e9822b1">
+  <link rel="stylesheet" href="../garden-assets/ipod.css?v=2d459aca">
   <style id="page-style">
     @media (min-width: 560px) {
       .plantbed { min-height: 817px; margin-left: max(0px, calc(50% - 420px - 13rem)); }
@@ -57,6 +58,56 @@
     <pre id="clock"></pre>
     <p id="clock-date"></p>
   </div>
+  <div id="ipod-shell" class="ipod-shell">
+          <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
+               data-view="list" data-player="off">
+
+            <div class="ipod-screen">
+              <div class="ipod-bar">
+                <button class="ipod-back" type="button"
+                        aria-label="menu, back to the playlist list">&#8249; menu</button>
+                <span class="ipod-bar-title" aria-live="polite">playlists</span>
+                <span class="ipod-battery" aria-hidden="true"></span>
+              </div>
+
+              <div class="ipod-view ipod-view-list">
+                <div class="ipod-list" role="listbox" tabindex="0" aria-label="playlists"></div>
+              </div>
+
+              <div class="ipod-view ipod-view-player">
+                <div class="ipod-stage"></div>
+                <div class="ipod-paused">
+                  <strong class="ipod-paused-name">paused</strong>
+                  <span>press &#9654;&#10073;&#10073; to start it again</span>
+                </div>
+              </div>
+
+              <div class="ipod-view ipod-view-empty">
+                <div class="ipod-empty">
+                  <strong>no music yet</strong>
+                  <span>put a YouTube link in a text file in <code>music/</code> and regrow.</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="ipod-ticker" aria-live="polite"></p>
+
+            <div class="ipod-wheel">
+              <button class="ipod-btn ipod-btn-menu" type="button" data-act="menu"
+                      aria-label="menu, back to the playlist list">menu</button>
+              <button class="ipod-btn ipod-btn-prev" type="button" data-act="prev"
+                      aria-label="previous playlist">&#8249;&#8249;</button>
+              <button class="ipod-btn ipod-btn-next" type="button" data-act="next"
+                      aria-label="next playlist">&#8250;&#8250;</button>
+              <button class="ipod-btn ipod-btn-play" type="button" data-act="play"
+                      aria-label="play or pause">&#9654;&#10073;&#10073;</button>
+              <button class="ipod-btn ipod-btn-select" type="button" data-act="select"
+                      aria-label="select, play the highlighted playlist"></button>
+            </div>
+
+            <p class="ipod-noscript">this player needs JavaScript.</p>
+          </div>
+  </div>
 
   <main>
     <header class="masthead">
@@ -70,57 +121,73 @@
         <a class="icon" href="8a6bed3870b365b8a36361cbde8606e5.pdf" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-8a6bed3870b365b8a36361cbde8606e5-pdf.png" alt="" width="56" height="72"></a>
         <h3><a href="8a6bed3870b365b8a36361cbde8606e5.pdf">8a6bed3870b365b8a36361cbde8606e5.pdf</a> <span class="meta">(939.3kB)</span></h3>
       </div>
-      <div class="item kind-other as-icon" id="p1" data-key="After the Quake -- Murakami,.textClipping">
+      <div class="item kind-clipping as-icon" id="p1" data-key="After the Quake -- Murakami,.textClipping">
         <a class="icon" href="After%20the%20Quake%20--%20Murakami,.textClipping" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-after-the-quake-murakami-textclipping.png" alt="" width="54" height="72"></a>
-        <h3><a href="After%20the%20Quake%20--%20Murakami,.textClipping">After the Quake -- Murakami,.textClipping</a> <span class="meta">(1.19kB)</span></h3>
+        <h3><a href="After%20the%20Quake%20--%20Murakami,.textClipping">After the Quake -- Murakami,.textClipping</a> <span class="meta">(1.19kB — “After the Quake -- Murakami, Haruki -- February 7, 2002 -- The Harvill Press -- isbn13 9781843430155 -- 2f0c422c0b1675dcf6eec4d03e9271bd -- Anna’s Archive
+村上春樹
+PDF
+6 MB”)</span></h3>
       </div>
       <div class="item kind-other as-icon" id="p2" data-key="Beauty _ a very short introduction.pdf">
         <a class="icon" href="Beauty%20_%20a%20very%20short%20introduction.pdf" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-beauty-a-very-short-introduction-pdf.png" alt="" width="46" height="72"></a>
         <h3><a href="Beauty%20_%20a%20very%20short%20introduction.pdf">Beauty _ a very short introduction.pdf</a> <span class="meta">(2.1MB)</span></h3>
       </div>
-      <div class="item kind-other as-icon" id="p3" data-key="Birthday stories - selected .textClipping">
+      <div class="item kind-clipping as-icon" id="p3" data-key="Birthday stories - selected .textClipping">
         <a class="icon" href="Birthday%20stories%20-%20selected%20.textClipping" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-birthday-stories-selected-textclipping.png" alt="" width="54" height="72"></a>
-        <h3><a href="Birthday%20stories%20-%20selected%20.textClipping">Birthday stories - selected .textClipping</a> <span class="meta">(1.51kB)</span></h3>
+        <h3><a href="Birthday%20stories%20-%20selected%20.textClipping">Birthday stories - selected .textClipping</a> <span class="meta">(1.51kB — “Birthday stories - selected and introduced by Haruki -- Haruki Murakami -- Di 1 ban, London, 2006 -- Random House Book Group Ltd_ -- isbn13 9780099481553 -- e80b86c9bb207b08857cea4f2d4e34f9 -- Anna’s…”)</span></h3>
       </div>
-      <div class="item kind-directory as-icon" id="p4" data-key="Cosmicomics.epub/">
-        <a class="icon" href="Cosmicomics.epub/" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/library-cosmicomics-epub.png" alt="" width="72" height="72"></a>
-        <h3><a href="Cosmicomics.epub/">Cosmicomics.epub/</a> <span class="meta">(3 items, 806.1kB)</span></h3>
+      <div class="item kind-book as-icon" id="p4" data-key="Cosmicomics.epub">
+        <a class="icon" href="../.epubs/LIBRARY!!!!!/Cosmicomics.epub" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-cosmicomics-epub.png" alt="" width="72" height="72"></a>
+        <h3><a href="../.epubs/LIBRARY!!!!!/Cosmicomics.epub">Cosmicomics.epub</a> <span class="meta">(806.1kB)</span></h3>
       </div>
-      <div class="item kind-other as-icon" id="p5" data-key="INTERPRETER_OF_MALADIES-Unkn.textClipping">
+      <div class="item kind-clipping as-icon" id="p5" data-key="INTERPRETER_OF_MALADIES-Unkn.textClipping">
         <a class="icon" href="INTERPRETER_OF_MALADIES-Unkn.textClipping" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-interpreter-of-maladies-unkn-textclipping.png" alt="" width="54" height="72"></a>
-        <h3><a href="INTERPRETER_OF_MALADIES-Unkn.textClipping">INTERPRETER_OF_MALADIES-Unkn.textClipping</a> <span class="meta">(440B)</span></h3>
+        <h3><a href="INTERPRETER_OF_MALADIES-Unkn.textClipping">INTERPRETER_OF_MALADIES-Unkn.textClipping</a> <span class="meta">(440B — “INTERPRETER_OF_MALADIES
+Unknown Author
+PDF
+1,006 KB”)</span></h3>
       </div>
-      <div class="item kind-other as-icon" id="p6" data-key="Invisible cities -- Calvino .textClipping">
+      <div class="item kind-clipping as-icon" id="p6" data-key="Invisible cities -- Calvino .textClipping">
         <a class="icon" href="Invisible%20cities%20--%20Calvino%20.textClipping" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-invisible-cities-calvino-textclipping.png" alt="" width="54" height="72"></a>
-        <h3><a href="Invisible%20cities%20--%20Calvino%20.textClipping">Invisible cities -- Calvino .textClipping</a> <span class="meta">(875B)</span></h3>
+        <h3><a href="Invisible%20cities%20--%20Calvino%20.textClipping">Invisible cities -- Calvino .textClipping</a> <span class="meta">(875B — “Invisible cities -- Calvino Italo -- 2012 -- 7519d46b68dc1795fe0eacc088db37b7 -- Anna’s Archive
+Italo Calvino
+PDF
+322 KB”)</span></h3>
       </div>
-      <div class="item kind-directory as-icon" id="p7" data-key="Norwegian Wood.epub/">
-        <a class="icon" href="Norwegian%20Wood.epub/" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/library-norwegian-wood-epub.png" alt="" width="72" height="72"></a>
-        <h3><a href="Norwegian%20Wood.epub/">Norwegian Wood.epub/</a> <span class="meta">(5 items, 7.7MB)</span></h3>
+      <div class="item kind-book as-icon" id="p7" data-key="Norwegian Wood.epub">
+        <a class="icon" href="../.epubs/LIBRARY!!!!!/Norwegian%20Wood.epub" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-norwegian-wood-epub.png" alt="" width="47" height="72"></a>
+        <h3><a href="../.epubs/LIBRARY!!!!!/Norwegian%20Wood.epub">Norwegian Wood.epub</a> <span class="meta">(7.7MB)</span></h3>
       </div>
-      <div class="item kind-other as-icon" id="p8" data-key="On seeing the 100% perfect g.textClipping">
+      <div class="item kind-clipping as-icon" id="p8" data-key="On seeing the 100% perfect g.textClipping">
         <a class="icon" href="On%20seeing%20the%20100%25%20perfect%20g.textClipping" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-on-seeing-the-100-perfect-g-textclipping.png" alt="" width="54" height="72"></a>
-        <h3><a href="On%20seeing%20the%20100%25%20perfect%20g.textClipping">On seeing the 100% perfect g.textClipping</a> <span class="meta">(612B)</span></h3>
+        <h3><a href="On%20seeing%20the%20100%25%20perfect%20g.textClipping">On seeing the 100% perfect g.textClipping</a> <span class="meta">(612B — “On seeing the 100% perfect girl one beautiful April morning
+Haruki murakami
+PDF
+76 KB”)</span></h3>
       </div>
-      <div class="item kind-directory as-icon" id="p9" data-key="Rashomon and Seventeen Other Stories.epub/">
-        <a class="icon" href="Rashomon%20and%20Seventeen%20Other%20Stories.epub/" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/library-rashomon-and-seventeen-other-stories-epub.png" alt="" width="72" height="72"></a>
-        <h3><a href="Rashomon%20and%20Seventeen%20Other%20Stories.epub/">Rashomon and Seventeen Other Stories.epub/</a> <span class="meta">(3 items, 6.61MB)</span></h3>
+      <div class="item kind-book as-icon" id="p9" data-key="Rashomon and Seventeen Other Stories.epub">
+        <a class="icon" href="../.epubs/LIBRARY!!!!!/Rashomon%20and%20Seventeen%20Other%20Stories.epub" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-rashomon-and-seventeen-other-stories-epub.png" alt="" width="72" height="72"></a>
+        <h3><a href="../.epubs/LIBRARY!!!!!/Rashomon%20and%20Seventeen%20Other%20Stories.epub">Rashomon and Seventeen Other Stories.epub</a> <span class="meta">(6.61MB)</span></h3>
       </div>
-      <div class="item kind-directory as-icon" id="p10" data-key="Siddhartha.epub/">
-        <a class="icon" href="Siddhartha.epub/" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/library-siddhartha-epub.png" alt="" width="72" height="72"></a>
-        <h3><a href="Siddhartha.epub/">Siddhartha.epub/</a> <span class="meta">(3 items, 2.38MB)</span></h3>
+      <div class="item kind-book as-icon" id="p10" data-key="Siddhartha.epub">
+        <a class="icon" href="../.epubs/LIBRARY!!!!!/Siddhartha.epub" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-siddhartha-epub.png" alt="" width="46" height="72"></a>
+        <h3><a href="../.epubs/LIBRARY!!!!!/Siddhartha.epub">Siddhartha.epub</a> <span class="meta">(2.38MB)</span></h3>
       </div>
-      <div class="item kind-other as-icon" id="p11" data-key="Tatsuki Fujimoto Before Chai.textClipping">
+      <div class="item kind-clipping as-icon" id="p11" data-key="Tatsuki Fujimoto Before Chai.textClipping">
         <a class="icon" href="Tatsuki%20Fujimoto%20Before%20Chai.textClipping" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-tatsuki-fujimoto-before-chai-textclipping.png" alt="" width="54" height="72"></a>
-        <h3><a href="Tatsuki%20Fujimoto%20Before%20Chai.textClipping">Tatsuki Fujimoto Before Chai.textClipping</a> <span class="meta">(1.1kB)</span></h3>
+        <h3><a href="Tatsuki%20Fujimoto%20Before%20Chai.textClipping">Tatsuki Fujimoto Before Chai.textClipping</a> <span class="meta">(1.1kB — “Tatsuki Fujimoto Before Chainsaw Man - 17-21 (2023) -- Tatsuki Fujimoto -- VIZ Media -- 3097b98fe91171f449f3b510358093c9 -- Anna’s Archive
+KCC
+PDF
+77.8 MB”)</span></h3>
       </div>
-      <div class="item kind-directory as-icon" id="p12" data-key="The Garden of Forking Paths.epub/">
-        <a class="icon" href="The%20Garden%20of%20Forking%20Paths.epub/" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/library-the-garden-of-forking-paths-epub.png" alt="" width="72" height="72"></a>
-        <h3><a href="The%20Garden%20of%20Forking%20Paths.epub/">The Garden of Forking Paths.epub/</a> <span class="meta">(45 items, 404.6kB)</span></h3>
+      <div class="item kind-book as-icon" id="p12" data-key="The Garden of Forking Paths.epub">
+        <a class="icon" href="../.epubs/LIBRARY!!!!!/The%20Garden%20of%20Forking%20Paths.epub" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-the-garden-of-forking-paths-epub.png" alt="" width="52" height="72"></a>
+        <h3><a href="../.epubs/LIBRARY!!!!!/The%20Garden%20of%20Forking%20Paths.epub">The Garden of Forking Paths.epub</a> <span class="meta">(404.6kB)</span></h3>
       </div>
-      <div class="item kind-other as-icon" id="p13" data-key="The Most Important Thing- Un.textClipping">
+      <div class="item kind-clipping as-icon" id="p13" data-key="The Most Important Thing- Un.textClipping">
         <a class="icon" href="The%20Most%20Important%20Thing-%20Un.textClipping" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-the-most-important-thing-un-textclipping.png" alt="" width="54" height="72"></a>
-        <h3><a href="The%20Most%20Important%20Thing-%20Un.textClipping">The Most Important Thing- Un.textClipping</a> <span class="meta">(1.43kB)</span></h3>
+        <h3><a href="The%20Most%20Important%20Thing-%20Un.textClipping">The Most Important Thing- Un.textClipping</a> <span class="meta">(1.43kB — “The Most Important Thing- Uncommon Sense for the Thoughtful -- Marks, Howard  &amp; chenjin5_com -- 2011 -- cj5_2443 -- 341bca6061992f40e40e7851ce06c067 -- Anna’s Archive
+Marks, Howard [Marks, Howard] &amp; c…”)</span></h3>
       </div>
       <div class="item kind-other as-icon" id="p14" data-key="Unflattening - Nick Sousanis.pdf">
         <a class="icon" href="Unflattening%20-%20Nick%20Sousanis.pdf" tabindex="-1" aria-hidden="true"><img src="../garden-assets/icons/f-library-unflattening-nick-sousanis-pdf.png" alt="" width="54" height="72"></a>
@@ -138,7 +205,9 @@
   </nav>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
-  <script src="../garden-assets/app.js?v=4bc62940"></script>
+  <script src="../garden-assets/app.js?v=0ef94bdd"></script>
+  <script>window.GARDEN_MUSIC = [{"name":"music","file":"IPOD/01 music.txt","src":"youtube","kind":"playlist","id":"PLXWFWrURanY0","embed":"https://www.youtube.com/embed/videoseries?list=PLXWFWrURanY0","link":"https://www.youtube.com/playlist?list=PLXWFWrURanY0","cover":null,"note":""},{"name":"Music","file":"IPOD/02 Music.txt","src":"spotify","kind":"playlist","id":"3b0KED083axyu4Gvnzq1iv","embed":"https://open.spotify.com/embed/playlist/3b0KED083axyu4Gvnzq1iv?utm_source=generator","link":"https://open.spotify.com/playlist/3b0KED083axyu4Gvnzq1iv","cover":null,"note":""},{"name":"spotify","file":"IPOD/02 spotify.txt","src":"spotify","kind":"playlist","id":"7lVqHImUCZhbtj1modlNff","embed":"https://open.spotify.com/embed/playlist/7lVqHImUCZhbtj1modlNff?utm_source=generator","link":"https://open.spotify.com/playlist/7lVqHImUCZhbtj1modlNff","cover":null,"note":""}];</script>
+  <script src="../garden-assets/ipod.js?v=8014275e"></script>
 </body>
 <!--
 a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)

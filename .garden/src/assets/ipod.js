@@ -375,6 +375,208 @@
     apply(get('ipod.docked', !window.matchMedia('(min-width: 900px)').matches), false);
   }
 
+  /* ------------------------------------------------------- free position
+
+     Dragging (below) can put the shell anywhere on the screen. Two other
+     things depend on where "anywhere" turned out to be:
+
+       - the next visit should open with the shell exactly where it was
+         left, not snapped back to the corner.
+       - docking (`<< hide` in the bar) and parking (`music` in the
+         taskbar, from app.js) both slide the shell off the LEFT EDGE OF
+         THE VIEWPORT, and both used to do it with a flat CSS percentage
+         that only worked because the shell always started at the left
+         edge already. A shell dragged out to the middle of a wide window
+         would move left by that same fixed amount and land still fully
+         on screen -- docking would visibly do nothing.
+
+     Both are handled here. `restorePosition` reads a remembered {x, y}
+     fraction back in on mount and turns it into a `left`/`top` in pixels.
+     `updateOffscreenVar` keeps a custom property, --ipod-offscreen-x, that
+     ipod.css's docked and parked transforms read instead of a flat
+     percentage -- recomputed after every move, so "off screen" always
+     means off screen, from wherever the shell happens to be standing. */
+
+  function shellRoom(shell) {
+    var barH = parseFloat(getComputedStyle(document.documentElement)
+      .getPropertyValue('--ipod-taskbar-h')) || 42;
+    return {
+      maxX: Math.max(0, window.innerWidth - shell.offsetWidth),
+      maxY: Math.max(0, window.innerHeight - shell.offsetHeight - barH - 8)
+    };
+  }
+
+  function updateOffscreenVar(shell) {
+    var rect = shell.getBoundingClientRect();
+    var away = Math.ceil(rect.left + shell.offsetWidth + 60);
+    shell.style.setProperty('--ipod-offscreen-x', '-' + away + 'px');
+  }
+
+  function restorePosition(shell) {
+    var p = get('ipod.pos', null);
+    if (!p) { updateOffscreenVar(shell); return; }
+    var room = shellRoom(shell);
+    shell.style.left = Math.round(p.x * room.maxX) + 'px';
+    shell.style.top = Math.round(p.y * room.maxY) + 'px';
+    shell.style.bottom = 'auto';
+    shell.style.right = 'auto';
+    shell.setAttribute('data-positioned', 'yes');
+    updateOffscreenVar(shell);
+  }
+
+  /* --------------------------------------------------------------- drag
+
+     The rest of the site already knows how to pick furniture up -- a few
+     pixels of travel turns a mouse press into a drag, and on a touch
+     screen a short hold does, because a swipe is how a phone reads a page
+     and a 4px threshold would turn every scroll that started on the
+     device into a drag instead. Copied here rather than shared, because
+     app.js's version moves absolutely-positioned items around inside a
+     scaled plantbed and this shell is a position:fixed piece of furniture
+     with no plantbed and no scale to divide out.
+
+     A press only counts as the drag handle when it is NOT on a button, a
+     link, or either scrolling list -- those need their own click and
+     their own touch scroll, and must never be hijacked into moving the
+     whole player. */
+
+  function buildDrag(shell) {
+    var DRAG_SLOP = 4;    // px of travel before a mouse press becomes a drag
+    var TOUCH_SLOP = 8;   // a finger resting is never as still as a mouse
+    var HOLD_MS = 420;    // press-and-hold, the gesture the rest of the site uses
+
+    var pending = null;
+    var dragging = false;
+    var holdTimer = null;
+
+    function isExcluded(target) {
+      return !!(target.closest && target.closest(
+        'button, input, textarea, select, a, video, audio, iframe, ' +
+        '.ipod-list, .ipod-queue'));
+    }
+
+    function place(left, top) {
+      var room = shellRoom(shell);
+      left = Math.max(0, Math.min(room.maxX, left));
+      top = Math.max(0, Math.min(room.maxY, top));
+      shell.style.left = left + 'px';
+      shell.style.top = top + 'px';
+      shell.style.bottom = 'auto';
+      shell.style.right = 'auto';
+    }
+
+    function swallowClick(el) {
+      if (!el) return;
+      var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
+      el.addEventListener('click', kill, true);
+      setTimeout(function () { el.removeEventListener('click', kill, true); }, 0);
+    }
+
+    function begin() {
+      dragging = true;
+      shell.classList.add('is-dragging');
+      if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+    }
+
+    function finish() {
+      clearTimeout(holdTimer);
+      var wasDragging = dragging;
+      var target = pending && pending.target;
+      dragging = false;
+      pending = null;
+      shell.classList.remove('is-dragging');
+      shell.style.touchAction = '';
+      if (!wasDragging) return;
+
+      // A long hold that never moved is still the drag gesture, not a
+      // click -- the same rule app.js's icons use, so a held finger never
+      // also opens whatever was under it.
+      swallowClick(target);
+
+      var left = parseInt(shell.style.left, 10) || 0;
+      var top = parseInt(shell.style.top, 10) || 0;
+      var room = shellRoom(shell);
+      set('ipod.pos', {
+        x: room.maxX ? left / room.maxX : 0,
+        y: room.maxY ? top / room.maxY : 0
+      });
+      shell.setAttribute('data-positioned', 'yes');
+      updateOffscreenVar(shell);
+    }
+
+    function onMove(e) {
+      if (!pending) return;
+
+      if (!dragging) {
+        var slop = pending.touch ? TOUCH_SLOP : DRAG_SLOP;
+        var travelled = Math.abs(e.clientX - pending.startX) >= slop ||
+                        Math.abs(e.clientY - pending.startY) >= slop;
+
+        if (pending.touch && !pending.held) {
+          // Travelled before the hold was up: this finger is reading the
+          // page, and the press was never a grab. Get out of its way.
+          if (travelled) { clearTimeout(holdTimer); pending = null; }
+          return;
+        }
+        // A lifted item follows the finger straight away; a mouse press
+        // becomes a drag the moment it clears the small slop.
+        if (!pending.touch && !travelled) return;
+        begin();
+      }
+
+      if (e.cancelable) e.preventDefault();
+      place(pending.originLeft + (e.clientX - pending.startX),
+            pending.originTop + (e.clientY - pending.startY));
+    }
+
+    shell.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (isExcluded(e.target)) return;
+      // Off screen already -- nothing here to grab hold of.
+      if (shell.getAttribute('data-docked') === 'on') return;
+
+      var rect = shell.getBoundingClientRect();
+      pending = {
+        target: e.target,
+        touch: e.pointerType !== 'mouse',
+        held: e.pointerType === 'mouse',   // a mouse means it the moment it moves
+        originLeft: rect.left,
+        originTop: rect.top,
+        startX: e.clientX,
+        startY: e.clientY
+      };
+      shell.style.touchAction = 'none';
+      if (shell.setPointerCapture) {
+        try { shell.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+
+      if (pending.held) return;
+      var p = pending;
+      holdTimer = setTimeout(function () {
+        if (pending === p) begin();
+      }, HOLD_MS);
+    });
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', finish);
+
+    // A long press is the drag gesture now, so the browser's own long-press
+    // menu would otherwise open on top of the shell being moved.
+    window.addEventListener('contextmenu', function (e) {
+      if (dragging) e.preventDefault();
+    });
+
+    // The viewport this was clamped against may no longer be the viewport
+    // it is standing in -- a phone rotated, a window resized. Re-derive
+    // the pixel position from the remembered fraction rather than leaving
+    // it exactly where it now may not fit.
+    window.addEventListener('resize', function () {
+      if (shell.getAttribute('data-positioned') === 'yes') restorePosition(shell);
+      else updateOffscreenVar(shell);
+    });
+  }
+
   /* ------------------------------------------------------------ device */
 
   function mount(root) {
@@ -400,7 +602,9 @@
     var noscript = root.querySelector('.ipod-noscript');
     if (noscript) noscript.parentNode.removeChild(noscript);
 
+    restorePosition(shell);
     buildDock(shell, root);
+    buildDrag(shell);
 
     /* ------------------------------------------------- the rest of the list
        A playlist is more than the one video playing. YouTube's player will
@@ -544,8 +748,14 @@
         btn.type = 'button';
         btn.textContent = String(i + 1) + '.';
         btn.addEventListener('click', function () {
+          // Stay on the track list. This used to call closeQueue() here,
+          // which snapped the screen back to the video the instant you
+          // picked a song -- exactly the behaviour this was asking not to
+          // do. yt.playVideoAt swaps the video inside the SAME YouTube
+          // player; nothing is torn down and nothing new is mounted, so
+          // the switch between tracks was already seamless underneath.
+          // All that needed to change was not covering it back up.
           try { yt.playVideoAt(i); } catch (e) {}
-          closeQueue();                 // you picked a track: show it playing
         });
         row.appendChild(btn);
         queueList.appendChild(row);
