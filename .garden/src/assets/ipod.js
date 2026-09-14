@@ -321,8 +321,23 @@
     // A word, not just chevrons: two faint arrows read as decoration and
     // the owner could not find the control.
     dock.innerHTML = '&#8249;&#8249;&nbsp;hide';
-    var bar = root.querySelector('.ipod-bar');
-    if (bar) bar.appendChild(dock);
+
+    // It used to sit in the bar across the top of the screen. That bar is
+    // 220-odd pixels wide and already holds the back button, the name of
+    // whatever is playing, and `tracks` — five things fighting over one
+    // line, all of them set tiny to fit. `hide` belongs to the device, not
+    // to the screen, so it moves down to the line under it, beside the
+    // ticker, and the bar gets its room back.
+    var ticker = root.querySelector('.ipod-ticker');
+    if (ticker && ticker.parentNode) {
+      var strip = el('div', 'ipod-strip');
+      ticker.parentNode.insertBefore(strip, ticker);
+      strip.appendChild(ticker);
+      strip.appendChild(dock);
+    } else {
+      var bar = root.querySelector('.ipod-bar');
+      if (bar) bar.appendChild(dock);
+    }
 
     function apply(on, save) {
       shell.setAttribute('data-docked', on ? 'on' : 'off');

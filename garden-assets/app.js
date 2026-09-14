@@ -726,6 +726,14 @@
   function mountResizable(item) {
     if (!item.classList.contains('kind-image') && !item.classList.contains('kind-video')) return;
 
+    /* The grip is a pointer affordance. A finger has no corner to catch, and
+       the browser draws nothing there to catch -- but mounting it anyway had
+       two costs on a phone. The press guard below swallows any click in the
+       bottom-right 18px of a resizable box, so that corner of every picture
+       went dead; and a resizable box drops its max-width, which let a 1872px
+       video push the whole page sideways and leave the site panning. */
+    if (!wide()) return;
+
     var media = item.querySelector('img, video');
     if (!media) return;
     var box = media.parentNode;
@@ -803,16 +811,20 @@
     var bed = document.querySelector('.plantbed');
     if (!bed) return;
 
-    var on = get('toggle.fit', true) &&
-             window.matchMedia('(min-width: 560px)').matches &&
+    var on = get('toggle.fit', true) && wide() &&
              bed.classList.contains('freeform');
 
     if (!on) {
       bedScale = 1;
       bed.style.transform = '';
-      bed.style.height = '';
-      bed.style.minHeight = '';
       bed.style.width = '';
+      // A frozen bed is holding its own height up -- every item in it is
+      // absolute now -- so clearing this would collapse the page to nothing
+      // the first time anything was dragged on a phone.
+      if (!bed.hasAttribute('data-frozen')) {
+        bed.style.height = '';
+        bed.style.minHeight = '';
+      }
       return;
     }
 

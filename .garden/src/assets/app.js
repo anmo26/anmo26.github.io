@@ -811,16 +811,20 @@
     var bed = document.querySelector('.plantbed');
     if (!bed) return;
 
-    var on = get('toggle.fit', true) &&
-             window.matchMedia('(min-width: 560px)').matches &&
+    var on = get('toggle.fit', true) && wide() &&
              bed.classList.contains('freeform');
 
     if (!on) {
       bedScale = 1;
       bed.style.transform = '';
-      bed.style.height = '';
-      bed.style.minHeight = '';
       bed.style.width = '';
+      // A frozen bed is holding its own height up -- every item in it is
+      // absolute now -- so clearing this would collapse the page to nothing
+      // the first time anything was dragged on a phone.
+      if (!bed.hasAttribute('data-frozen')) {
+        bed.style.height = '';
+        bed.style.minHeight = '';
+      }
       return;
     }
 
@@ -1300,10 +1304,15 @@
     var panel = document.createElement('div');
     panel.className = 'viewer';
 
-    // Cascade, so a second one does not land exactly on the first.
-    var step = (openViewers % 6) * 26;
-    panel.style.left = (70 + step) + 'px';
-    panel.style.top = (70 + step) + 'px';
+    // Cascade, so a second one does not land exactly on the first. Only where
+    // there is room to cascade into: on a phone the stylesheet pins the panel
+    // to the four edges of the screen, and an inline coordinate written here
+    // beats that rule and leaves the panel hanging off the side instead.
+    if (wide()) {
+      var step = (openViewers % 6) * 26;
+      panel.style.left = (70 + step) + 'px';
+      panel.style.top = (70 + step) + 'px';
+    }
     panel.style.zIndex = ++zTop;
     openViewers++;
 
