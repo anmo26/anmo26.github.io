@@ -3,23 +3,34 @@ day 2 building anmo’s garden: afternoon session.
 You fixed many bugs, but there are so many other ui things you can improve. ! Help me fix these issues in the order i provided. For overall archetecture and overseer use opus 5 medium. But for all the agents use sonnet 5 medium. I need to save tokens!!
 
 
-Fix the bugs
-Fix the libary, why can’t it display these files properly? What type of files can it hold?
-Connect to cloudflare to have unlimited online file storage
+1. Fix the bugs
+
+Fix the libary now, ignroe the legal stuff for now, why can’t it display these files properly? What type of files can it hold?
+
+
 On the front page, if a text is too long, make a read more button to save space on the main page
+
 When the tracks are playing have a moving (playing icon)to indicate the music is on
-I want there to be a to-do list on the main screen that can be dragable that displays what i have accomplished in the recent update on the site and also what i intend to do next. Kinda like a bullet pointed list of this document.
+
+I want there to be a to-do list on the main screen that can be dragable that displays what i have accomplished in the recent update on the site and also what 
+
+i intend to do next. Kinda like a bullet pointed list of this document.
+
 Why is the garden log broken? I cannot see when the site was last updated anymore..
 
-Make as much of the site interactable as possible, make somethign a suprise! I like how the clock changes when you click on it!!!.... Hmm idea!!! Make the library a secret folder where the only way to access it is the spam click the clock like 20 times in row within some time paremeter to be able to access it. And yes, fix the books please. 
+the iphone usage is much much better than before but its still glitchy and wierd ie the ipod not going to the side, not being able to drag folder and images by their icon (only the text rn), not being able to zoom in or out to see the other folders (i think this one would be a huge improvement) rn its still swipe right and left, on iphone, try your best to make the different things not collide or overlap with eachother, since its on a smaller surface its harder to control thigns so try to make the ui as friendly as possible. 
+
+2. Make as much of the site interactable as possible, make somethign a suprise! I like how the clock changes when you click on it!!!.... Hmm idea!!! Make the library a secret folder where the only way to access it is the spam click the clock like 20 times in row within some time parameter to be able to access it. And yes, fix the books please. 
 Make the clock look like its written with the letters a n mo l i and whenever available, have it in the order of anmo li, you can also use the numbers 2 and 6 and also @ ! $ and others to render it properly
 Plants ppl can water and take care of, have it so that people can click on plants to turn it from brown to green. Make it impossible for a plant to die. But have it so that hwenever someone visits a page on the site, they can decide to click on the plant to water it. Put a prickly pear cactus letter field on the left of the clock and right of the tile card. (have it write water me at the bottom.
 
+3
 In the future , we can do this. A place where people can leave messages anywhere on the site for other and me to read(be careful with this) maybe only allow this to be kept in a specialized folder.
+
 In the future, we can also make a tv player to play videos of my youtube channel: independent of the ipod. But serves similar service
 Create secret pages that can only be found if you know the method to enter it.
 
 
-
+Connect to cloudflare to have unlimited online file storage
 
 
