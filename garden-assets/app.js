@@ -368,19 +368,49 @@
      listeners behind after every folder the visitor walked into. */
 
   var drag = null;
+  var pending = null;          // pressed, but not yet moved far enough to count
+  var DRAG_SLOP = 4;           // px of travel before a press becomes a drag
 
   function dragMove(e) {
+    if (pending) {
+      if (Math.abs(e.clientX - pending.startX) < DRAG_SLOP &&
+          Math.abs(e.clientY - pending.startY) < DRAG_SLOP) return;
+
+      drag = pending;
+      pending = null;
+      drag.el.style.left = drag.originX + 'px';
+      drag.el.style.top = drag.originY + 'px';
+      drag.el.style.zIndex = ++zTop;
+      drag.el.classList.add('focused');
+      if (drag.handle && drag.handle.setPointerCapture) {
+        try { drag.handle.setPointerCapture(drag.pointerId); } catch (err) {}
+      }
+    }
     if (!drag) return;
+
+    // Held off until now: preventing the default on the press itself would
+    // have cancelled the click, and a press that never travels IS a click.
+    if (e.cancelable) e.preventDefault();
+
     var x = Math.max(0, drag.originX + (e.clientX - drag.startX));
     var y = Math.max(0, drag.originY + (e.clientY - drag.startY));
     drag.el.style.left = x + 'px';
     drag.el.style.top = y + 'px';
   }
 
+  /** A press that turned into a drag must not also open the link under it. */
+  function swallowNextClick(el) {
+    var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
+    el.addEventListener('click', kill, true);
+    setTimeout(function () { el.removeEventListener('click', kill, true); }, 0);
+  }
+
   function dragEnd() {
+    pending = null;
     if (!drag) return;
     var d = drag;
     drag = null;
+    swallowNextClick(d.el);
     d.el.classList.remove('focused');
 
     var x = parseInt(d.el.style.left, 10);
@@ -398,14 +428,24 @@
   }
 
   window.addEventListener('pointermove', dragMove);
+  window.addEventListener('pointerdown', function () { pending = null; }, true);
   window.addEventListener('pointerup', dragEnd);
   window.addEventListener('pointercancel', dragEnd);
 
+  /**
+   * A press does not become a drag until the pointer has actually travelled.
+   * That is what lets the filename and the icon -- both of them links, and
+   * both the obvious things to grab -- be draggable and still be clickable.
+   * The old handler bailed out on any link, which left nothing draggable but
+   * the grey size text beside the name.
+   */
   function makeDraggable(el, handle, key, onDrop) {
     handle = handle || el;
 
     handle.addEventListener('pointerdown', function (e) {
-      if (e.target.closest('a, button, input, textarea, select')) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      // Real controls keep their own behaviour; a press on one is never a drag.
+      if (e.target.closest('button, input, textarea, select, video, audio, iframe')) return;
       if (!window.matchMedia('(min-width: 560px)').matches) return;
 
       var offset = el.offsetParent;
@@ -414,23 +454,17 @@
       var rect = el.getBoundingClientRect();
       var parent = offset.getBoundingClientRect();
 
-      drag = {
+      pending = {
         el: el,
         key: key,
         onDrop: onDrop,
+        handle: handle,
+        pointerId: e.pointerId,
         originX: rect.left - parent.left,
         originY: rect.top - parent.top,
         startX: e.clientX,
         startY: e.clientY
       };
-
-      el.style.left = drag.originX + 'px';
-      el.style.top = drag.originY + 'px';
-      el.style.zIndex = ++zTop;
-      el.classList.add('focused');
-
-      handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
-      e.preventDefault();
     });
   }
 
@@ -451,11 +485,17 @@
 
   function mountItems() {
     document.querySelectorAll('.plantbed > .item').forEach(function (item) {
-      var handle = item.querySelector('h3');
-      if (!handle) return;
+      // The browser's own link and image dragging would otherwise take over
+      // the moment you grab an icon, which is the obvious thing to grab.
+      item.querySelectorAll('a, img').forEach(function (n) { n.draggable = false; });
 
       item.addEventListener('pointerdown', function () { item.style.zIndex = ++zTop; });
-      makeDraggable(item, handle, item.dataset.key);
+
+      // Anything that stands for the file is a handle: the icon, the name,
+      // the picture. Prose and code are not, so text stays selectable.
+      var handles = item.querySelectorAll('h3, .icon, :scope > a > img, :scope > img, :scope > video');
+      if (!handles.length) return;
+      handles.forEach(function (h) { makeDraggable(item, h, item.dataset.key); });
     });
   }
 

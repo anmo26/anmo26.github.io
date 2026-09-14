@@ -368,19 +368,49 @@
      listeners behind after every folder the visitor walked into. */
 
   var drag = null;
+  var pending = null;          // pressed, but not yet moved far enough to count
+  var DRAG_SLOP = 4;           // px of travel before a press becomes a drag
 
   function dragMove(e) {
+    if (pending) {
+      if (Math.abs(e.clientX - pending.startX) < DRAG_SLOP &&
+          Math.abs(e.clientY - pending.startY) < DRAG_SLOP) return;
+
+      drag = pending;
+      pending = null;
+      drag.el.style.left = drag.originX + 'px';
+      drag.el.style.top = drag.originY + 'px';
+      drag.el.style.zIndex = ++zTop;
+      drag.el.classList.add('focused');
+      if (drag.handle && drag.handle.setPointerCapture) {
+        try { drag.handle.setPointerCapture(drag.pointerId); } catch (err) {}
+      }
+    }
     if (!drag) return;
+
+    // Held off until now: preventing the default on the press itself would
+    // have cancelled the click, and a press that never travels IS a click.
+    if (e.cancelable) e.preventDefault();
+
     var x = Math.max(0, drag.originX + (e.clientX - drag.startX));
     var y = Math.max(0, drag.originY + (e.clientY - drag.startY));
     drag.el.style.left = x + 'px';
     drag.el.style.top = y + 'px';
   }
 
+  /** A press that turned into a drag must not also open the link under it. */
+  function swallowNextClick(el) {
+    var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
+    el.addEventListener('click', kill, true);
+    setTimeout(function () { el.removeEventListener('click', kill, true); }, 0);
+  }
+
   function dragEnd() {
+    pending = null;
     if (!drag) return;
     var d = drag;
     drag = null;
+    swallowNextClick(d.el);
     d.el.classList.remove('focused');
 
     var x = parseInt(d.el.style.left, 10);
@@ -398,14 +428,24 @@
   }
 
   window.addEventListener('pointermove', dragMove);
+  window.addEventListener('pointerdown', function () { pending = null; }, true);
   window.addEventListener('pointerup', dragEnd);
   window.addEventListener('pointercancel', dragEnd);
 
+  /**
+   * A press does not become a drag until the pointer has actually travelled.
+   * That is what lets the filename and the icon -- both of them links, and
+   * both the obvious things to grab -- be draggable and still be clickable.
+   * The old handler bailed out on any link, which left nothing draggable but
+   * the grey size text beside the name.
+   */
   function makeDraggable(el, handle, key, onDrop) {
     handle = handle || el;
 
     handle.addEventListener('pointerdown', function (e) {
-      if (e.target.closest('a, button, input, textarea, select')) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      // Real controls keep their own behaviour; a press on one is never a drag.
+      if (e.target.closest('button, input, textarea, select, video, audio, iframe')) return;
       if (!window.matchMedia('(min-width: 560px)').matches) return;
 
       var offset = el.offsetParent;
@@ -414,23 +454,17 @@
       var rect = el.getBoundingClientRect();
       var parent = offset.getBoundingClientRect();
 
-      drag = {
+      pending = {
         el: el,
         key: key,
         onDrop: onDrop,
+        handle: handle,
+        pointerId: e.pointerId,
         originX: rect.left - parent.left,
         originY: rect.top - parent.top,
         startX: e.clientX,
         startY: e.clientY
       };
-
-      el.style.left = drag.originX + 'px';
-      el.style.top = drag.originY + 'px';
-      el.style.zIndex = ++zTop;
-      el.classList.add('focused');
-
-      handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
-      e.preventDefault();
     });
   }
 
@@ -451,11 +485,17 @@
 
   function mountItems() {
     document.querySelectorAll('.plantbed > .item').forEach(function (item) {
-      var handle = item.querySelector('h3');
-      if (!handle) return;
+      // The browser's own link and image dragging would otherwise take over
+      // the moment you grab an icon, which is the obvious thing to grab.
+      item.querySelectorAll('a, img').forEach(function (n) { n.draggable = false; });
 
       item.addEventListener('pointerdown', function () { item.style.zIndex = ++zTop; });
-      makeDraggable(item, handle, item.dataset.key);
+
+      // Anything that stands for the file is a handle: the icon, the name,
+      // the picture. Prose and code are not, so text stays selectable.
+      var handles = item.querySelectorAll('h3, .icon, :scope > a > img, :scope > img, :scope > video');
+      if (!handles.length) return;
+      handles.forEach(function (h) { makeDraggable(item, h, item.dataset.key); });
     });
   }
 
@@ -827,6 +867,172 @@
       });
   }
 
+
+  /* ============================================================== VIEWERS
+     Opening a file used to hand the whole browser window over to it, which
+     is the one thing a folder never does. A file opens in a panel on top of
+     the page instead: draggable, closeable, and as many at once as you like,
+     so two things can sit side by side while the site carries on behind them.
+     ---------------------------------------------------------------------- */
+
+  var VIEWER_KIND = {
+    image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'bmp'],
+    video: ['mp4', 'mov', 'webm', 'm4v', 'ogv'],
+    audio: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'aiff'],
+    frame: ['pdf'],
+    text:  ['txt', 'text', 'md', 'markdown', 'log', 'csv', 'json', 'js', 'mjs',
+            'css', 'html', 'py', 'sh', 'yml', 'yaml', 'toml', 'ini', 'rb', 'go',
+            'rs', 'c', 'h', 'cpp', 'java', 'sql', 'conf']
+  };
+
+  var openViewers = 0;
+
+  function viewerKind(pathname) {
+    var m = /\.([A-Za-z0-9]+)$/.exec(pathname);
+    if (!m) return null;
+    var ext = m[1].toLowerCase();
+    for (var kind in VIEWER_KIND) {
+      if (VIEWER_KIND[kind].indexOf(ext) !== -1) return kind;
+    }
+    return null;
+  }
+
+  /** A link to a file we can show ourselves, rather than a folder to walk into. */
+  function fileLink(a) {
+    if (!a || !a.getAttribute) return false;
+    if (a.hasAttribute('download') || a.getAttribute('target')) return false;
+
+    var href = a.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return false;
+
+    var url;
+    try { url = new URL(a.href); } catch (e) { return false; }
+    if (url.origin !== location.origin) return false;
+    if (/\/$/.test(url.pathname) || /\/index\.html$/i.test(url.pathname)) return false;
+
+    return viewerKind(url.pathname);
+  }
+
+  function closeViewer(panel) {
+    // Stop the sound before the node goes: a detached <video> can keep
+    // playing in some browsers, and a torn-off iframe keeps downloading.
+    panel.querySelectorAll('video, audio').forEach(function (m) {
+      try { m.pause(); m.removeAttribute('src'); m.load(); } catch (e) {}
+    });
+    panel.querySelectorAll('iframe').forEach(function (f) { f.src = 'about:blank'; });
+    if (panel.parentNode) panel.parentNode.removeChild(panel);
+    openViewers = Math.max(0, openViewers - 1);
+  }
+
+  function openViewer(href, name, kind) {
+    var panel = document.createElement('div');
+    panel.className = 'viewer';
+
+    // Cascade, so a second one does not land exactly on the first.
+    var step = (openViewers % 6) * 26;
+    panel.style.left = (70 + step) + 'px';
+    panel.style.top = (70 + step) + 'px';
+    panel.style.zIndex = ++zTop;
+    openViewers++;
+
+    var bar = document.createElement('div');
+    bar.className = 'viewer-bar';
+
+    var label = document.createElement('span');
+    label.className = 'viewer-name';
+    label.textContent = name;
+    bar.appendChild(label);
+
+    var out = document.createElement('a');
+    out.className = 'viewer-out';
+    out.href = href;
+    out.target = '_blank';
+    out.rel = 'noopener';
+    out.title = 'open the real file in a new tab';
+    out.textContent = '↗';
+    bar.appendChild(out);
+
+    var shut = document.createElement('button');
+    shut.className = 'viewer-shut';
+    shut.type = 'button';
+    shut.title = 'close';
+    shut.setAttribute('aria-label', 'close ' + name);
+    shut.textContent = '✕';
+    shut.addEventListener('click', function () { closeViewer(panel); });
+    bar.appendChild(shut);
+
+    panel.appendChild(bar);
+
+    var body = document.createElement('div');
+    body.className = 'viewer-body';
+    panel.appendChild(body);
+
+    if (kind === 'image') {
+      var img = document.createElement('img');
+      img.alt = name;
+      img.src = href;
+      img.draggable = false;
+      body.appendChild(img);
+    } else if (kind === 'video') {
+      var v = document.createElement('video');
+      v.controls = true;
+      v.src = href;
+      body.appendChild(v);
+    } else if (kind === 'audio') {
+      var au = document.createElement('audio');
+      au.controls = true;
+      au.src = href;
+      body.appendChild(au);
+    } else if (kind === 'frame') {
+      var f = document.createElement('iframe');
+      f.src = href;
+      f.title = name;
+      body.appendChild(f);
+    } else {
+      var pre = document.createElement('pre');
+      pre.textContent = 'reading…';
+      body.appendChild(pre);
+      fetch(href).then(function (r) {
+        return r.ok ? r.text() : Promise.reject(new Error(r.status));
+      }).then(function (t) {
+        // textContent, never innerHTML: this is a file off the disk.
+        pre.textContent = t;
+      }).catch(function () {
+        pre.textContent = 'could not read this file. the ↗ opens it directly.';
+      });
+    }
+
+    document.body.appendChild(panel);
+    panel.addEventListener('pointerdown', function () { panel.style.zIndex = ++zTop; });
+    makeDraggable(panel, bar, null);
+    shut.focus();
+    return panel;
+  }
+
+  function mountViewers() {
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      // Modifier-clicks still mean "give me a real tab".
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      var a = e.target.closest ? e.target.closest('a') : null;
+      var kind = fileLink(a);
+      if (!kind) return;
+
+      e.preventDefault();
+      openViewer(a.href, a.getAttribute('data-name') || decodeURIComponent(
+        a.pathname.split('/').pop()), kind);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var all = document.querySelectorAll('.viewer');
+      if (!all.length) return;
+      closeViewer(all[all.length - 1]);
+    });
+  }
+
   function mountNav() {
     if (!window.fetch || !window.history || !history.pushState || !window.DOMParser) return;
 
@@ -913,6 +1119,7 @@
     mountClock();
     mountToggles();
     mountNav();
+    mountViewers();
     mountBroadcast();
     bootPage();
   }
