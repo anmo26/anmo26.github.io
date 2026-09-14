@@ -823,12 +823,22 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
 
 .ipod-queue-list { margin: 0; padding: 0; list-style: none; }
 
-.ipod-queue-row { margin: 0; border-bottom: 1px solid var(--rule-soft, rgba(38, 36, 31, .08)); }
+/* A row now holds two things -- the eq and the button -- side by side,
+   rather than the button alone. */
+.ipod-queue-row {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  padding-left: .5rem;
+  border-bottom: 1px solid var(--rule-soft, rgba(38, 36, 31, .08));
+}
 
 .ipod-queue-name {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
   display: block;
-  width: 100%;
-  padding: .42rem .5rem;
+  padding: .42rem .5rem .42rem .3rem;
   background: none;
   border: 0;
   color: var(--ipod-ink, #26241F);
@@ -841,10 +851,8 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
 
 .ipod-queue-name:hover { background: var(--ipod-hover, rgba(38, 36, 31, .05)); }
 
-/* the one that is actually sounding */
+/* the one that is actually sounding -- the eq bars (below) are the marker
+   now, so the row only needs to say the same thing in ink. */
 .ipod-queue-row[aria-current="true"] .ipod-queue-name {
   color: var(--ipod-mark, #A9752F);
-}
-.ipod-queue-row[aria-current="true"] .ipod-queue-name::before {
-  content: "\25B8\00a0";
 }

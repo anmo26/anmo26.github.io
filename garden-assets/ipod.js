@@ -88,6 +88,19 @@
     return h >>> 0;
   }
 
+  /**
+   * Three little bars for the "now playing" indicator. Built once wherever
+   * it is needed (a queue row, the strip) and left alone from then on --
+   * ipod.css does the actual bouncing, keyed off `body.music-playing`, so
+   * nothing here ever starts or stops a JS animation loop.
+   */
+  function buildEq(extraClass) {
+    var wrap = el('span', 'ipod-eq' + (extraClass ? ' ' + extraClass : ''));
+    wrap.setAttribute('aria-hidden', 'true');            // decoration only;
+    for (var i = 0; i < 3; i++) wrap.appendChild(el('span', 'ipod-eq-bar'));
+    return wrap;
+  }
+
   function initials(name) {
     var words = String(name)
       .replace(/['’]/g, '')          // don't let "today's" split into two words
@@ -397,6 +410,16 @@
      percentage -- recomputed after every move, so "off screen" always
      means off screen, from wherever the shell happens to be standing. */
 
+  /**
+   * The same "is this a phone" line ipod.css draws for the tab layout
+   * (the @media (max-width: 559px) block). Kept as one function so the two
+   * places that need to agree on it -- restorePosition below, and the tab
+   * CSS -- can't quietly drift apart.
+   */
+  function isNarrow() {
+    return window.matchMedia('(max-width: 559px)').matches;
+  }
+
   function shellRoom(shell) {
     var barH = parseFloat(getComputedStyle(document.documentElement)
       .getPropertyValue('--ipod-taskbar-h')) || 42;
@@ -414,7 +437,19 @@
 
   function restorePosition(shell) {
     var p = get('ipod.pos', null);
-    if (!p) { updateOffscreenVar(shell); return; }
+
+    // A spot remembered on a wide window means nothing on a phone's much
+    // smaller shellRoom -- the same fraction can land the open player
+    // anywhere, including the middle of the screen with its top edge over
+    // the page header. That is the whole of "the ipod not going to the
+    // side": once it had EVER been dragged on a bigger screen, opening it
+    // on the phone reapplied that fraction verbatim. A position is only
+    // honoured when it was saved under the same phone/not-phone class it
+    // is being restored into; anything saved before this flag existed
+    // reads as `narrow: undefined`, i.e. not a phone save, so old stray
+    // positions are quietly ignored on a phone rather than needing a reset.
+    if (!p || !!p.narrow !== isNarrow()) { updateOffscreenVar(shell); return; }
+
     var room = shellRoom(shell);
     shell.style.left = Math.round(p.x * room.maxX) + 'px';
     shell.style.top = Math.round(p.y * room.maxY) + 'px';
@@ -498,7 +533,9 @@
       var room = shellRoom(shell);
       set('ipod.pos', {
         x: room.maxX ? left / room.maxX : 0,
-        y: room.maxY ? top / room.maxY : 0
+        y: room.maxY ? top / room.maxY : 0,
+        narrow: isNarrow()      // see restorePosition -- keeps this fraction
+                                 // from leaking across the phone/desktop line
       });
       shell.setAttribute('data-positioned', 'yes');
       updateOffscreenVar(shell);
@@ -605,6 +642,13 @@
     restorePosition(shell);
     buildDock(shell, root);
     buildDrag(shell);
+
+    // The "somewhere on the player itself" copy of the now-playing bars,
+    // beside the ticker -- buildDock has already wrapped the ticker in
+    // .ipod-strip by this point, whichever view is showing.
+    if (ticker && ticker.parentNode) {
+      ticker.parentNode.insertBefore(buildEq('ipod-eq-strip'), ticker);
+    }
 
     /* ------------------------------------------------- the rest of the list
        A playlist is more than the one video playing. YouTube's player will
@@ -744,6 +788,10 @@
       queueList.innerHTML = '';
       ids.forEach(function (id, i) {
         var row = el('li', 'ipod-queue-row');
+        // Outside the button, not inside it: the button's own textContent
+        // gets overwritten wholesale once the real title comes back from
+        // oEmbed, which would carry off any child node living in there too.
+        row.appendChild(buildEq());
         var btn = el('button', 'ipod-queue-name');
         btn.type = 'button';
         btn.textContent = String(i + 1) + '.';
@@ -1225,6 +1273,9 @@
       state.playing = state.index;
       state.view = 'player';
       root.setAttribute('data-view', 'player');
+      root.setAttribute('data-loaded', 'yes');   // something has been picked
+                                                  // at least once -- see the
+                                                  // strip eq's CSS gate
       closeQueue();          // picking a playlist lands on the video, always
       sizeStage();           // and in the shape of whatever is about to play
 
