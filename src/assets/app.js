@@ -191,7 +191,7 @@
     'J': ['001', '001', '001', '101', '010'],
     'K': ['101', '101', '110', '101', '101'],
     'L': ['100', '100', '100', '100', '111'],
-    'M': ['1001', '1111', '1111', '1001', '1001'],
+    'M': ['10001', '11011', '10101', '10001', '10001'],
     'N': ['1001', '1101', '1111', '1011', '1001'],
     'O': ['010', '101', '101', '101', '010'],
     'P': ['110', '101', '110', '100', '100'],
@@ -219,6 +219,10 @@
     ' ': ['00', '00', '00', '00', '00']
   };
 
+  // a thinner ground for the date: the same keyboard texture, but sown with
+  // blanks so the small letterforms are not crowded by it
+  var MICRO_GROUND = 'v  w v   w  v w   ';
+
   var MICRO_H = 5;
   var MICRO_GAP = 1;              // ground columns between two letters
   var DOT = '·';
@@ -240,12 +244,12 @@
           var on = glyph[r].charAt(c) === '1';
           rows[r].push(on
             ? { ch: pick(FIGURE, seed), cls: 'f' }
-            : { ch: pick(GROUND, seed), cls: 'g' });
+            : { ch: pick(MICRO_GROUND, seed), cls: 'g' });
         }
 
         if (i < text.length - 1) {
           for (c = 0; c < MICRO_GAP; c++) {
-            rows[r].push({ ch: pick(GROUND, i * 11 + r * 7 + c + 3), cls: 'g' });
+            rows[r].push({ ch: pick(MICRO_GROUND, i * 11 + r * 7 + c + 3), cls: 'g' });
           }
         }
       }

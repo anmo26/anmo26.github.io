@@ -13,8 +13,8 @@
   "_comment_include": "if non-empty, ONLY files matching these appear. leave empty to show everything not excluded.",
   "include": [],
   "_comment_publish": "true = watch.js git-commits and pushes each change",
-  "publish": false,
-  "url": null,
+  "publish": true,
+  "url": "https://anmo26.github.io",
   "debounceMs": 2000,
   "guestbook": {
     "enabled": false,

@@ -440,7 +440,7 @@ a:visited { color: var(--olive); }
   font-weight: 700;
 }
 
-#clock-date .g { color: var(--ochre); opacity: .32; }
+#clock-date .g { color: var(--ochre); opacity: .38; }
 #clock-date .f { color: var(--ink); }
 
 @media (max-width: 899px) {
