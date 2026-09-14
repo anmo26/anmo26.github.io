@@ -412,6 +412,18 @@ body.tex-dots::after {
 
 .clock { color: var(--ink-faint); white-space: nowrap; }
 
+/* A name, five controls and a hint do not fit across a phone. The sideways
+   scroll they used to get is an affordance nobody finds. Two rows instead,
+   with every control big enough to actually hit. */
+@media (max-width: 559px) {
+  .taskbar {
+    flex-wrap: wrap; overflow-x: visible;
+    row-gap: .1rem; padding: .25rem .5rem;
+  }
+  .taskbar .spacer { display: none; }
+  .toggle { padding: .55rem .5rem; }
+}
+
 /* ------------------------------------------------------------- guestbook */
 
 .guestbed {
@@ -566,6 +578,13 @@ body.tex-dots::after {
    the bed.
    -------------------------------------------------------------------- */
 
+/* The feed is a right-hand margin column, and a phone has no margin -- below
+   560px it would land at the top of the front page as a 9kB wall of "regrew,
+   pushed, published" above anything the owner actually wrote. */
+@media (max-width: 559px) {
+  .plantbed > .item[data-key=".garden.log"] { display: none; }
+}
+
 @media (min-width: 560px) {
   .plantbed.freeform > .item[data-key=".garden.log"],
   .plantbed.scattered > .item[data-key=".garden.log"] {
@@ -698,6 +717,13 @@ body.tex-dots::after {
   #clock-date { font-size: 8px; }
 }
 
+/* 8px is below reading. The field drops its seconds on a phone, so it is
+   five cards wide instead of eight and there is room to grow. */
+@media (max-width: 559px) {
+  #clock-shell { margin: 0 auto 1.25rem; }
+  #clock, #clock-date { font-size: 10px; }
+}
+
 /* ------------------------------------------------------------- viewers
    A file opens in a panel over the page, not by handing the whole browser
    window to it. This is the one place a frame is right: it has to read as
@@ -797,6 +823,17 @@ body.tex-dots::after {
 /* A phone has no room for floating panels; let the file just open. */
 @media (max-width: 559px) {
   .viewer { position: fixed; inset: 1rem; max-width: none; resize: none; }
+
+  /* 18px of button is a miss with a fingertip, and the control beside it
+     opens a new tab -- so a miss does not merely fail, it takes you off the
+     site. Both get a proper thumb-sized target and room between them. */
+  .viewer-bar { padding: .5rem; gap: .75rem; }
+  .viewer-out,
+  .viewer-shut { width: 2.75rem; height: 2.75rem; font-size: 1rem; }
+
+  /* The panel is as tall as the screen now, so its body should be too --
+     otherwise every short file trails a hand's width of blank paper. */
+  .viewer-body { max-height: none; }
 }
 
 /* Pictures on the front page can be pulled bigger or smaller by the corner.
@@ -818,6 +855,13 @@ body.tex-dots::after {
   height: 100%;
   object-fit: contain;
   margin: 0;
+}
+
+/* On a phone the filename is the only thing there is to tap, so it has to
+   be readable and it has to be worth aiming at. */
+@media (max-width: 559px) {
+  .item h3 { font-size: .8rem; }
+  .item h3 a { display: inline-block; padding: .2rem 0; }
 }
 
 /* A phone has no corner to grab and no room to spare. */

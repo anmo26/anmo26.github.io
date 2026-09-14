@@ -686,17 +686,27 @@
     });
     if (!mine.length) return;
 
+    var bed = document.querySelector('.plantbed');
+
     // On a phone the items are still in flow, and a remembered coordinate
     // cannot mean anything to them until the bed has been pinned.
-    if (!wide()) freezeBed(document.querySelector('.plantbed'));
+    if (!wide()) freezeBed(bed);
 
     mine.forEach(function (m) {
-      m.el.style.left = m.at.x + 'px';
+      var x = m.at.x;
+      // A window narrowed from a desktop to a phone brings its remembered
+      // coordinates with it, and half of them are off the side of the screen
+      // now. Better where it still fits than where it cannot be reached.
+      if (!wide() && bed) {
+        var room = bed.clientWidth - m.el.offsetWidth;
+        x = room > 0 ? Math.min(x, room) : 0;
+      }
+      m.el.style.left = x + 'px';
       m.el.style.top = m.at.y + 'px';
       m.el.style.zIndex = ++zTop;
     });
 
-    if (!wide()) growBed(document.querySelector('.plantbed'));
+    if (!wide()) growBed(bed);
   }
 
   /* ============================================================== WINDOWS */
@@ -892,8 +902,6 @@
     { id: 'fit', label: 'fit', def: true,
       only: function () { return wide(); },
       apply: function () { fitSoon(); } },
-    { id: 'grain', label: 'grain',
-      apply: function (on) { document.body.classList.toggle('grain', on); } },
     { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
                              if (c) c.style.display = on ? '' : 'none'; } },
@@ -912,6 +920,14 @@
 
   var THEMES = ['', 'theme-clean', 'theme-pocari', 'theme-olive', 'theme-ink'];
   var THEME_NAMES = ['bone', 'paper', 'pocari', 'olive', 'ink'];
+
+  // Grain used to be a single on/off, and for a long time it was wired to a
+  // class the stylesheet did not define -- the button did nothing at all.
+  // There are four textures now, so it cycles like the theme button beside
+  // it. Each is drawn in plain black and multiplied into whatever paper is
+  // underneath, so none of them can introduce a colour of its own.
+  var TEXTURES = ['', 'tex-grain', 'tex-scan', 'tex-weave', 'tex-dots'];
+  var TEXTURE_NAMES = ['plain', 'grain', 'scan', 'weave', 'dots'];
 
   function mountToggles() {
     var bar = document.getElementById('taskbar-toggles');
@@ -953,6 +969,25 @@
     });
     bar.appendChild(themeBtn);
     paintTheme();
+
+    // texture cycler -- same shape as the theme one above
+    var texIdx = get('texture', 0);
+    var texBtn = document.createElement('button');
+    texBtn.className = 'toggle';
+    texBtn.type = 'button';
+    function paintTexture() {
+      TEXTURES.forEach(function (c) { if (c) document.body.classList.remove(c); });
+      if (TEXTURES[texIdx]) document.body.classList.add(TEXTURES[texIdx]);
+      texBtn.innerHTML = '<span class="led"></span>' + TEXTURE_NAMES[texIdx];
+      texBtn.setAttribute('aria-pressed', texIdx ? 'true' : 'false');
+    }
+    texBtn.addEventListener('click', function () {
+      texIdx = (texIdx + 1) % TEXTURES.length;
+      set('texture', texIdx);
+      paintTexture();
+    });
+    bar.appendChild(texBtn);
+    paintTexture();
 
     // reset everything this visitor has rearranged
     var reset = document.createElement('button');

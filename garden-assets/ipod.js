@@ -297,6 +297,22 @@
     return stage;
   }
 
+  /**
+   * How tall is the taskbar right now?
+   *
+   * The player and its grab tab both sit just above it, and "just above it"
+   * used to be a guessed 2.6rem. On a phone the taskbar wraps to two rows —
+   * and it gains a row again every time a control is added to it — so the
+   * guess put the tab UNDERNEATH the taskbar, invisible. Measured instead,
+   * and re-measured on resize, so it cannot drift out of date.
+   */
+  function sizeChrome() {
+    var bar = document.querySelector('.taskbar');
+    var h = bar ? bar.offsetHeight : 0;
+    document.documentElement.style.setProperty('--ipod-taskbar-h',
+      (h > 0 ? h : 42) + 'px');
+  }
+
   /* ------------------------------------------------------- the dock
      The player is furniture: it can be pushed to the edge of the screen and
      pulled back, and it keeps playing either way, because docking is a
@@ -367,6 +383,14 @@
     var shell = shellFor(root);
     var stage = stageFor(root);
 
+    sizeChrome();
+    window.addEventListener('resize', sizeChrome);
+    // The web fonts land after this runs and can add a row to the taskbar.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(sizeChrome).catch(function () {});
+    }
+    setTimeout(sizeChrome, 600);
+
     var bar     = root.querySelector('.ipod-bar');
     var title   = root.querySelector('.ipod-bar-title');
     var back    = root.querySelector('.ipod-back');
@@ -390,16 +414,11 @@
     var infoCache = {};
 
     /**
-     * A video's name AND its shape, in one request.
-     *
-     * oEmbed reports the size of the player YouTube would give that video,
-     * which is the only public way to learn that something was filmed
-     * upright before it is on screen. The /shorts/ form of the URL is the
-     * one that tells the truth: asked about a vertical video through the
-     * ordinary /watch/ URL, YouTube still answers with the default 16:9
-     * box, while /shorts/ answers 113x200. It is right about ordinary
-     * landscape and 4:3 videos too, so it is the call we make; /watch/ is
-     * kept only as a fallback in case YouTube stops accepting the other.
+     * A video's name, and — where oEmbed happens to know it — its shape.
+     * The shape here is a second opinion only; `videoShape` below is the
+     * one that decides. Measured: oEmbed called this playlist's first track
+     * 4:3 when the video is actually square, so it is not trustworthy on
+     * its own. It is right often enough to be worth keeping as a backstop.
      */
     function videoInfo(id) {
       if (infoCache[id]) return Promise.resolve(infoCache[id]);
@@ -426,6 +445,52 @@
 
     function videoTitle(id) {
       return videoInfo(id).then(function (i) { return i.title; });
+    }
+
+    /* ------------------------------------------------ how tall is it, really
+
+       YouTube keeps a thumbnail cut to a video's ORIGINAL proportions at
+       i.ytimg.com/vi/<id>/oar1.jpg — "oar" for original aspect ratio. It is
+       the only public thing that is reliably right: measured across a
+       square upload, two videos shot upright on a phone, a Short and an
+       ordinary widescreen video, it matched every one, where oEmbed got the
+       square one wrong and reports 16:9 for Shorts.
+
+       It is read as an image, so there is no CORS to satisfy — the browser
+       hands us naturalWidth and naturalHeight and that is all we need. When
+       there is no such file the video is the ordinary widescreen shape, and
+       oEmbed's answer (then 16:9) is used instead.
+
+       Nothing here is requested until something is playing, so the player is
+       as quiet on arrival as it ever was.                                  */
+
+    var shapeCache = {};
+
+    function videoShape(id) {
+      if (shapeCache[id]) return Promise.resolve(shapeCache[id]);
+
+      return new Promise(function (resolve) {
+        var img = new Image();
+        var done = false;
+
+        function finish(r) {
+          if (done) return;
+          done = true;
+          if (r) shapeCache[id] = r;
+          resolve(r);
+        }
+
+        img.onload = function () {
+          finish(img.naturalWidth > 0 && img.naturalHeight > 0
+            ? img.naturalWidth / img.naturalHeight : 0);
+        };
+        img.onerror = function () { finish(0); };
+        setTimeout(function () { finish(0); }, 6000);   // never hang the screen
+        img.src = 'https://i.ytimg.com/vi/' + id + '/oar1.jpg';
+      }).then(function (r) {
+        if (r) return r;
+        return videoInfo(id).then(function (i) { return i.ratio || (16 / 9); });
+      });
     }
 
     var queue = el('div', 'ipod-queue');
@@ -545,15 +610,20 @@
 
     /** How tall the picture may get before it starts eating the window. */
     function stageCap() {
-      var room = (window.innerHeight || 700) * 0.36;
-      return Math.max(120, Math.min(330, Math.round(room)));
+      var room = (window.innerHeight || 700) * 0.32;
+      return Math.max(120, Math.min(280, Math.round(room)));
     }
 
     function sizeStage() {
       if (bar) root.style.setProperty('--ipod-bar-h', bar.offsetHeight + 'px');
       if (!screenEl) return;
 
-      if (!ratioNow) {
+      // The video's shape belongs to the player. On the menu the screen goes
+      // back to its plain 4:3, because a widescreen video would otherwise
+      // squash the tile grid down to a single row of covers, and the menu is
+      // for browsing. `state` is not assigned yet on the very first call,
+      // which is exactly the "nothing loaded" case anyway.
+      if (!ratioNow || !state || state.view !== 'player') {
         screenEl.style.height = '';
         stage.style.width = '';
         stage.style.height = '';
@@ -581,10 +651,10 @@
     /** Cut the stage to this video's shape as soon as its size is known. */
     function fitTo(id) {
       if (!id) return;
-      videoInfo(id).then(function (info) {
-        if (!info.ratio) return;
-        if (Math.abs(info.ratio - ratioNow) < 0.01) return;
-        ratioNow = info.ratio;
+      videoShape(id).then(function (ratio) {
+        if (!ratio) return;
+        if (Math.abs(ratio - ratioNow) < 0.01) return;
+        ratioNow = ratio;
         sizeStage();
       });
     }
@@ -946,6 +1016,7 @@
       state.view = 'player';
       root.setAttribute('data-view', 'player');
       closeQueue();          // picking a playlist lands on the video, always
+      sizeStage();           // and in the shape of whatever is about to play
 
       var t = tracks[state.playing];
       if (t.src === 'youtube') playYouTube(state.playing);
@@ -973,6 +1044,7 @@
         root.setAttribute('data-view', 'list');
         state.index = state.playing >= 0 ? state.playing : state.index;
       }
+      sizeStage();           // the menu takes its own shape back
       paint();
       list.focus();
     }

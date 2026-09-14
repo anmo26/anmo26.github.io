@@ -33,6 +33,14 @@ const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore',
                        'garden.config.json', '.nojekyll', '.gitignore',
                        '.garden-cache', '.thumbs', '.originals', '.garden'];
 
+// The one dotfile that is content rather than clutter. .garden.log is the
+// site's own running feed -- it regrew, it pushed, it published -- and it is
+// deliberately shown in the right-hand margin. The hide-every-dotfile rule
+// below is right in general and would have swallowed it, so it is named back
+// in here rather than via the config `include` list: that list turns into an
+// exclusive whitelist for the whole site the moment it is non-empty.
+const ALWAYS_SHOW = ['.garden.log'];
+
 const EXT = {
   image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.bmp'],
   video: ['.mp4', '.mov', '.webm', '.m4v', '.ogv'],
@@ -147,7 +155,7 @@ function isIgnored(name, isDir, rules) {
   // the next stray dotfile would have done the same. Some of what lands in a
   // folder unasked (.env, credentials, editor droppings) should never be
   // published at all, which makes this the safe default rather than a tidy-up.
-  if (name.charAt(0) === '.' && !allowed) return true;
+  if (name.charAt(0) === '.' && !allowed && !ALWAYS_SHOW.includes(name)) return true;
 
   if (rules.allow && !isDir && !allowed) return true;
   return false;

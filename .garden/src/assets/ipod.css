@@ -551,7 +551,11 @@ body.theme-ink .ipod-tile-art.is-generated {
 .ipod-shell {
   position: fixed;
   left: 0;
-  bottom: 2.9rem;               /* clear of the taskbar */
+  /* Clear of the taskbar, whatever height the taskbar happens to be —
+     ipod.js measures it into --ipod-taskbar-h and keeps it up to date.
+     It was a flat 2.9rem, which is a guess that is wrong the moment the
+     bar wraps to two rows, as it does on a phone. */
+  bottom: calc(var(--ipod-taskbar-h, 2.9rem) + .45rem);
   z-index: 9997;                /* over the page, under the taskbar (9999) */
   padding-left: 1.1rem;         /* the inset lives here so the dock transform
                                    can be a plain -100% and land flush */
@@ -674,7 +678,44 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
    the edge by default (ipod.js decides on first visit) and the paddings
    tighten so the tab does not crowd the content. */
 @media (max-width: 700px) {
-  .ipod-shell { bottom: 2.6rem; padding-left: .6rem; }
+  .ipod-shell { padding-left: .6rem; }
+}
+
+/* ------------------------------------------------------------ on a phone
+
+   On a narrow screen the grab tab was a disaster. It is a 26px column
+   standing halfway down the LEFT EDGE, and at 375px the left edge is the
+   text: in notes/ it sat squarely on top of the "c" of colophon.txt, and
+   in a folder it covered the first column of icons. A control that makes
+   the page unreadable is not a control.
+
+   So on a phone it lies down instead, into the strip of paper just above
+   the taskbar — the same line the player itself sits on when it is open,
+   which is the one band of the screen nothing else is using. Wide screens
+   are untouched: there the left edge is margin, and a vertical tab there
+   is exactly right.
+
+   559px is the width the rest of the site already calls a phone. */
+
+@media (max-width: 559px) {
+  .ipod-tab {
+    top: auto;
+    bottom: calc(var(--ipod-taskbar-h, 2.6rem) + .45rem);  /* as the shell */
+    transform: none;
+    width: auto;
+    height: 1.5rem;
+    padding: 0 .55rem 0 1.15rem; /* room on the left for the playing dot */
+    border-radius: 0 3px 3px 0;
+  }
+  .ipod-tab-label {
+    writing-mode: horizontal-tb;
+    font-size: .66rem;
+  }
+  .ipod-tab::after {
+    top: 50%;
+    left: .5rem;
+    transform: translateY(-50%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
