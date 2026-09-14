@@ -329,24 +329,54 @@ function describe(dir, entry, rules, root, isRoot) {
              drawnHeight: Math.round(d.height * scale) };
   }
 
+  // A log is a feed, not a document: only its last few lines are ever shown,
+  // so it must be tailed BEFORE the inline size gate rather than after. It
+  // grows forever -- gating it on total size means it reads fine for a while
+  // and then one day silently turns into a download link.
+  if (/\.log$/i.test(name)) {
+    const text = tailText(full, LOG_TAIL_LINES);
+    if (text === null) return { ...file, type: 'other' };
+    return { ...file, type: 'text', contents: text, lines: text.split('\n').length };
+  }
+
   if (type === 'markdown' || type === 'text' || type === 'raw') {
     if (stat.size > INLINE_LIMIT[type]) return { ...file, type: 'other' };
     let body = '';
     try { body = fs.readFileSync(full, 'utf8'); } catch { return { ...file, type: 'other' }; }
     if (body.includes('\u0000')) return { ...file, type: 'other' };  // binary
-    // Keep only the tail of a log: it is a live feed, not a document.
-    let text = body.replace(/\s+$/, '');
-    if (/\.log$/i.test(name)) {
-      const all = text.split('\n');
-      if (all.length > LOG_TAIL_LINES) {
-        text = all.slice(-LOG_TAIL_LINES).join('\n');
-      }
-    }
-
-    return { ...file, contents: text, lines: text.split('\n').length };
+    return { ...file, contents: body.replace(/\s+$/, ''), lines: body.replace(/\s+$/, '').split('\n').length };
   }
 
   return file;
+}
+
+/**
+ * The last `lines` lines of a text file, read without pulling the whole file
+ * into memory -- only the final chunk of bytes is read, so this stays cheap
+ * no matter how large the file grows. Returns null when the file can't be
+ * read or isn't text.
+ */
+function tailText(fullPath, lines) {
+  const CHUNK = 64 * 1024;
+  let fd;
+  try {
+    fd = fs.openSync(fullPath, 'r');
+    const size = fs.fstatSync(fd).size;
+    const start = Math.max(0, size - CHUNK);
+    const buf = Buffer.alloc(size - start);
+    fs.readSync(fd, buf, 0, buf.length, start);
+    const raw = buf.toString('utf8');
+    if (raw.includes('\u0000')) return null;  // binary
+    // A partial read can slice a character or a line in half; drop the first
+    // line when we didn't start at the beginning of the file.
+    const body = (start > 0 ? raw.slice(raw.indexOf('\n') + 1) : raw).replace(/\s+$/, '');
+    const all = body.split('\n');
+    return all.length > lines ? all.slice(-lines).join('\n') : body;
+  } catch {
+    return null;
+  } finally {
+    if (fd !== undefined) { try { fs.closeSync(fd); } catch { /* already gone */ } }
+  }
 }
 
 /**
