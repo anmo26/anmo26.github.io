@@ -312,7 +312,9 @@
     dock.type = 'button';
     dock.setAttribute('aria-label', 'push the music player to the side');
     dock.title = 'push it to the side';
-    dock.innerHTML = '&#8249;&#8249;';
+    // A word, not just chevrons: two faint arrows read as decoration and
+    // the owner could not find the control.
+    dock.innerHTML = '&#8249;&#8249;&nbsp;hide';
     var bar = root.querySelector('.ipod-bar');
     if (bar) bar.appendChild(dock);
 

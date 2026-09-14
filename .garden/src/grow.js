@@ -56,6 +56,10 @@ const TOP_PADDING = 50;            // px of breathing room above the topmost ite
 // Writing is the point of this site, so markdown gets a generous budget.
 // Plain text and source files stay modest so a stray log can't flood a page.
 const INLINE_LIMIT = { markdown: 200000, text: 20000, raw: 4096 };
+
+// A log is read from the bottom. Showing the whole of one would push the
+// rest of the page off the screen and grow without limit.
+const LOG_TAIL_LINES = 20;
 const ROOT_FONT_PX = 14;
 
 // Drawn size of a folder icon. The PNG is written at 2x this for retina.
@@ -230,7 +234,16 @@ function describe(dir, entry, rules, root, isRoot) {
     let body = '';
     try { body = fs.readFileSync(full, 'utf8'); } catch { return { ...file, type: 'other' }; }
     if (body.includes('\u0000')) return { ...file, type: 'other' };  // binary
-    return { ...file, contents: body.replace(/\s+$/, ''), lines: body.split('\n').length };
+    // Keep only the tail of a log: it is a live feed, not a document.
+    let text = body.replace(/\s+$/, '');
+    if (/\.log$/i.test(name)) {
+      const all = text.split('\n');
+      if (all.length > LOG_TAIL_LINES) {
+        text = all.slice(-LOG_TAIL_LINES).join('\n');
+      }
+    }
+
+    return { ...file, contents: text, lines: text.split('\n').length };
   }
 
   return file;

@@ -78,6 +78,24 @@ function publish() {
   log(`published — live in ~1 min at ${config.url ?? 'your Pages URL'}`);
 }
 
+/**
+ * The log is on the page, and launchd keeps this process alive for as long as
+ * the machine is up, so left alone it would grow forever. Only the tail is
+ * ever shown; keep a little more than that and drop the rest.
+ */
+const LOG_KEEP = 200;
+
+function trimLog() {
+  const p = path.join(root, '.garden.log');
+  try {
+    const lines = fs.readFileSync(p, 'utf8').split('\n');
+    if (lines.length <= LOG_KEEP * 4) return;
+    // Rewritten in place. launchd holds this file open in append mode, so its
+    // next write lands after whatever is here now rather than at a stale offset.
+    fs.writeFileSync(p, lines.slice(-LOG_KEEP).join('\n'));
+  } catch { /* no log yet, or it is being written to right now */ }
+}
+
 /* ---------------------------------------------------------------------- heic
    An iPhone writes HEIC by default and no browser will draw one, so a photo
    dropped straight in would be a dead link. Every .heic gets a .jpg sibling
@@ -157,6 +175,7 @@ function rebuild() {
   try {
     // Before the build, not after: the generator has to see the .jpg.
     convertHeic();
+    trimLog();
 
     // Run the generator as a child process rather than calling growSite() in
     // here. ES modules are cached for the life of the process, so an imported

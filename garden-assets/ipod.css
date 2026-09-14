@@ -589,14 +589,18 @@ body.music-playing .ipod-tab::after {
   padding: 0 .3rem;
   margin-left: -.2rem;
   background: none;
-  border: 1px solid transparent;
-  color: var(--ipod-faint, #8A8477);
+  /* Visible at rest. This is the control that gets the player out of the
+     way, so it should not have to be hunted for. */
+  border: 1px solid var(--rule, rgba(38, 36, 31, .16));
+  border-radius: 2px;
+  color: var(--ipod-ink, #26241F);
   font: inherit;
   font-size: .6rem;
+  letter-spacing: .04em;
   line-height: 1;
   cursor: pointer;
 }
-.ipod-dock:hover { color: var(--ipod-ink, #26241F); border-color: var(--rule, rgba(38, 36, 31, .16)); }
+.ipod-dock:hover { color: var(--ipod-mark, #A9752F); border-color: var(--ipod-mark, #A9752F); }
 .ipod-dock:focus-visible { outline: 1px solid var(--ipod-mark, #A9752F); outline-offset: 1px; }
 
 /* -------------------------------------------------------- navigating
