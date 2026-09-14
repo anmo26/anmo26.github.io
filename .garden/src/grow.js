@@ -705,6 +705,24 @@ function splitForReadMore(text, minChars) {
       return { head: text.slice(0, m.index), tail: text.slice(m.index).replace(/^\s+/, '') };
     }
   }
+  // No paragraph break that early means one long unbroken run of writing --
+  // exactly the case the owner wanted folded, so falling back to "leave it
+  // whole" would quietly do nothing. Cut at a line break instead, and failing
+  // that at the end of a sentence. Markdown that is one giant paragraph has
+  // no fence or list to saw through, so neither cut can break it.
+  const soft = /\n/g;
+  while ((m = soft.exec(text))) {
+    if (m.index >= minChars) {
+      return { head: text.slice(0, m.index), tail: text.slice(m.index).replace(/^\s+/, '') };
+    }
+  }
+  const sentence = /[.!?][)"'\u201d\u2019]?\s/g;
+  while ((m = sentence.exec(text))) {
+    if (m.index >= minChars) {
+      const cut = m.index + m[0].length;
+      return { head: text.slice(0, cut).replace(/\s+$/, ''), tail: text.slice(cut).replace(/^\s+/, '') };
+    }
+  }
   return null;
 }
 
@@ -731,8 +749,11 @@ function renderBody(f, assetPrefix = '') {
       // .garden.log is already tailed to its last 20 lines (see the /\.log$/
       // branch in describe) and must stay exactly as-is -- it is a feed, not
       // an essay, and folding half of a 20-line log behind a click would just
-      // be annoying. Nothing else on the front page gets that exemption.
-      const split = f.name === '.garden.log' ? null : splitForReadMore(f.contents, READMORE_CHARS);
+      // be annoying. todo.md is a widget another script drags around and
+      // reads as a list, not a piece of writing, so it is exempt for the same
+      // reason: a bulleted list cut in half mid-list is just confusing.
+      const NO_READMORE = ['.garden.log', 'todo.md'];
+      const split = NO_READMORE.includes(f.name) ? null : splitForReadMore(f.contents, READMORE_CHARS);
       if (!split) return `<div class="md">${markdown(f.contents)}</div>`;
       return `<div class="read-more"><div class="md">${markdown(split.head)}</div>` +
              `<details class="read-more-toggle"><summary class="read-more-summary">read more</summary>` +
@@ -769,7 +790,16 @@ function renderItem(f, i, assetPrefix = '') {
       `width="${f.iconW ?? ICON_PX}" height="${f.iconH ?? ICON_PX}"></a>\n        `
     : '';
 
-  return `      <div class="item kind-${f.type}${f.iconOnly ? ' as-icon' : ''}" id="p${i}" data-key="${escapeHtml(f.name)}">
+  // todo.md at the site root is the draggable to-do list another script turns
+  // interactive -- it needs a class of its own to hook into (kind-markdown
+  // alone would make it indistinguishable from any other note), on top of the
+  // kind it already gets from its type. Root-only: a same-named file tucked
+  // inside some other folder is just a note with an ordinary name, not this
+  // widget, and only a root item is ever drawn with its body showing (see
+  // describe's `!isRoot` short-circuit) -- iconOnly is exactly that signal.
+  const todoClass = f.name === 'todo.md' && !f.iconOnly ? ' kind-todo' : '';
+
+  return `      <div class="item kind-${f.type}${todoClass}${f.iconOnly ? ' as-icon' : ''}" id="p${i}" data-key="${escapeHtml(f.name)}">
         ${icon}<h3><a href="${f.href}">${escapeHtml(f.name)}</a>` +
           (meta ? ` <span class="meta">(${escapeHtml(meta)})</span>` : '') + `</h3>` +
           (body ? `\n        ${body}` : '') + `
