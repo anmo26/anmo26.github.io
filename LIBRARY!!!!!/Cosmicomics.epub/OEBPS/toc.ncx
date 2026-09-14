@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
+<ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/">
+  <head>
+    <meta name="dtb:uid" content="FB2BookID" />
+    <meta name="dtb:depth" content="3" />
+    <meta name="dtb:totalPageCount" content="0" />
+    <meta name="dtb:maxPageNumber" content="0" />
+  </head>
+  <docTitle>
+    <text>Cosmicomics</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="NavPoint-1" playOrder="1">
+      <navLabel>
+        <text>Italo Calvino   Cosmicomics</text>
+      </navLabel>
+      <content src="section2.xhtml" />
+      <navPoint id="NavPoint-2" playOrder="2">
+        <navLabel>
+          <text>The Distance of the Moon</text>
+        </navLabel>
+        <content src="section4.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-3" playOrder="3">
+        <navLabel>
+          <text>AT DAYBREAK</text>
+        </navLabel>
+        <content src="section5.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-4" playOrder="4">
+        <navLabel>
+          <text>A SIGN IN SPACE</text>
+        </navLabel>
+        <content src="section6.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-5" playOrder="5">
+        <navLabel>
+          <text>ALL AT ONE POINT</text>
+        </navLabel>
+        <content src="section7.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-6" playOrder="6">
+        <navLabel>
+          <text>WITHOUT COLORS</text>
+        </navLabel>
+        <content src="section8.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-7" playOrder="7">
+        <navLabel>
+          <text>GAMES WITHOUT END</text>
+        </navLabel>
+        <content src="section9.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-8" playOrder="8">
+        <navLabel>
+          <text>THE AQUATIC UNCLE</text>
+        </navLabel>
+        <content src="section10.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-9" playOrder="9">
+        <navLabel>
+          <text>HOW MUCH SHALL WE BET?</text>
+        </navLabel>
+        <content src="section11.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-10" playOrder="10">
+        <navLabel>
+          <text>THE DINOSAURS</text>
+        </navLabel>
+        <content src="section12.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-11" playOrder="11">
+        <navLabel>
+          <text>THE FORM OF SPACE</text>
+        </navLabel>
+        <content src="section13.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-12" playOrder="12">
+        <navLabel>
+          <text>THE LIGHT-YEARS</text>
+        </navLabel>
+        <content src="section14.xhtml" />
+      </navPoint>
+      <navPoint id="NavPoint-13" playOrder="13">
+        <navLabel>
+          <text>THE SPIRAL</text>
+        </navLabel>
+        <content src="section15.xhtml" />
+        <navPoint id="NavPoint-14" playOrder="14">
+          <navLabel>
+            <text>II</text>
+          </navLabel>
+          <content src="section17.xhtml" />
+        </navPoint>
+        <navPoint id="NavPoint-15" playOrder="15">
+          <navLabel>
+            <text>III</text>
+          </navLabel>
+          <content src="section18.xhtml" />
+        </navPoint>
+      </navPoint>
+    </navPoint>
+  </navMap>
+</ncx>

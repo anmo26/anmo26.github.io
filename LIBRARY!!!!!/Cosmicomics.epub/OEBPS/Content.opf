@@ -1,0 +1,104 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="FB2BookID">
+  <metadata xmlns="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dcterms="http://purl.org/dc/terms/">
+    <dc:title>Cosmicomics</dc:title>
+    <dc:creator xmlns:ns0="http://www.idpf.org/2007/opf" ns0:role="aut" ns0:file-as="Calvino, Italo">Italo Calvino</dc:creator>
+    <dc:identifier xmlns:p6="http://www.idpf.org/2007/opf" id="FB2BookID" p6:scheme="URI">urn:uuid:fbd-d847ff-68cd-fb42-0185-9ed1-937c-794400</dc:identifier>
+    <dc:description>&lt;ul&gt;&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?40921" dir="ltr"&gt;The Spiral&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044769" dir="ltr"&gt;La spirale&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?40942" dir="ltr"&gt;A Sign in Space&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044760" dir="ltr"&gt;Un segno nello spazio&lt;/a&gt;&lt;/i&gt; 1964)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?57571" dir="ltr"&gt;All at One Point&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044761" dir="ltr"&gt;Tutto in un punto&lt;/a&gt;&lt;/i&gt; 1964)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96202" dir="ltr"&gt;The Aquatic Uncle&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044764" dir="ltr"&gt;Lo zio acquatico&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96204" dir="ltr"&gt;Games Without End&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044763" dir="ltr"&gt;Giochi senza fine&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96764" dir="ltr"&gt;The Light Years&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044768" dir="ltr"&gt;Gli anni-luce&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96765" dir="ltr"&gt;The Form of Space&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044767" dir="ltr"&gt;La forma dello spazio&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96766" dir="ltr"&gt;The Dinosaurs&lt;/a&gt; &amp;#8226; novelette by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044766" dir="ltr"&gt;I dinosauri&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96767" dir="ltr"&gt;How Much Shall We Bet?&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044765" dir="ltr"&gt;Quanto scommettiamo&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96768" dir="ltr"&gt;Without Colors&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044762" dir="ltr"&gt;Senza colori&lt;/a&gt;&lt;/i&gt; 1965)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96769" dir="ltr"&gt;At Daybreak&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044759" dir="ltr"&gt;Sul far del giorno&lt;/a&gt;&lt;/i&gt; 1964)&lt;li&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?96770" dir="ltr"&gt;The Distance of the Moon&lt;/a&gt; &amp;#8226; shortstory by &lt;a href="http://www.isfdb.org/cgi-bin/ea.cgi?2367" dir="ltr"&gt;Italo Calvino&lt;/a&gt; (trans. of &lt;i&gt;&lt;a href="http://www.isfdb.org/cgi-bin/title.cgi?1044758" dir="ltr"&gt;La distanza della Luna&lt;/a&gt;&lt;/i&gt; 1964)&lt;/ul&gt;</dc:description>
+    <dc:publisher>Harcourt, Brace &amp; World</dc:publisher>
+    <dc:subject>Collection</dc:subject>
+    <dc:subject>1970 Ditmar</dc:subject>
+    <dc:subject>Win of 1970 Ditmar Award for Best International Long Fiction</dc:subject>
+    <dc:subject>_isfdb</dc:subject>
+    <dc:date>1968-01-02T00:00:00+00:00</dc:date>
+    <dc:language>en</dc:language>
+    <dc:identifier xmlns:ns1="http://www.idpf.org/2007/opf" ns1:scheme="calibre">bf0cf70a-08e3-4004-8510-bae09db5e3cf</dc:identifier>
+    <dc:identifier xmlns:ns2="http://www.idpf.org/2007/opf" ns2:scheme="URL">http://isfdb.org/cgi-bin/pl.cgi?8052</dc:identifier>
+    <meta name="cover" content="images/pic_1.jpg"/>
+    <meta name="calibre:title_sort" content="Cosmicomics"/>
+    <meta name="calibre:author_link_map" content="{&quot;Italo Calvino&quot;: &quot;&quot;}"/>
+  </metadata>
+  <manifest>
+    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>
+    <item id="annotation" href="annotation.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent1_0" href="section1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent2_0" href="section2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent3_0" href="section3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent4_0" href="section4.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent5_0" href="section5.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent6_0" href="section6.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent7_0" href="section7.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent8_0" href="section8.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent9_0" href="section9.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent10_0" href="section10.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent11_0" href="section11.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent12_0" href="section12.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent13_0" href="section13.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent14_0" href="section14.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent15_0" href="section15.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent16_0" href="section16.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent17_0" href="section17.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent18_0" href="section18.xhtml" media-type="application/xhtml+xml"/>
+    <item id="bookcontent19_0" href="fb2info.xhtml" media-type="application/xhtml+xml"/>
+    <item id="about" href="about.xhtml" media-type="application/xhtml+xml"/>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="mainCSS" href="css/main.css" media-type="text/css"/>
+    <item id="pic_1.jpg" href="images/pic_1.jpg" media-type="image/jpeg"/>
+    <item id="pic_2.jpg" href="images/pic_2.jpg" media-type="image/jpeg"/>
+    <item id="LiberationSerif-Bold" href="fonts/LiberationSerif-Bold.ttf" media-type="application/x-font-ttf"/>
+    <item id="LiberationSerif-BoldItalic" href="fonts/LiberationSerif-BoldItalic.ttf" media-type="application/x-font-ttf"/>
+    <item id="LiberationSerif-Italic" href="fonts/LiberationSerif-Italic.ttf" media-type="application/x-font-ttf"/>
+    <item id="LiberationSerif-Regular" href="fonts/LiberationSerif-Regular.ttf" media-type="application/x-font-ttf"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="cover"/>
+    <itemref idref="title"/>
+    <itemref idref="annotation"/>
+    <itemref idref="bookcontent1_0"/>
+    <itemref idref="bookcontent2_0"/>
+    <itemref idref="bookcontent3_0"/>
+    <itemref idref="bookcontent4_0"/>
+    <itemref idref="bookcontent5_0"/>
+    <itemref idref="bookcontent6_0"/>
+    <itemref idref="bookcontent7_0"/>
+    <itemref idref="bookcontent8_0"/>
+    <itemref idref="bookcontent9_0"/>
+    <itemref idref="bookcontent10_0"/>
+    <itemref idref="bookcontent11_0"/>
+    <itemref idref="bookcontent12_0"/>
+    <itemref idref="bookcontent13_0"/>
+    <itemref idref="bookcontent14_0"/>
+    <itemref idref="bookcontent15_0"/>
+    <itemref idref="bookcontent16_0"/>
+    <itemref idref="bookcontent17_0"/>
+    <itemref idref="bookcontent18_0"/>
+    <itemref idref="bookcontent19_0"/>
+    <itemref idref="about"/>
+  </spine>
+  <guide>
+    <reference type="cover" title="cover" href="cover.xhtml"/>
+    <reference type="title-page" title="title" href="title.xhtml"/>
+    <reference type="preface" title="annotation" href="annotation.xhtml"/>
+    <reference type="title-page" title="bookcontent1_0" href="section1.xhtml"/>
+    <reference type="text" title="bookcontent2_0" href="section2.xhtml"/>
+    <reference type="text" title="bookcontent3_0" href="section3.xhtml"/>
+    <reference type="text" title="bookcontent4_0" href="section4.xhtml"/>
+    <reference type="text" title="bookcontent5_0" href="section5.xhtml"/>
+    <reference type="text" title="bookcontent6_0" href="section6.xhtml"/>
+    <reference type="text" title="bookcontent7_0" href="section7.xhtml"/>
+    <reference type="text" title="bookcontent8_0" href="section8.xhtml"/>
+    <reference type="text" title="bookcontent9_0" href="section9.xhtml"/>
+    <reference type="text" title="bookcontent10_0" href="section10.xhtml"/>
+    <reference type="text" title="bookcontent11_0" href="section11.xhtml"/>
+    <reference type="text" title="bookcontent12_0" href="section12.xhtml"/>
+    <reference type="text" title="bookcontent13_0" href="section13.xhtml"/>
+    <reference type="text" title="bookcontent14_0" href="section14.xhtml"/>
+    <reference type="text" title="bookcontent15_0" href="section15.xhtml"/>
+    <reference type="text" title="bookcontent16_0" href="section16.xhtml"/>
+    <reference type="text" title="bookcontent17_0" href="section17.xhtml"/>
+    <reference type="text" title="bookcontent18_0" href="section18.xhtml"/>
+    <reference type="notes" title="bookcontent19_0" href="fb2info.xhtml"/>
+    <reference type="copyright-page" title="about" href="about.xhtml"/>
+  </guide>
+</package>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package version="2.0" unique-identifier="PrimaryID" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <dc:title>Siddhartha</dc:title>
+    <dc:language xsi:type="dcterms:RFC4646">en</dc:language>
+    <dc:creator opf:role="aut" opf:file-as="Hesse, Hermann">Hermann Hesse</dc:creator>
+    <dc:coverage />
+    <dc:date opf:event="original-publication">1922</dc:date>
+    <dc:date opf:event="ops-publication">2008-11-17</dc:date>
+    <dc:subject>Fiction</dc:subject>
+    <dc:subject>Non-Fiction</dc:subject>
+    <dc:subject>Human Science</dc:subject>
+    <dc:subject>Philosophy</dc:subject>
+    <dc:identifier id="PrimaryID" opf:scheme="URN">urn:uuid:4d34ad66-1954-11e7-bcb2-4c72b9252ec6</dc:identifier>
+    <meta name="Sigil version" content="0.9.8" />
+    <dc:date opf:event="modification" xmlns:opf="http://www.idpf.org/2007/opf">2018-08-22</dc:date>
+    <meta name="cover" content="Siddhartha.jpg" />
+  </metadata>
+  <manifest>
+    <item id="Main1.xhtml" href="Text/Main1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main2.xhtml" href="Text/Main2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main3.xhtml" href="Text/Main3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main4.xhtml" href="Text/Main4.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main5.xhtml" href="Text/Main5.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main6.xhtml" href="Text/Main6.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main7.xhtml" href="Text/Main7.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main8.xhtml" href="Text/Main8.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main9.xhtml" href="Text/Main9.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main10.xhtml" href="Text/Main10.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main11.xhtml" href="Text/Main11.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main12.xhtml" href="Text/Main12.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main13.xhtml" href="Text/Main13.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main14.xhtml" href="Text/Main14.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main15.xhtml" href="Text/Main15.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main16.xhtml" href="Text/Main16.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Main17.xhtml" href="Text/Main17.xhtml" media-type="application/xhtml+xml"/>
+    <item id="page-css" href="Styles/page.css" media-type="text/css"/>
+    <item id="titlepage-css" href="Styles/title.css" media-type="text/css"/>
+    <item id="about-css" href="Styles/about.css" media-type="text/css"/>
+    <item id="main-css" href="Styles/main.css" media-type="text/css"/>
+    <item id="footnotes-css" href="Styles/footnotes.css" media-type="text/css"/>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="sgc-toc.css" href="Styles/sgc-toc.css" media-type="text/css"/>
+    <item id="TOC.xhtml" href="Text/TOC.xhtml" media-type="application/xhtml+xml"/>
+    <item id="Siddhartha.jpg" href="Images/Siddhartha.jpg" media-type="image/jpeg"/>
+    <item id="cover.xhtml" href="Text/cover.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="cover.xhtml"/>
+    <itemref idref="TOC.xhtml"/>
+    <itemref idref="Main1.xhtml" linear="yes"/>
+    <itemref idref="Main2.xhtml" linear="yes"/>
+    <itemref idref="Main3.xhtml" linear="yes"/>
+    <itemref idref="Main4.xhtml" linear="yes"/>
+    <itemref idref="Main5.xhtml" linear="yes"/>
+    <itemref idref="Main6.xhtml" linear="yes"/>
+    <itemref idref="Main7.xhtml" linear="yes"/>
+    <itemref idref="Main8.xhtml" linear="yes"/>
+    <itemref idref="Main9.xhtml" linear="yes"/>
+    <itemref idref="Main10.xhtml" linear="yes"/>
+    <itemref idref="Main11.xhtml" linear="yes"/>
+    <itemref idref="Main12.xhtml" linear="yes"/>
+    <itemref idref="Main13.xhtml" linear="yes"/>
+    <itemref idref="Main14.xhtml" linear="yes"/>
+    <itemref idref="Main15.xhtml" linear="yes"/>
+    <itemref idref="Main16.xhtml" linear="yes"/>
+    <itemref idref="Main17.xhtml" linear="yes"/>
+  </spine>
+  <guide>
+    <reference type="title-page" title="Title Page" href="Text/Main1.xhtml"/>
+    <reference type="text" title="Main0" href="Text/Main2.xhtml"/>
+    <reference type="text" title="Main1" href="Text/Main3.xhtml"/>
+    <reference type="text" title="Main2" href="Text/Main4.xhtml"/>
+    <reference type="text" title="Main3" href="Text/Main5.xhtml"/>
+    <reference type="text" title="Main4" href="Text/Main6.xhtml"/>
+    <reference type="text" title="Main5" href="Text/Main7.xhtml"/>
+    <reference type="text" title="Main6" href="Text/Main8.xhtml"/>
+    <reference type="text" title="Main7" href="Text/Main9.xhtml"/>
+    <reference type="text" title="Main8" href="Text/Main10.xhtml"/>
+    <reference type="text" title="Main9" href="Text/Main11.xhtml"/>
+    <reference type="text" title="Main10" href="Text/Main12.xhtml"/>
+    <reference type="text" title="Main11" href="Text/Main13.xhtml"/>
+    <reference type="text" title="Main12" href="Text/Main14.xhtml"/>
+    <reference type="text" title="Main13" href="Text/Main15.xhtml"/>
+    <reference type="text" title="Main14" href="Text/Main16.xhtml"/>
+    <reference type="text" title="Main15" href="Text/Main17.xhtml"/>
+    <reference type="cover" title="Cover" href="Text/cover.xhtml"/>
+    <reference type="toc" title="Table of Content" href="Text/TOC.xhtml"/>
+  </guide>
+</package>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN"
+   "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
+
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head>
+    <meta name="dtb:uid" content="urn:uuid:4d34ad66-1954-11e7-bcb2-4c72b9252ec6"/>
+    <meta name="dtb:depth" content="2"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>Siddhartha</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="navPoint-1" playOrder="1">
+      <navLabel>
+        <text>Siddhartha</text>
+      </navLabel>
+      <content src="Text/Main1.xhtml"/>
+      <navPoint id="navPoint-2" playOrder="2">
+        <navLabel>
+          <text>Hermann Hesse</text>
+        </navLabel>
+        <content src="Text/Main1.xhtml#sigil_toc_id_1"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="navPoint-3" playOrder="3">
+      <navLabel>
+        <text>Part 1</text>
+      </navLabel>
+      <content src="Text/Main2.xhtml"/>
+      <navPoint id="navPoint-4" playOrder="4">
+        <navLabel>
+          <text>THE SON OF THE BRAHMAN</text>
+        </navLabel>
+        <content src="Text/Main4.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-5" playOrder="5">
+        <navLabel>
+          <text>WITH THE SAMANAS</text>
+        </navLabel>
+        <content src="Text/Main5.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-6" playOrder="6">
+        <navLabel>
+          <text>GOTAMA</text>
+        </navLabel>
+        <content src="Text/Main6.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-7" playOrder="7">
+        <navLabel>
+          <text>AWAKENING</text>
+        </navLabel>
+        <content src="Text/Main7.xhtml"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="navPoint-8" playOrder="8">
+      <navLabel>
+        <text>Part 2</text>
+      </navLabel>
+      <content src="Text/Main8.xhtml"/>
+      <navPoint id="navPoint-9" playOrder="9">
+        <navLabel>
+          <text>KAMALA</text>
+        </navLabel>
+        <content src="Text/Main10.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-10" playOrder="10">
+        <navLabel>
+          <text>WITH THE CHILDLIKE PEOPLE</text>
+        </navLabel>
+        <content src="Text/Main11.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-11" playOrder="11">
+        <navLabel>
+          <text>SANSARA</text>
+        </navLabel>
+        <content src="Text/Main12.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-12" playOrder="12">
+        <navLabel>
+          <text>BY THE RIVER</text>
+        </navLabel>
+        <content src="Text/Main13.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-13" playOrder="13">
+        <navLabel>
+          <text>THE FERRYMAN</text>
+        </navLabel>
+        <content src="Text/Main14.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-14" playOrder="14">
+        <navLabel>
+          <text>THE SON</text>
+        </navLabel>
+        <content src="Text/Main15.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-15" playOrder="15">
+        <navLabel>
+          <text>OM</text>
+        </navLabel>
+        <content src="Text/Main16.xhtml"/>
+      </navPoint>
+      <navPoint id="navPoint-16" playOrder="16">
+        <navLabel>
+          <text>GOVINDA</text>
+        </navLabel>
+        <content src="Text/Main17.xhtml"/>
+      </navPoint>
+    </navPoint>
+  </navMap>
+</ncx>

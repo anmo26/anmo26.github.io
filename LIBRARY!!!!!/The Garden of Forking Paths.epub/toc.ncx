@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="en">
+  <head>
+    <meta content="4ae292e6-00ae-4665-90ea-d4804e84126f" name="dtb:uid"/>
+    <meta content="2" name="dtb:depth"/>
+    <meta content="calibre (1.48.0)" name="dtb:generator"/>
+    <meta content="0" name="dtb:totalPageCount"/>
+    <meta content="0" name="dtb:maxPageNumber"/>
+  </head>
+  <docTitle>
+    <text>The Garden of Forking Paths</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="uc8259c08-2768-44cb-9b6c-ea050443f590" playOrder="1">
+      <navLabel>
+        <text>Contents</text>
+      </navLabel>
+      <content src="index_split_004.html"/>
+    </navPoint>
+    <navPoint id="u5c5a9754-d09d-4097-b813-55ef59602454" playOrder="2">
+      <navLabel>
+        <text>Prologue</text>
+      </navLabel>
+      <content src="index_split_005.html"/>
+    </navPoint>
+    <navPoint id="u498f6a4e-92cd-44d0-b678-0ca69e7f4df0" playOrder="3">
+      <navLabel>
+        <text>Tlön, Uqbar, Orbius Tertius</text>
+      </navLabel>
+      <content src="index_split_006.html"/>
+    </navPoint>
+    <navPoint id="u1670fb62-8edb-4222-9fff-948231f816c1" playOrder="4">
+      <navLabel>
+        <text>The Approach to al-Mu'Tasim</text>
+      </navLabel>
+      <content src="index_split_007.html"/>
+    </navPoint>
+    <navPoint id="uc8973ab1-041f-4c3c-a375-cea845856ccc" playOrder="5">
+      <navLabel>
+        <text>The Circular Ruins</text>
+      </navLabel>
+      <content src="index_split_008.html"/>
+    </navPoint>
+    <navPoint id="ua13ff000-586d-458e-b2f4-a8361fd70266" playOrder="6">
+      <navLabel>
+        <text>Pierre Menard, Author of the Quixote</text>
+      </navLabel>
+      <content src="index_split_009.html"/>
+    </navPoint>
+    <navPoint id="u2498e0a2-f944-4d2e-a136-485ec7025cec" playOrder="7">
+      <navLabel>
+        <text>The Lottery of Babylon</text>
+      </navLabel>
+      <content src="index_split_010.html"/>
+    </navPoint>
+    <navPoint id="u85786f73-450c-4273-b578-76b41aac39ec" playOrder="8">
+      <navLabel>
+        <text>A Glimpse into the Work of Herbert Quain</text>
+      </navLabel>
+      <content src="index_split_011.html"/>
+    </navPoint>
+    <navPoint id="u378c1b29-9fc8-47ca-b01f-f2e014ba6345" playOrder="9">
+      <navLabel>
+        <text>The Library of Babel</text>
+      </navLabel>
+      <content src="index_split_012.html"/>
+    </navPoint>
+    <navPoint id="u0ba7dce5-1082-43fe-8031-b5afd1bd2fe2" playOrder="10">
+      <navLabel>
+        <text>The Garden of Forking Paths</text>
+      </navLabel>
+      <content src="index_split_013.html#ub996ecf7-b44b-4a1a-8a8e-f8ee7e907494"/>
+    </navPoint>
+    <navPoint id="u7f06fe1d-0a5e-4e47-9843-f2d69ac47f0f" playOrder="11">
+      <navLabel>
+        <text>A Note About the Author</text>
+      </navLabel>
+      <content src="index_split_014.html"/>
+    </navPoint>
+    <navPoint id="u10abe62d-1515-46d9-aff1-86f9f596e78d" playOrder="12">
+      <navLabel>
+        <text>Sur Masthead and Back Cover</text>
+      </navLabel>
+      <content src="index_split_070.html"/>
+    </navPoint>
+  </navMap>
+</ncx>
