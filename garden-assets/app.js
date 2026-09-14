@@ -269,7 +269,9 @@
     if (!host) return;
 
     var state = {
-      seconds: get('clock.seconds', true),
+      // Seconds cost three more cards, and the field is already as wide as a
+      // phone will take. A visitor who wants them back taps the clock.
+      seconds: get('clock.seconds', wide()),
       hour24: get('clock.hour24', false)
     };
 
@@ -870,7 +872,16 @@
     fitTimer = setTimeout(fitBed, 60);
   }
 
+  /* The last word in the taskbar is an instruction, and the gesture it names
+     is not the same one on both. A phone was being told to drag. */
+  function mountHint() {
+    var hint = document.getElementById('taskbar-clock');
+    if (!hint) return;
+    hint.textContent = wide() ? 'drag things around →' : 'hold an item to move it';
+  }
+
   window.addEventListener('resize', fitSoon);
+  window.addEventListener('resize', mountHint);
 
   /* ============================================================== TOGGLES */
 
@@ -1542,6 +1553,7 @@
   function boot() {
     mountClock();
     mountToggles();
+    mountHint();
     mountNav();
     mountViewers();
     mountBroadcast();
