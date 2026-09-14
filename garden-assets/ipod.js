@@ -11,10 +11,16 @@
 
    TWO PROPERTIES THIS FILE MUST KEEP
 
-   1. LAZY. Nothing third-party is requested until the visitor picks
-      something: no iframe, and the YouTube API script itself is injected
-      on first play, not on page load. A page with the player on it makes
-      zero requests off this origin until somebody presses a button.
+   1. LAZY, UNLESS ASKED OTHERWISE. Nothing third-party is requested until
+      the visitor picks something: no iframe, and the YouTube API script
+      itself is injected on first play, not on page load.
+
+      The one exception is the `autoplay` preference, which the owner asked
+      for and which ships on: with it on, the player asks YouTube for the
+      last-played list as soon as the page settles, so there is music in the
+      garden the moment it opens. Switch it off in the player's own bar and
+      this file is exactly as lazy as it was -- zero off-origin requests
+      until somebody presses a button.
 
    2. ALIVE ACROSS PAGES. app.js swaps <main> on internal navigation. The
       player must therefore live OUTSIDE <main> and never be rebuilt. On
@@ -366,21 +372,45 @@
        Spotify's own embed already shows its tracks, so the panel stays out
        of the way there. */
 
-    var titleCache = {};
+    var infoCache = {};
+
+    /**
+     * A video's name AND its shape, in one request.
+     *
+     * oEmbed reports the size of the player YouTube would give that video,
+     * which is the only public way to learn that something was filmed
+     * upright before it is on screen. The /shorts/ form of the URL is the
+     * one that tells the truth: asked about a vertical video through the
+     * ordinary /watch/ URL, YouTube still answers with the default 16:9
+     * box, while /shorts/ answers 113x200. It is right about ordinary
+     * landscape and 4:3 videos too, so it is the call we make; /watch/ is
+     * kept only as a fallback in case YouTube stops accepting the other.
+     */
+    function videoInfo(id) {
+      if (infoCache[id]) return Promise.resolve(infoCache[id]);
+      if (!window.fetch) return Promise.resolve({ title: '', ratio: 0 });
+
+      function ask(url) {
+        return fetch('https://www.youtube.com/oembed?format=json&url=' +
+                     encodeURIComponent(url))
+          .then(function (r) { return r.ok ? r.json() : null; });
+      }
+
+      return ask('https://www.youtube.com/shorts/' + id)
+        .then(function (j) { return j || ask('https://www.youtube.com/watch?v=' + id); })
+        .then(function (j) {
+          var info = {
+            title: (j && j.title) ? String(j.title) : '',
+            ratio: (j && j.width > 0 && j.height > 0) ? (j.width / j.height) : 0
+          };
+          if (info.title || info.ratio) infoCache[id] = info;
+          return info;
+        })
+        .catch(function () { return { title: '', ratio: 0 }; });
+    }
 
     function videoTitle(id) {
-      if (titleCache[id]) return Promise.resolve(titleCache[id]);
-      if (!window.fetch) return Promise.resolve('');
-
-      return fetch('https://www.youtube.com/oembed?format=json&url=' +
-                   encodeURIComponent('https://www.youtube.com/watch?v=' + id))
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (j) {
-          var t = j && j.title ? j.title : '';
-          if (t) titleCache[id] = t;
-          return t;
-        })
-        .catch(function () { return ''; });
+      return videoInfo(id).then(function (i) { return i.title; });
     }
 
     var queue = el('div', 'ipod-queue');
@@ -418,8 +448,7 @@
       // A single video is not a playlist, and neither is Spotify.
       if (!ids.length || stage.getAttribute('data-mode') !== 'yt') {
         queueBtn.hidden = true;
-        queue.hidden = true;
-        queueBtn.setAttribute('aria-expanded', 'false');
+        closeQueue();
         return;
       }
       queueBtn.hidden = false;
@@ -436,6 +465,7 @@
         btn.textContent = String(i + 1) + '.';
         btn.addEventListener('click', function () {
           try { yt.playVideoAt(i); } catch (e) {}
+          closeQueue();                 // you picked a track: show it playing
         });
         row.appendChild(btn);
         queueList.appendChild(row);
@@ -458,18 +488,92 @@
       [0, 400, 1200, 3000].forEach(function (ms) { setTimeout(buildQueue, ms); });
     }
 
-    queueBtn.addEventListener('click', function () {
-      var open = queue.hidden;
-      queue.hidden = !open;
-      queueBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (open) markQueue();
-    });
+    /**
+     * THE `tracks` PANEL IS A GUEST, NOT A VIEW.
+     *
+     * It used to be sticky: one press of `tracks` opened it and nothing
+     * ever closed it again. Because it is a layer above BOTH the stage and
+     * the menu, that one press meant every playlist opened afterwards came
+     * up showing the track list instead of the video -- and so did MENU.
+     * That is the whole of the "it defaults to tracks rather than the
+     * video" complaint. Every move that changes what the screen is meant to
+     * be showing now closes it, and it is hidden outright on the menu.
+     */
+    function showQueue(on) {
+      queue.hidden = !on;
+      queueBtn.setAttribute('aria-expanded', on ? 'true' : 'false');
+      if (on) markQueue();
+    }
+    function closeQueue() { showQueue(false); }
 
-    // The stage is an absolute layer, so it has to be told where the bar
-    // ends. Measured rather than guessed — the bar grows with the font.
+    queueBtn.addEventListener('click', function () { showQueue(queue.hidden); });
+
+    /* --------------------------------------------------- the stage's shape
+
+       The screen used to be a fixed 4:3 box that whatever was playing got
+       poured into, and YouTube padded the difference: a widescreen video
+       sat in a letterbox, and a video shot upright on a phone came out as a
+       thin strip down the middle with black either side of it.
+
+       The stage is now cut to the shape of the thing playing -- the box IS
+       the video -- and the screen grows or shrinks to match, within limits
+       so a tall video cannot push the device off the top of the window.
+       Resizing a box does not unmount it, so the music never stops.
+
+       The stage is also an absolute layer and has to be told where the bar
+       ends. That is measured rather than guessed: the bar grows with the
+       font.                                                               */
+
+    var WIDEST  = 16 / 9;      // wider than this and YouTube letterboxes anyway
+    var TALLEST = 9 / 16;      // a phone held upright
+    var ratioNow = 0;          // 0 = nothing loaded: the plain 4:3 screen
+
+    /** How tall the picture may get before it starts eating the window. */
+    function stageCap() {
+      var room = (window.innerHeight || 700) * 0.36;
+      return Math.max(120, Math.min(330, Math.round(room)));
+    }
+
     function sizeStage() {
       if (bar) root.style.setProperty('--ipod-bar-h', bar.offsetHeight + 'px');
+      if (!screenEl) return;
+
+      if (!ratioNow) {
+        screenEl.style.height = '';
+        stage.style.width = '';
+        stage.style.height = '';
+        return;
+      }
+
+      var r = ratioNow;
+      if (r > WIDEST) r = WIDEST;
+      if (r < TALLEST) r = TALLEST;
+
+      var wide = screenEl.clientWidth;
+      if (!wide) return;
+
+      var h = Math.round(wide / r);
+      var cap = stageCap();
+      if (h > cap) h = cap;
+      if (h < 96) h = 96;
+      var w = Math.min(wide, Math.round(h * r));
+
+      stage.style.width = w + 'px';
+      stage.style.height = h + 'px';
+      screenEl.style.height = (h + (bar ? bar.offsetHeight : 0)) + 'px';
     }
+
+    /** Cut the stage to this video's shape as soon as its size is known. */
+    function fitTo(id) {
+      if (!id) return;
+      videoInfo(id).then(function (info) {
+        if (!info.ratio) return;
+        if (Math.abs(info.ratio - ratioNow) < 0.01) return;
+        ratioNow = info.ratio;
+        sizeStage();
+      });
+    }
+
     sizeStage();
     window.addEventListener('resize', sizeStage);
 
@@ -494,6 +598,14 @@
       live: false,         // is a Spotify embed currently mounted
       now: ''              // the track title YouTube is reporting
     };
+
+    // The autostart attempt, and what it is allowed to do next. See the
+    // "starting on its own" section at the bottom of mount().
+    var AUTO_KEY = 'toggle.autoplay';
+    var autoPending = false;     // we asked for playback and have no answer yet
+    var hasPlayed = false;       // sound has come out at least once this visit
+    var gestureArmed = false;    // waiting on the visitor's first click/key/touch
+    var hint = '';               // a line the ticker shows instead of the link
 
     /* ---------------------------------------------------------- tiles */
 
@@ -592,9 +704,13 @@
       } else {
         var now = tracks[state.playing] || cur;
         title.textContent = state.now || now.name;
+        ticker.innerHTML = '';
+        // A waiting autostart owns this line until sound actually starts —
+        // it is the only place the player can tell you what it is waiting
+        // for, and it must not be buried behind a link.
+        if (hint) { ticker.textContent = hint; return; }
         // The link goes first so it survives the ellipsis on a narrow
         // screen; the note is the part that can afford to be cut.
-        ticker.innerHTML = '';
         var a = document.createElement('a');
         a.href = now.link;
         a.target = '_blank';
@@ -659,6 +775,18 @@
       } catch (e) { return ''; }
     }
 
+    function nowPlayingId() {
+      try {
+        var d = yt && yt.getVideoData && yt.getVideoData();
+        return (d && d.video_id) ? d.video_id : '';
+      } catch (e) { return ''; }
+    }
+
+    function playerState() {
+      try { return (yt && yt.getPlayerState) ? yt.getPlayerState() : -1; }
+      catch (e) { return -1; }
+    }
+
     function playYouTube(i) {
       var t = tracks[i];
       stageMode('yt');
@@ -668,7 +796,9 @@
       loadYouTubeAPI().then(function (YT) {
         if (state.playing !== i) return;          // they moved on while it loaded
 
-        if (yt && yt.loadPlaylist) { ytLoadTrack(t); queueSoon(); paint(); return; }
+        if (yt && yt.loadPlaylist) {
+          ytLoadTrack(t); queueSoon(); paint(); checkAutoplay(); return;
+        }
 
         var opts = {
           width: '100%',
@@ -682,8 +812,10 @@
               try { e.target.playVideo(); } catch (err) {}
               if (stage.getAttribute('data-mode') !== 'yt') return;
               state.now = nowPlayingTitle();
+              fitTo(nowPlayingId());
               queueSoon();
               paint();
+              checkAutoplay();
             },
             onStateChange: function (e) {
               // Switching to a Spotify playlist pauses this player rather
@@ -696,7 +828,18 @@
 
               // 1 playing, 2 paused, 0 ended, 3 buffering, 5 cued
               playingNow(e.data === 1);
+
+              // Sound is out: the autostart is over, and anything it was
+              // holding against the visitor's first gesture is let go.
+              if (e.data === 1) {
+                hasPlayed = true; autoPending = false; hint = ''; disarmGesture();
+              } else if (e.data === 2 && hasPlayed) {
+                // They pressed pause. Do not argue with them.
+                autoPending = false; hint = ''; disarmGesture();
+              }
+
               state.now = nowPlayingTitle();
+              fitTo(nowPlayingId());
               buildQueue();
               paint();
             },
@@ -710,6 +853,18 @@
         yt = new YT.Player(ytHost().firstChild, opts);
       }).catch(function (err) {
         if (state.playing !== i) return;
+        // If YouTube never answered an autostart, do not leave a visitor who
+        // asked for nothing staring at an empty black screen: put the menu
+        // back and say what happened on the one line there is.
+        if (autoPending) {
+          autoPending = false;
+          state.view = 'list';
+          root.setAttribute('data-view', 'list');
+          root.setAttribute('data-player', 'off');
+          stage.setAttribute('data-mode', 'none');
+          state.playing = -1;
+          paint();
+        }
         say(err && err.message ? err.message : 'could not reach YouTube');
       });
     }
@@ -735,6 +890,10 @@
       frame.setAttribute('allow',
         'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');
       spBox.appendChild(frame);
+      // Spotify's widget has no shape of its own worth matching — it is a
+      // list, and it scrolls. Give it the plain screen back.
+      ratioNow = 0;
+      sizeStage();
       state.live = true;
       state.now = '';
       root.setAttribute('data-player', 'on');
@@ -762,18 +921,16 @@
       } else if (mode === 'sp' && yt) {
         try { yt.pauseVideo(); } catch (e) {}
       }
-      if (mode !== 'yt' && typeof queueBtn !== 'undefined') {
-        queueBtn.hidden = true;
-        queue.hidden = true;
-      }
+      if (mode !== 'yt') { queueBtn.hidden = true; closeQueue(); }
     }
 
     /* ------------------------------------------------------ the controls */
 
-    function select() {
+    function select(quiet) {
       state.playing = state.index;
       state.view = 'player';
       root.setAttribute('data-view', 'player');
+      closeQueue();          // picking a playlist lands on the video, always
 
       var t = tracks[state.playing];
       if (t.src === 'youtube') playYouTube(state.playing);
@@ -781,7 +938,9 @@
 
       set('ipod.last', t.file);
       paint();
-      if (back) back.focus();
+      // `quiet` is the autostart: taking focus out from under someone who
+      // has just arrived and may already be reading is not on.
+      if (back && !quiet) back.focus();
     }
 
     /**
@@ -790,6 +949,7 @@
      * simply covers the stage while the music carries on behind it.
      */
     function toMenu() {
+      closeQueue();          // MENU means the playlists, not the track list
       if (state.view === 'list') {
         list.scrollTop = 0;
         state.index = 0;
@@ -892,6 +1052,126 @@
       e.preventDefault();
     });
 
+    /* ------------------------------------------------- starting on its own
+
+       The owner wants music in the garden the moment it opens. No browser
+       will simply allow that. Audible playback nobody asked for is blocked
+       everywhere -- YouTube's embed is not an exception, it is the usual
+       case -- and shipping a player that quietly fails would be worse than
+       shipping nothing.
+
+       So it is two moves. Ask immediately. If the ask is refused, hold the
+       request against the visitor's very first gesture anywhere on the page
+       -- a click, a key, a touch -- and start then. Either way the music
+       begins at the first moment the browser permits, and the refusal
+       looks like a player waiting on its poster frame, which is a normal
+       player and not a broken one.
+
+       Three things it must not do:
+         - fight a visitor who pauses it (once sound has come out, pause is
+           final: the gesture listener is dropped and never re-armed)
+         - start again on internal navigation (app.js swaps <main> only, so
+           this file is never re-run; the whole of it happens once per real
+           page load)
+         - be unavoidable (`auto` in the player's bar, remembered)         */
+
+    function autoWanted() { return get(AUTO_KEY, true) !== false; }
+
+    function firstGesture() {
+      disarmGesture();
+      hint = '';
+      try { if (yt && yt.playVideo) yt.playVideo(); } catch (e) {}
+      paint();
+    }
+
+    function disarmGesture() {
+      if (!gestureArmed) return;
+      gestureArmed = false;
+      document.removeEventListener('pointerdown', firstGesture, true);
+      document.removeEventListener('keydown', firstGesture, true);
+      document.removeEventListener('touchstart', firstGesture, true);
+    }
+
+    function armGesture() {
+      if (gestureArmed || hasPlayed || !autoWanted()) return;
+      gestureArmed = true;
+      // Capture, so it runs before anything on the page swallows the event,
+      // and one-shot, so it can never become a thing that keeps happening.
+      document.addEventListener('pointerdown', firstGesture, true);
+      document.addEventListener('keydown', firstGesture, true);
+      document.addEventListener('touchstart', firstGesture, true);
+      hint = 'your browser held the music — click anywhere to start it';
+      paint();
+    }
+
+    /**
+     * Did the autostart actually take? Asked a beat after the player says it
+     * is ready, because "playing" does not arrive in the same tick. 1 is
+     * playing and 3 is buffering its way there; anything else at this point
+     * means the browser said no.
+     */
+    function checkAutoplay() {
+      if (!autoPending) return;
+      setTimeout(function () {
+        if (!autoPending) return;
+        var s = playerState();
+        if (s === 1 || s === 3) return;
+        armGesture();
+      }, 1500);
+    }
+
+    function autoStart() {
+      if (!autoWanted()) return;
+
+      // YouTube only. Its player says whether it really started; Spotify's
+      // embed says nothing at all, so "autostart" there would be a silent
+      // iframe and a lit dot that might be a lie.
+      var want = -1, i;
+      if (tracks[state.index] && tracks[state.index].src === 'youtube') {
+        want = state.index;
+      } else {
+        for (i = 0; i < tracks.length; i++) {
+          if (tracks[i].src === 'youtube') { want = i; break; }
+        }
+      }
+      if (want < 0) return;
+
+      autoPending = true;
+      state.index = want;
+      select(true);
+    }
+
+    /* ------------------------------------------------------ the switch
+
+       A site that makes noise unbidden is hostile to some visitors, so the
+       switch is one press away, on the menu where the player is not busy
+       showing anything else, and it is remembered. Off is genuinely off:
+       nothing is asked of YouTube until somebody presses play.
+
+       It writes `toggle.autoplay`, which is the key a taskbar toggle in
+       app.js would use — the two would be the same setting, not two.     */
+
+    var autoBtn = el('button', 'ipod-auto');
+    autoBtn.type = 'button';
+    autoBtn.textContent = 'auto';
+
+    function paintAuto() {
+      var on = autoWanted();
+      autoBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      autoBtn.title = on
+        ? 'music starts when the site opens — click to stop that'
+        : 'music waits for you — click to have it start when the site opens';
+      autoBtn.setAttribute('aria-label', autoBtn.title);
+    }
+
+    autoBtn.addEventListener('click', function () {
+      set(AUTO_KEY, !autoWanted());
+      paintAuto();
+      if (!autoWanted()) { autoPending = false; hint = ''; disarmGesture(); paint(); }
+    });
+    if (bar) bar.appendChild(autoBtn);
+    paintAuto();
+
     /* ------------------------------------------------------- first run */
 
     // Restore where the visitor left off — highlight only. Loading the embed
@@ -911,6 +1191,9 @@
     if (last && tracks[state.index].file === last) {
       say('last played: ' + tracks[state.index].name);
     }
+
+    // Last, so a throw in here cannot take the rest of the player with it.
+    try { autoStart(); } catch (e) { if (window.console) console.warn('[ipod]', e); }
   }
 
   /* ================================================================ boot */

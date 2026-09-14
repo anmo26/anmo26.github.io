@@ -627,11 +627,14 @@
   function makeDraggable(el, handle, key, onDrop) {
     handle = handle || el;
 
+    // iOS pops its own preview panel over a link or an image after about half
+    // a second, which is precisely the gesture that now lifts the item.
+    handle.style.webkitTouchCallout = 'none';
+
     handle.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       // Real controls keep their own behaviour; a press on one is never a drag.
       if (e.target.closest('button, input, textarea, select, video, audio, iframe')) return;
-      if (!window.matchMedia('(min-width: 560px)').matches) return;
       if (inResizeGrip(e)) return;     // that corner belongs to the browser
 
       var offset = el.offsetParent;
@@ -647,25 +650,51 @@
         onDrop: onDrop,
         handle: handle,
         pointerId: e.pointerId,
+        touch: e.pointerType !== 'mouse',
+        held: e.pointerType === 'mouse',   // a mouse means it the moment it moves
         originX: (rect.left - parent.left) / k,
         originY: (rect.top - parent.top) / k,
         startX: e.clientX,
         startY: e.clientY
       };
+
+      clearTimeout(holdTimer);
+      if (pending.held) return;
+
+      /* Swiping is how a phone reads a page, so a finger that has merely
+         landed on something is not yet asking to move it -- and a 4px
+         threshold would have turned every scroll that started on an icon into
+         a drag. Hold still and the item lifts; move first and the press stays
+         what it was, a scroll or a tap. */
+      var p = pending;
+      holdTimer = setTimeout(function () {
+        if (pending === p) lift(p);
+      }, HOLD_MS);
     });
   }
 
   function restorePositions() {
-    if (!window.matchMedia('(min-width: 560px)').matches) return;
     var moved = get('moved', {});
+    var mine = [];
+
     Object.keys(moved).forEach(function (key) {
       if (key.indexOf('note:') === 0) return;   // notes carry their own x/y
       var el = document.querySelector('.item[data-key="' + CSS.escape(key) + '"]');
-      if (!el) return;
-      el.style.left = moved[key].x + 'px';
-      el.style.top = moved[key].y + 'px';
-      el.style.zIndex = ++zTop;
+      if (el) mine.push({ el: el, at: moved[key] });
     });
+    if (!mine.length) return;
+
+    // On a phone the items are still in flow, and a remembered coordinate
+    // cannot mean anything to them until the bed has been pinned.
+    if (!wide()) freezeBed(document.querySelector('.plantbed'));
+
+    mine.forEach(function (m) {
+      m.el.style.left = m.at.x + 'px';
+      m.el.style.top = m.at.y + 'px';
+      m.el.style.zIndex = ++zTop;
+    });
+
+    if (!wide()) growBed(document.querySelector('.plantbed'));
   }
 
   /* ============================================================== WINDOWS */
@@ -696,6 +725,14 @@
    */
   function mountResizable(item) {
     if (!item.classList.contains('kind-image') && !item.classList.contains('kind-video')) return;
+
+    /* The grip is a pointer affordance. A finger has no corner to catch, and
+       the browser draws nothing there to catch -- but mounting it anyway had
+       two costs on a phone. The press guard below swallows any click in the
+       bottom-right 18px of a resizable box, so that corner of every picture
+       went dead; and a resizable box drops its max-width, which let a 1872px
+       video push the whole page sideways and leave the site panning. */
+    if (!wide()) return;
 
     var media = item.querySelector('img, video');
     if (!media) return;
