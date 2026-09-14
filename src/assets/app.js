@@ -169,36 +169,75 @@
     return html;
   }
 
-  /**
-   * The date and the meridiem, built out of the same letterforms but on a
-   * tighter cell: no card padding, no seam, a single ground column between
-   * letters. Set smaller in CSS so the time still reads as the big thing.
-   */
+  /* ------------------------------------------------------- the date face
+     The date line and the meridiem are character fields too, but cut on a
+     smaller cell: a condensed 5-row alphabet (3 columns wide, 4 or 5 for
+     the wide letters) instead of the 5 x 7 cards. The individual characters
+     stay as large as the ones in the time — that is what keeps it readable —
+     while the letterforms themselves are half the height, so the time still
+     reads as the biggest thing on the block.
+     Each glyph is an array of rows; a row's length is that glyph's width.
+     ------------------------------------------------------------------- */
+  var MICRO = {
+    'A': ['010', '101', '111', '101', '101'],
+    'B': ['110', '101', '110', '101', '110'],
+    'C': ['011', '100', '100', '100', '011'],
+    'D': ['110', '101', '101', '101', '110'],
+    'E': ['111', '100', '110', '100', '111'],
+    'F': ['111', '100', '110', '100', '100'],
+    'G': ['011', '100', '101', '101', '011'],
+    'H': ['101', '101', '111', '101', '101'],
+    'I': ['111', '010', '010', '010', '111'],
+    'J': ['001', '001', '001', '101', '010'],
+    'K': ['101', '101', '110', '101', '101'],
+    'L': ['100', '100', '100', '100', '111'],
+    'M': ['1001', '1111', '1111', '1001', '1001'],
+    'N': ['1001', '1101', '1111', '1011', '1001'],
+    'O': ['010', '101', '101', '101', '010'],
+    'P': ['110', '101', '110', '100', '100'],
+    'Q': ['010', '101', '101', '111', '011'],
+    'R': ['110', '101', '110', '101', '101'],
+    'S': ['011', '100', '010', '001', '110'],
+    'T': ['111', '010', '010', '010', '010'],
+    'U': ['101', '101', '101', '101', '111'],
+    'V': ['101', '101', '101', '101', '010'],
+    'W': ['10001', '10001', '10101', '11011', '10001'],
+    'X': ['101', '101', '010', '101', '101'],
+    'Y': ['101', '101', '010', '010', '010'],
+    'Z': ['111', '001', '010', '100', '111'],
+    '0': ['111', '101', '101', '101', '111'],
+    '1': ['010', '110', '010', '010', '111'],
+    '2': ['111', '001', '111', '100', '111'],
+    '3': ['111', '001', '111', '001', '111'],
+    '4': ['101', '101', '111', '001', '001'],
+    '5': ['111', '100', '111', '001', '111'],
+    '6': ['111', '100', '111', '101', '111'],
+    '7': ['111', '001', '001', '010', '010'],
+    '8': ['111', '101', '111', '101', '111'],
+    '9': ['111', '101', '111', '001', '111'],
+    '·': ['0', '0', '1', '0', '0'],   // the separator, a punched dot
+    ' ': ['00', '00', '00', '00', '00']
+  };
+
+  var MICRO_H = 5;
   var MICRO_GAP = 1;              // ground columns between two letters
-  var SEP_W = 3;                  // width of the separator / space cell
   var DOT = '·';
 
+  /** Builds the date line as a field of characters, same ink and ground. */
   function smallField(text) {
     var rows = [];
     var r, c, i;
 
-    for (r = 0; r < 7; r++) rows.push([]);
+    for (r = 0; r < MICRO_H; r++) rows.push([]);
 
     for (i = 0; i < text.length; i++) {
-      var ch = text.charAt(i);
-      var glyph = GLYPH[ch] || null;
-      var width = glyph ? 5 : SEP_W;
+      var glyph = MICRO[text.charAt(i)] || MICRO[' '];
+      var width = glyph[0].length;
 
-      for (r = 0; r < 7; r++) {
+      for (r = 0; r < MICRO_H; r++) {
         for (c = 0; c < width; c++) {
           var seed = i * 29 + r * 13 + c * 5;
-          var on = false;
-          if (glyph) {
-            on = glyph[r].charAt(c) === '1';
-          } else if (ch === DOT) {
-            // the separator is a single punched dot in the ground
-            on = r === 3 && c === 1;
-          }
+          var on = glyph[r].charAt(c) === '1';
           rows[r].push(on
             ? { ch: pick(FIGURE, seed), cls: 'f' }
             : { ch: pick(GROUND, seed), cls: 'g' });
@@ -250,7 +289,7 @@
       var d = new Date();
 
       if (dateHost) {
-        var line = DAYS[d.getDay()] + DOT +
+        var line = DAYS[d.getDay()].slice(0, 3) + DOT +
           MONTHS[d.getMonth()].slice(0, 3) + ' ' + d.getDate() + DOT + d.getFullYear() +
           (state.hour24 ? '' : DOT + (d.getHours() < 12 ? 'AM' : 'PM'));
         if (line !== dateLine) {

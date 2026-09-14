@@ -3,3 +3,6 @@
 .DS_Store
 node_modules/
 *.log
+
+# the compiled icon helper and its cache — rebuilt on demand, never published
+.garden-cache/

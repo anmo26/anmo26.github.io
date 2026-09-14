@@ -175,6 +175,24 @@ main { padding: 2.5rem 1.5rem 1.5rem; }
 }
 .item .md { margin-top: .35rem; }
 
+/* A folder is drawn the way Finder draws it: the system icon with the name
+   centred underneath. The PNG is whatever macOS actually renders for that
+   exact folder, so a custom icon or a tag colour arrives here unchanged.
+   Fixed width so long names wrap under the icon instead of stretching the
+   row, which is what Finder does too. */
+.item.kind-directory { width: 7rem; text-align: center; }
+.item.kind-directory h3 { white-space: normal; line-height: 1.35; }
+.item.kind-directory .meta { display: block; }
+
+.item .icon { display: block; line-height: 0; cursor: grab; }
+.item .icon:active { cursor: grabbing; }
+.item .icon img {
+  width: 96px; height: 96px;
+  margin: 0 auto .3rem;
+  /* The icons carry their own soft shadow. A second one would double it. */
+  -webkit-user-drag: none; user-select: none;
+}
+
 a { color: var(--ochre); text-underline-offset: 2px; }
 a:visited { color: var(--olive); }
 
@@ -368,6 +386,8 @@ a:visited { color: var(--olive); }
 
   /* An unarranged folder still scatters — it should never look like a grid. */
   .plantbed.scattered > .item { position: absolute; margin: 0; width: max-content; max-width: 24rem; }
+  /* Folders keep their Finder-shaped column even when positioned. */
+  .plantbed > .item.kind-directory { width: 7rem; }
 
   .item pre { max-width: 26rem; }
 
@@ -414,9 +434,9 @@ a:visited { color: var(--olive); }
   margin: .45rem 0 0;
   white-space: pre;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 11px;
   line-height: 0.94;
-  letter-spacing: .04em;
+  letter-spacing: .06em;
   font-weight: 700;
 }
 
@@ -426,5 +446,5 @@ a:visited { color: var(--olive); }
 @media (max-width: 899px) {
   #clock-shell { position: static; margin: 0 auto 2rem; text-align: center; }
   #clock { font-size: 8px; }
-  #clock-date { font-size: 5px; letter-spacing: .02em; }
+  #clock-date { font-size: 8px; }
 }

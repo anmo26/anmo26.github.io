@@ -18,6 +18,7 @@ import { fileURLToPath } from 'url';
 import { parseDSStore } from './dsstore.js';
 import { imageSize, videoSize } from './imagesize.js';
 import { markdown, escapeHtml } from './markdown.js';
+import { folderIcon } from './icons.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DEFAULT = path.join(__dirname, '..');
@@ -26,7 +27,8 @@ const ROOT_DEFAULT = path.join(__dirname, '..');
 
 const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore',
                        'node_modules', 'garden-assets', 'src', '*.sh',
-                       'garden.config.json', '.nojekyll', '.gitignore'];
+                       'garden.config.json', '.nojekyll', '.gitignore',
+                       '.garden-cache'];
 
 const EXT = {
   image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.bmp'],
@@ -43,6 +45,9 @@ const TOP_PADDING = 50;            // px of breathing room above the topmost ite
 // Plain text and source files stay modest so a stray log can't flood a page.
 const INLINE_LIMIT = { markdown: 200000, text: 20000, raw: 4096 };
 const ROOT_FONT_PX = 14;
+
+// Drawn size of a folder icon. The PNG is written at 2x this for retina.
+const ICON_PX = 96;
 const MAX_MEDIA_PX = 24 * ROOT_FONT_PX;  // matches `max-width/height: 24em`
 
 // Below this width the freeform positions are dropped and items simply stack.
@@ -122,14 +127,17 @@ function countItems(dir, rules) {
 
 /* ------------------------------------------------------- describing a file */
 
-function describe(dir, entry, rules) {
+function describe(dir, entry, rules, root) {
   const name = entry.name;
   const full = path.join(dir, name);
   const href = encodeURI(name + (entry.isDirectory() ? '/' : ''));
 
   if (entry.isDirectory()) {
     const n = countItems(full, rules);
+    // The icon macOS itself draws for this folder, so a custom one or a tag
+    // colour carries through. null off a Mac -- the name stands alone then.
     return { name: name + '/', href, type: 'directory',
+             icon: folderIcon(full, root),
              contents: `${n} item${n === 1 ? '' : 's'}` };
   }
 
@@ -161,7 +169,8 @@ function describe(dir, entry, rules) {
 function estimateHeight(file) {
   const head = 26;                     // the filename line
   switch (file.type) {
-    case 'directory': return head;     // a folder is only ever that line
+    // A folder is its icon and the name under it, the way Finder stacks them.
+    case 'directory': return file.icon ? head + ICON_PX + 8 : head;
     case 'image':
     case 'video': return head + (file.drawnHeight ?? 200) + 6;
     case 'audio': return head + 48;
@@ -202,12 +211,18 @@ function renderBody(f) {
  * weighs, and then the thing itself. No frame around it -- the page is the
  * folder, and the items are lying on it.
  */
-function renderItem(f, i) {
+function renderItem(f, i, assetPrefix = '') {
   const meta = f.type === 'directory' ? f.contents : (f.size ?? '');
   const body = renderBody(f);
 
+  // The icon and the name are one link, because in Finder they are one thing.
+  const icon = f.icon
+    ? `<a class="icon" href="${f.href}" tabindex="-1" aria-hidden="true">` +
+      `<img src="${assetPrefix}${f.icon}" alt="" width="${ICON_PX}" height="${ICON_PX}"></a>\n        `
+    : '';
+
   return `      <div class="item kind-${f.type}" id="p${i}" data-key="${escapeHtml(f.name)}">
-        <h3><a href="${f.href}">${escapeHtml(f.name)}</a>` +
+        ${icon}<h3><a href="${f.href}">${escapeHtml(f.name)}</a>` +
           (meta ? ` <span class="meta">(${escapeHtml(meta)})</span>` : '') + `</h3>` +
           (body ? `\n        ${body}` : '') + `
       </div>`;
@@ -391,7 +406,7 @@ function guestbookWindow() {
 
 function renderPage({ siteName, title, files, positioned, description, socialImage,
                       assetPrefix, isRoot, tagline, marquee, guestbook, music }) {
-  const items = files.map(renderItem).join('\n');
+  const items = files.map((f, i) => renderItem(f, i, assetPrefix)).join('\n');
 
   // A guestbook needs a server to hold visitor notes, which GitHub Pages
   // cannot do. Off until there is a backend; flip "enabled" in the config.
@@ -564,7 +579,7 @@ function grow(dir, ctx) {
   const positions = parseDSStore(path.join(dir, '.DS_Store'));
 
   const files = entries.map(e => {
-    const f = describe(dir, e, rules);
+    const f = describe(dir, e, rules, ctx.root);
     const loc = positions[e.name]?.Iloc;
     if (loc) { f.x = loc.x; f.y = loc.y; }
     return f;
