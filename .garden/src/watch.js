@@ -57,9 +57,58 @@ function hasGitRemote() {
   return r.status === 0 && r.stdout.trim().length > 0;
 }
 
+// GitHub refuses outright any single file over 100 MB, and it refuses the
+// whole push, not just that file. A folder of raw camera .MOV files landed
+// here once and every publish after it failed with an HTTP 408 that looked
+// like a network problem -- the site quietly stopped updating for hours
+// while the watcher cheerfully reported "pushing..." each time. Six commits
+// piled up behind it, and none of them could ever have gone out.
+//
+// So oversized files are kept out of the commit in the first place, and
+// written into .gitignore so the next walk does not pick them up again.
+// They stay exactly where they are on disk: this is about what gets
+// published, never about the owner's folder.
+const MAX_PUBLISH_BYTES = 90 * 1024 * 1024;
+
+function holdBackGiants() {
+  const staged = git(['diff', '--cached', '--name-only']);
+  if (staged.status !== 0) return [];
+
+  const giants = [];
+  for (const rel of staged.stdout.split('\n')) {
+    if (!rel.trim()) continue;
+    let size;
+    try { size = fs.statSync(path.join(root, rel)).size; } catch { continue; }
+    if (size > MAX_PUBLISH_BYTES) giants.push({ rel, size });
+  }
+  if (!giants.length) return [];
+
+  for (const g of giants) git(['rm', '--cached', '--quiet', '--', g.rel]);
+
+  // Anchored with a leading slash and escaped so a name with [ or * in it
+  // still matches only itself.
+  const lines = giants.map(g => '/' + g.rel.replace(/([[\]*?!#\\])/g, '\\$1'));
+  let gi = '';
+  try { gi = fs.readFileSync(path.join(root, '.gitignore'), 'utf8'); } catch {}
+  const missing = lines.filter(l => !gi.split('\n').includes(l));
+  if (missing.length) {
+    fs.appendFileSync(path.join(root, '.gitignore'),
+      (gi.endsWith('\n') || !gi ? '' : '\n') +
+      '\n# Too big for GitHub (>90MB); left on disk, kept out of the repo.\n' +
+      missing.join('\n') + '\n');
+  }
+
+  for (const g of giants) {
+    log(`too big to publish (${(g.size / 1048576).toFixed(0)}MB), left on disk: ${g.rel}`);
+  }
+  return giants;
+}
+
 function publish() {
   const add = git(['add', '-A']);
   if (add.status !== 0) { log('git add failed:', add.stderr.trim()); return; }
+
+  holdBackGiants();
 
   const status = git(['status', '--porcelain']);
   if (!status.stdout.trim()) { log('nothing to publish'); return; }
