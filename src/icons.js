@@ -69,7 +69,9 @@ export function folderIcon(fullPath, root) {
 
   const rel = path.relative(root, fullPath);
   const out = path.join(root, 'garden-assets', 'icons', iconName(rel));
-  const stampFile = out + '.stamp';
+  // The stamp is build bookkeeping, not part of the site -- it lives in the
+  // cache dir so it never gets published alongside the PNG.
+  const stampFile = path.join(root, '.garden-cache', iconName(rel) + '.stamp');
   const stamp = iconStamp(fullPath);
 
   let cached = null;
@@ -79,6 +81,7 @@ export function folderIcon(fullPath, root) {
     fs.mkdirSync(path.dirname(out), { recursive: true });
     const r = spawnSync(bin, [fullPath, out, String(ICON_PX)], { encoding: 'utf8' });
     if (r.status !== 0) return null;
+    fs.mkdirSync(path.dirname(stampFile), { recursive: true });
     fs.writeFileSync(stampFile, stamp);
   }
 
