@@ -19,7 +19,7 @@ import { parseDSStore } from './dsstore.js';
 import { liveSnapshot, positionsFor } from './finder.js';
 import { imageSize, videoSize } from './imagesize.js';
 import { markdown, escapeHtml } from './markdown.js';
-import { folderIcon, fileThumb, beginIconRun, sweepIcons } from './icons.js';
+import { folderIcon, fileThumb, webPreview, beginIconRun, sweepIcons } from './icons.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DEFAULT = path.join(__dirname, '..');
@@ -40,6 +40,10 @@ const EXT = {
          '.tsx', '.py', '.sh', '.zsh', '.bash', '.css', '.yml', '.yaml', '.toml', '.ini',
          '.rb', '.go', '.rs', '.c', '.h', '.cpp', '.java', '.sql', '.r', '.ejs', '.conf'],
 };
+
+// Pictures a browser will not draw. macOS writes HEIC by default, so these
+// arrive constantly from an iPhone; each gets a web-safe copy made for it.
+const NEEDS_PREVIEW = ['.heic', '.heif', '.tif', '.tiff'];
 
 const TOP_PADDING = 50;            // px of breathing room above the topmost item
 // Writing is the point of this site, so markdown gets a generous budget.
@@ -164,6 +168,17 @@ function describe(dir, entry, rules, root, isRoot) {
   // QuickLook draws, so a photo still looks like that photo.
   if (!isRoot) return { ...file, ...iconBox(fileThumb(full, root)) };
 
+  // A HEIC is a photograph the front page should simply show, but no browser
+  // will render one. Stand a converted copy in its place; the name still
+  // links to the file that is actually in the folder.
+  if (NEEDS_PREVIEW.includes(path.extname(name).toLowerCase())) {
+    const p = webPreview(full, root);
+    if (!p) return { ...file, type: 'other' };
+    const scale = Math.min(1, MAX_MEDIA_PX / p.w, MAX_MEDIA_PX / p.h);
+    return { ...file, type: 'image', previewHref: p.href,
+             width: p.w, height: p.h, drawnHeight: Math.round(p.h * scale) };
+  }
+
   if (type === 'image' || type === 'video') {
     const d = (type === 'image' ? imageSize(full) : videoSize(full)) ??
               (type === 'video' ? { width: 480, height: 270 } : null);
@@ -210,15 +225,18 @@ function estimateHeight(file) {
 
 /* ----------------------------------------------------------------- the page */
 
-function renderBody(f) {
+function renderBody(f, assetPrefix = '') {
   // An icon stands for the file rather than opening it, so there is no body
   // to draw -- you click it, and the real file opens.
   if (f.iconOnly) return '';
 
   switch (f.type) {
-    case 'image':
-      return `<a href="${f.href}"><img src="${f.href}" alt="${escapeHtml(f.name)}" ` +
+    case 'image': {
+      // A converted stand-in when the real file is a format browsers refuse.
+      const src = f.previewHref ? assetPrefix + f.previewHref : f.href;
+      return `<a href="${src}"><img src="${src}" alt="${escapeHtml(f.name)}" ` +
              `width="${f.width}" height="${f.height}" loading="lazy"></a>`;
+    }
     case 'video':
       return `<video width="${f.width}" height="${f.height}" controls preload="metadata">` +
              `<source src="${f.href}"></video>`;
@@ -241,7 +259,7 @@ function renderBody(f) {
  */
 function renderItem(f, i, assetPrefix = '') {
   const meta = f.type === 'directory' ? f.contents : (f.size ?? '');
-  const body = renderBody(f);
+  const body = renderBody(f, assetPrefix);
 
   // The icon and the name are one link, because in Finder they are one thing.
   const icon = f.icon
@@ -640,7 +658,8 @@ function grow(dir, ctx) {
     files,
     positioned,
     description: ctx.description,
-    socialImage: rel ? null : firstImage?.href,
+    // The converted copy when there is one -- a link preview cannot show HEIC.
+    socialImage: rel ? null : (firstImage?.previewHref ?? firstImage?.href),
     assetPrefix: '../'.repeat(depthFromRoot),
     isRoot: depthFromRoot === 0,
     tagline: ctx.tagline,

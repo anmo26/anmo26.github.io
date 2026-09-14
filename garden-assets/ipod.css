@@ -548,6 +548,9 @@ body.music-off .ipod-tab { display: none; }
   font-family: var(--mono, Menlo, monospace);
   cursor: pointer;
 }
+/* An author `display` beats the UA sheet's `[hidden] { display: none }`,
+   so the tab has to opt back out by hand. */
+.ipod-tab[hidden] { display: none; }
 .ipod-tab:hover { color: var(--ink, #26241F); }
 .ipod-tab:focus-visible { outline: 1px solid var(--ochre, #A9752F); outline-offset: 1px; }
 

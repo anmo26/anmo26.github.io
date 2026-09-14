@@ -29,6 +29,9 @@ const ICON_PX = 256;          // 128pt at 2x -- sharp on retina, ~9 KB each
 // cheap at any size, but a thumbnail is a photograph: every extra pixel is
 // real weight in a public repo, so this one is sized to exactly what's drawn.
 const THUMB_PX = 192;
+// A full-size derivative, not a thumbnail: this one stands in for the photo
+// itself on the front page, so it has to survive being looked at.
+const PREVIEW_PX = 1600;
 
 const helpers = new Map();    // name -> compiled binary, or null once it failed
 
@@ -175,6 +178,60 @@ export function fileThumb(fullPath, root) {
   return size ? { href: 'garden-assets/icons/' + file, w: size.w, h: size.h } : null;
 }
 
+/**
+ * A web-safe copy of a picture no browser will draw.
+ *
+ * macOS writes HEIC by default, so a photo straight off an iPhone dropped in
+ * the folder would otherwise show up as a dead "download" link -- which
+ * defeats the point of the front page being the desk. sips ships with the
+ * system, so this costs no dependency.
+ *
+ * Returns the derivative's path relative to the site root and its pixel size,
+ * or null if the conversion is not possible here.
+ */
+export function webPreview(fullPath, root) {
+  if (process.platform !== 'darwin') return null;
+
+  let stamp;
+  try {
+    const st = fs.statSync(fullPath);
+    stamp = `${st.mtimeMs}:${st.size}`;
+  } catch { return null; }
+
+  const rel = path.relative(root, fullPath);
+  // iconName hands back a .png name and records the claim, which is what the
+  // sweep matches on; the bytes themselves are JPEG, because this is a
+  // photograph and a lossless copy of one is pointless weight in a git repo.
+  const claim = iconName(rel, 'w-');
+  const file = claim.replace(/\.png$/, '.jpg');
+  const out = path.join(root, 'garden-assets', 'icons', file);
+  const stampFile = path.join(root, '.garden-cache', file + '.stamp');
+
+  let cached = null;
+  try { cached = fs.readFileSync(stampFile, 'utf8'); } catch { /* first time */ }
+  const [cachedStamp, cachedSize] = cached ? cached.split('\n') : [];
+  if (cachedStamp === stamp && cachedSize && fs.existsSync(out)) {
+    const [w, h] = cachedSize.split(' ').map(Number);
+    if (w > 0 && h > 0) return { href: 'garden-assets/icons/' + file, w, h };
+  }
+
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  const r = spawnSync('sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', '80',
+    '-Z', String(PREVIEW_PX), fullPath, '--out', out],
+    { encoding: 'utf8', timeout: 30000 });
+  if (r.status !== 0 || !fs.existsSync(out)) return null;
+
+  const m = spawnSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', out],
+    { encoding: 'utf8', timeout: 10000 });
+  const w = Number(/pixelWidth:\s*(\d+)/.exec(m.stdout ?? '')?.[1]);
+  const h = Number(/pixelHeight:\s*(\d+)/.exec(m.stdout ?? '')?.[1]);
+  if (!(w > 0 && h > 0)) return null;
+
+  fs.mkdirSync(path.dirname(stampFile), { recursive: true });
+  fs.writeFileSync(stampFile, `${stamp}\n${w} ${h}`);
+  return { href: 'garden-assets/icons/' + file, w, h };
+}
+
 /* -------------------------------------------------------------- housekeeping
    Every file on the site now owns a PNG, and files get renamed and thrown
    away constantly. Without a sweep the icon folder only ever grows, and it is
@@ -205,8 +262,12 @@ export function sweepIcons(root) {
     }
   };
 
-  sweep(path.join(root, 'garden-assets', 'icons'), '.png', n => n.slice(0, -4));
-  sweep(path.join(root, '.garden-cache'), '.stamp', n => n.slice(0, -'.png.stamp'.length));
+  // claimed is keyed on the bare name, so every sweep strips the extension.
+  const icons = path.join(root, 'garden-assets', 'icons');
+  sweep(icons, '.png', n => n.slice(0, -4));
+  sweep(icons, '.jpg', n => n.slice(0, -4));
+  sweep(path.join(root, '.garden-cache'), '.stamp',
+        n => n.slice(0, -'.stamp'.length).replace(/\.(png|jpg)$/, ''));
 
   return removed;
 }
