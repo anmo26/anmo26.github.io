@@ -812,10 +812,16 @@
 
   var bedScale = 1;
   var MIN_SCALE = 0.62;
-  // Only a safety net against a pathologically wide arrangement -- a phone
-  // fits by width alone (below), and a canvas a laptop finds merely wide
-  // can be four or five times a phone's own width.
-  var MOBILE_MIN_SCALE = 0.14;
+  // A phone fits by width alone, and an arrangement a laptop finds merely
+  // wide can be four or five times a phone's own width -- so fitting ALL of
+  // it in means shrinking to about a seventh, at which point the filenames
+  // are two pixels tall and the photos are specks. That is not "the same
+  // look as the desktop", it is a thumbnail of it.
+  //
+  // So legibility wins over never panning: the floor is the point where text
+  // is still readable, and a wider arrangement than that is panned across,
+  // the way you would move a small window over a big desk.
+  var MOBILE_MIN_SCALE = 0.5;
   var TASKBAR_H = 44;
 
   function taskbarHeight() {

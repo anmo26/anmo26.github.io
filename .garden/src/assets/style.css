@@ -948,6 +948,17 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
   margin: 0;
 }
 
+/* When the arrangement is wider than the phone even at the smallest
+   readable scale, the bed compensates for its own transform with a width
+   well over 100%. Left in the page's normal flow that widens the DOCUMENT,
+   and a mobile browser answers by blowing the layout viewport out to match
+   -- the whole page zooms out and the folder ends up somewhere off screen.
+   Giving it its own sideways scroll keeps the blow-out inside this one box:
+   the page stays the width of the phone, and the folder is panned across. */
+@media (max-width: 559px) {
+  main { overflow-x: auto; overscroll-behavior-x: contain; }
+}
+
 /* On a phone the filename is the only thing there is to tap, so it has to
    be readable and it has to be worth aiming at. */
 @media (max-width: 559px) {
