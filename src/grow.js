@@ -12,6 +12,7 @@
  * Inspired by kevin.garden / file.gallery by Kevin N. Chen.
  */
 import fs from 'fs';
+import { spawnSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -29,7 +30,7 @@ const ROOT_DEFAULT = path.join(__dirname, '..');
 const ALWAYS_IGNORE = ['.git', '.DS_Store', 'index.html', '.gardenignore',
                        'node_modules', 'garden-assets', 'src', '*.sh',
                        'garden.config.json', '.nojekyll', '.gitignore',
-                       '.garden-cache'];
+                       '.garden-cache', '.thumbs', '.originals'];
 
 const EXT = {
   image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.bmp'],
@@ -44,6 +45,12 @@ const EXT = {
 // Pictures a browser will not draw. macOS writes HEIC by default, so these
 // arrive constantly from an iPhone; each gets a web-safe copy made for it.
 const NEEDS_PREVIEW = ['.heic', '.heif', '.tif', '.tiff'];
+
+// Anything wider than this gets a smaller copy made for it. The page shows
+// that copy and links to the full file, so a 4000px photo does not have to
+// come down the wire just to be looked at at 400px.
+const THUMB_MAX_PX = 1600;
+const THUMBS = '.thumbs';
 
 const TOP_PADDING = 50;            // px of breathing room above the topmost item
 // Writing is the point of this site, so markdown gets a generous budget.
@@ -185,6 +192,7 @@ function describe(dir, entry, rules, root, isRoot) {
     if (!d) return { ...file, type: 'other' };
     const scale = Math.min(1, MAX_MEDIA_PX / d.width, MAX_MEDIA_PX / d.height);
     return { ...file, width: d.width, height: d.height,
+             thumbHref: type === 'image' ? thumbFor(full, root, d.width) : null,
              drawnHeight: Math.round(d.height * scale) };
   }
 
@@ -197,6 +205,34 @@ function describe(dir, entry, rules, root, isRoot) {
   }
 
   return file;
+}
+
+/**
+ * A smaller copy of an oversized image, made once and reused. Returns its
+ * path relative to the site root, or null if there is nothing to gain or the
+ * conversion is not possible here.
+ *
+ * Regenerated only when the source is newer, so the common rebuild -- which
+ * happens on every save -- costs two stats and nothing else.
+ */
+function thumbFor(fullPath, root, width) {
+  if (process.platform !== 'darwin' || !(width > THUMB_MAX_PX)) return null;
+
+  const rel = path.relative(root, fullPath);
+  const out = path.join(root, THUMBS, rel);
+
+  try {
+    const src = fs.statSync(fullPath);
+    const thumb = fs.statSync(out);
+    if (thumb.mtimeMs >= src.mtimeMs) return THUMBS + '/' + rel.split(path.sep).join('/');
+  } catch { /* no thumb yet, or the source vanished */ }
+
+  try { fs.mkdirSync(path.dirname(out), { recursive: true }); } catch { return null; }
+  const r = spawnSync('sips', ['-Z', String(THUMB_MAX_PX), fullPath, '--out', out],
+    { encoding: 'utf8', timeout: 60000 });
+  if (r.status !== 0 || !fs.existsSync(out)) return null;
+
+  return THUMBS + '/' + rel.split(path.sep).join('/');
 }
 
 /** Rough rendered height, used only to give the page something to scroll to. */
@@ -233,8 +269,10 @@ function renderBody(f, assetPrefix = '') {
   switch (f.type) {
     case 'image': {
       // A converted stand-in when the real file is a format browsers refuse.
-      const src = f.previewHref ? assetPrefix + f.previewHref : f.href;
-      return `<a href="${src}"><img src="${src}" alt="${escapeHtml(f.name)}" ` +
+      const full = f.previewHref ? assetPrefix + f.previewHref : f.href;
+      // Shown smaller when the original is huge; the link still goes to it.
+      const shown = f.thumbHref ? assetPrefix + encodeURI(f.thumbHref) : full;
+      return `<a href="${full}"><img src="${shown}" alt="${escapeHtml(f.name)}" ` +
              `width="${f.width}" height="${f.height}" loading="lazy"></a>`;
     }
     case 'video':

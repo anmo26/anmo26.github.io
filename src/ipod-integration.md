@@ -1,362 +1,401 @@
 # wiring the iPod into grow.js
 
-Everything the music window needs already exists in `src/assets/`:
+The player is three files, all of them already written:
 
-- `src/assets/ipod.css` — the device
-- `src/assets/ipod.js` — the behaviour
+- `src/assets/ipod.css` — the device, the shell it sits in, the dock
+- `src/assets/ipod.js` — the behaviour, the YouTube player, the dock controls
 - `music/` — the content (see `music/README.txt`)
 
 `copyAssets()` already copies **every** file in `src/assets/` into
-`garden-assets/`, so `ipod.css` and `ipod.js` ship with no change to that
-function. What follows is the rest: a parser, a markup block, and two tags.
+`garden-assets/`, so those two ship with no change to that function.
 
-Nothing here touches the folder-is-the-site idea — the player is driven
-entirely by what is in `music/`.
+What `grow.js` still has to do is small: read `music/`, and emit the chassis
+**outside `<main>`** on every page. Section 5 is the exact diff.
 
 ---
 
-## 1. the data shape
+## 1. what changed, and why
+
+The player used to be a Spotify embed living in a `.item` inside `<main>` on
+the front page only. Three things were wrong with that:
+
+1. **Spotify's embed has no controls.** A cross-origin iframe cannot be
+   told to play, pause or skip, so the only "pause" available was to delete
+   the iframe. YouTube publishes an official IFrame Player API, so the click
+   wheel can now drive real playback.
+2. **It died on navigation.** Every folder is a real page, so walking into
+   `art/` tore the document down and the music with it. `app.js` now swaps
+   `<main>` client-side instead — which only helps if the player is not
+   inside `<main>`. It now lives in `#ipod-shell`, a sibling of
+   `#clock-shell`, and is never rebuilt.
+3. **It was front-page only.** A visitor landing on `anmo.garden/art/` got
+   no player at all. It is emitted on every page now. It costs the folder
+   pages no layout, because it is fixed to the corner rather than laid out
+   in the plantbed.
+
+Spotify is still supported and still parsed. It is no longer the default.
+
+---
+
+## 2. the data shape
 
 `ipod.js` reads one global, injected by the generator before the script tag:
 
 ```js
 window.GARDEN_MUSIC = [
   {
-    name:  "late night drives",                 // display name, sort prefix and extension stripped
-    file:  "01 late night drives.txt",          // source filename — the localStorage key and dedupe key
-    kind:  "playlist",                          // playlist | album | track | artist | episode | show
-    id:    "37i9dQZF1DX4WYpdgoIcn6",            // Spotify base62 id
-    embed: "https://open.spotify.com/embed/playlist/37i9dQZF1DX4WYpdgoIcn6?utm_source=generator",
-    link:  "https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6",
-    cover: "music/covers/deep-focus.jpg",       // href relative to the page, or null
-    note:  "windows down, nothing to prove"     // string, may be ""
+    name:  "music",                      // display name, sort prefix and extension stripped
+    file:  "01 music.txt",               // source filename — the localStorage key
+    src:   "youtube",                    // "youtube" | "spotify"   <-- NEW
+    kind:  "playlist",                   // youtube: playlist|video
+                                         // spotify: playlist|album|track|artist|episode|show
+    id:    "PLXWFWrURanY0",
+    embed: "https://www.youtube.com/embed/videoseries?list=PLXWFWrURanY0",
+    link:  "https://www.youtube.com/playlist?list=PLXWFWrURanY0",
+    cover: "music/covers/x.jpg",         // href relative to the page, or null
+    note:  "a line under the tile"       // string, may be ""
   }
 ];
 ```
 
 Order in the array is the order on screen.
 
-`ipod.js` re-validates and repairs every entry on the client, so the only
-hard requirement is `name` plus **one** of `id`+`kind`, `embed`, or `link`.
-Anything with none of those is dropped silently rather than drawn broken.
-An absent or empty `window.GARDEN_MUSIC` is not an error — the screen shows
-a legible "no music yet" panel and the wheel goes inert.
+`ipod.js` re-validates and repairs every entry on the client. `src` is a
+hint, not a contract: if it is missing or disagrees with the URL, the URL
+wins. The only hard requirement is `name` plus **one** of `id`+`kind`+`src`,
+`embed`, `link`, or `url`. Anything with none of those is dropped silently
+rather than drawn broken. An absent or empty `window.GARDEN_MUSIC` shows a
+legible "no music yet" panel and leaves the wheel inert.
 
-`cover` is used verbatim as an `<img src>`, so it must be correct **relative
-to the page being written**. On a subpage, prefix it with `assetPrefix` (see
-step 4). If the image 404s the tile falls back to a generated gradient, so a
-wrong path degrades rather than breaks.
+This means the OLD Spotify-shaped data (no `src` field) still works — the
+source is re-derived from `embed`. Nothing that used to play stops playing.
 
----
+`cover` is used verbatim as an `<img src>`, so it must be correct relative
+to the page being written; on a subpage, prefix it with `assetPrefix`. A
+404 falls back to the generated gradient, so a wrong path degrades.
 
-## 2. `readMusic(dir)` — paste into grow.js
-
-Drop this in after the `describing a file` section, next to `describe()`.
-Uses only `fs` and `path`, both already imported.
-
-```js
-/* -------------------------------------------------------------------- music
-   The music/ folder is the playlist list. One text file per playlist, each
-   holding a Spotify link — see music/README.txt. No audio is ever hosted;
-   playback happens in Spotify's own embed iframe.
-   ------------------------------------------------------------------------ */
-
-const MUSIC_EXT = ['.txt', '.md', '.markdown', '.mdown'];
-const COVER_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
-const SPOTIFY_KINDS = ['playlist', 'album', 'track', 'artist', 'episode', 'show'];
-
-/** Pulls {kind, id} out of a Spotify URL, a spotify: URI, or a bare id. */
-function parseSpotify(raw) {
-  const s = String(raw ?? '').trim();
-  if (!s) return null;
-
-  const uri = s.match(/^spotify:([a-z]+):([A-Za-z0-9]+)/i);
-  if (uri && SPOTIFY_KINDS.includes(uri[1].toLowerCase())) {
-    return { kind: uri[1].toLowerCase(), id: uri[2] };
-  }
-  const url = s.match(/open\.spotify\.com\/(?:embed\/)?(?:intl-[a-z-]+\/)?([a-z]+)\/([A-Za-z0-9]+)/i);
-  if (url && SPOTIFY_KINDS.includes(url[1].toLowerCase())) {
-    return { kind: url[1].toLowerCase(), id: url[2] };
-  }
-  if (/^[A-Za-z0-9]{16,30}$/.test(s)) return { kind: 'playlist', id: s };   // a bare id
-  return null;
-}
-
-const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-/**
- * Reads music/ into the array ipod.js expects. Returns [] when the folder
- * isn't there, which is the signal not to emit the window at all.
- * Covers come back relative to the site root (e.g. "music/covers/x.jpg").
- */
-export function readMusic(dir) {
-  let entries;
-  try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return [];                                   // no music/ folder — nothing to do
-  }
-
-  const base = path.basename(dir);
-
-  // Index covers/ once, so a cover can also be found by name alone.
-  const covers = new Map();
-  try {
-    for (const c of fs.readdirSync(path.join(dir, 'covers'))) {
-      const ext = path.extname(c).toLowerCase();
-      if (COVER_EXT.includes(ext)) covers.set(slug(path.basename(c, ext)), `covers/${c}`);
-    }
-  } catch { /* no covers/, that's fine */ }
-
-  const files = entries
-    .filter(e => e.isFile() &&
-                 MUSIC_EXT.includes(path.extname(e.name).toLowerCase()) &&
-                 !e.name.startsWith('.') &&
-                 !/^readme\b/i.test(e.name))     // the instructions aren't a playlist
-    .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
-
-  const out = [];
-  for (const e of files) {
-    let body;
-    try { body = fs.readFileSync(path.join(dir, e.name), 'utf8'); } catch { continue; }
-
-    // Liberal parse: `key: value` lines, plus any bare URL / URI / id line.
-    const fields = {};
-    const loose = [];
-    for (const raw of body.split(/\r?\n/)) {
-      const line = raw.trim();
-      if (!line || line.startsWith('#')) continue;
-      if (/^spotify:[a-z]+:/i.test(line)) { loose.push(line); continue; }   // it's a URI, not a key
-      const kv = line.match(/^([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(\S.*)$/);
-      if (kv && !/^https?$/i.test(kv[1])) { fields[kv[1].toLowerCase()] = kv[2].trim(); continue; }
-      loose.push(line);
-    }
-
-    const found = [fields.spotify, fields.url, fields.link, fields.playlist,
-                   fields.album, fields.track, ...loose]
-      .map(v => parseSpotify(v)).find(Boolean);
-    if (!found) continue;                        // not a playlist file; skip it quietly
-
-    const stem = path.basename(e.name, path.extname(e.name));
-    const name = stem.replace(/^\d{1,3}[\s._)-]+\s*/, '').trim() || stem;   // drop the "01 " prefix
-
-    const rel = (fields.cover || covers.get(slug(name)) || covers.get(slug(stem)) || '')
-      .replace(/^\.\//, '');
-
-    out.push({
-      name,
-      file: e.name,
-      kind: found.kind,
-      id: found.id,
-      embed: `https://open.spotify.com/embed/${found.kind}/${found.id}?utm_source=generator`,
-      link: `https://open.spotify.com/${found.kind}/${found.id}`,
-      cover: rel ? encodeURI(`${base}/${rel}`) : null,
-      note: fields.note || fields.caption || '',
-    });
-  }
-  return out;
-}
-```
-
-Verified against the shipped `music/` folder — all three accepted link
-forms parse, `README.txt` is skipped, a missing folder returns `[]`.
+**Covers are never fetched from YouTube.** `i.ytimg.com` thumbnails would
+be a third-party request on page load, and the one property this player
+must keep is that a page makes zero off-origin requests until somebody
+presses play.
 
 ---
 
-## 3. the window markup
+## 3. the two structural rules
 
-A `.win` in the same shape `renderWindow()` produces: `kind-ipod`, a
-`.win-bar` with a title, meta and a roll-up button, and a `.win-body`.
-No close button — closing the music window would strand the player behind a
-`hidden` flag in localStorage with nothing to reopen it.
+These are the whole design. Break either and the music stops.
 
-Add alongside `guestbookWindow()`:
+**The chassis lives outside `<main>`.** `app.js` replaces `<main>` wholesale
+on internal navigation. Anything inside it at that moment is destroyed.
+`grow.js` emits `#ipod-shell` next to `#clock-shell`; as a belt-and-braces
+measure `ipod.js` also lifts a stray `.ipod` out of `<main>` on boot (a move
+made before any iframe exists, so it cannot interrupt playback) and removes
+the empty `.item` wrapper it came in. That fallback is why the player still
+works if the diff below is only half-applied.
 
-```js
-function musicWindow(music) {
-  const n = music.length;
-  return `      <div class="win kind-ipod" id="music" data-key="__music">
-        <div class="win-bar">
-          <span class="win-title">music</span>
-          <span class="win-meta">${n} playlist${n === 1 ? '' : 's'}</span>
-          <button class="win-btn js-collapse" type="button" title="roll up">_</button>
-        </div>
-        <div class="win-body">
-          <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
-               data-view="list" data-player="off">
+**The stage is a layer, not a view.** The screen's views are toggled with
+`display: none`, and an iframe in a box that gets `display: none` is an
+iframe that has stopped. `.ipod-stage` is therefore positioned absolutely
+over the screen and merely *covered* by the tile list, so pressing MENU no
+longer stops anything. `ipod.js` moves it there on boot and measures the
+bar's height into `--ipod-bar-h` so the layer starts below it.
 
-            <div class="ipod-screen">
-              <div class="ipod-bar">
-                <button class="ipod-back" type="button"
-                        aria-label="menu, back to the playlist list">&#8249; menu</button>
-                <span class="ipod-bar-title" aria-live="polite">playlists</span>
-                <span class="ipod-battery" aria-hidden="true"></span>
-              </div>
-
-              <div class="ipod-view ipod-view-list">
-                <div class="ipod-list" role="listbox" tabindex="0" aria-label="playlists"></div>
-              </div>
-
-              <div class="ipod-view ipod-view-player">
-                <div class="ipod-stage"></div>
-                <div class="ipod-paused">
-                  <strong class="ipod-paused-name">paused</strong>
-                  <span>press &#9654;&#10073;&#10073; to start it again</span>
-                </div>
-              </div>
-
-              <div class="ipod-view ipod-view-empty">
-                <div class="ipod-empty">
-                  <strong>no music yet</strong>
-                  <span>put a Spotify link in a text file in <code>music/</code> and regrow.</span>
-                </div>
-              </div>
-            </div>
-
-            <p class="ipod-ticker" aria-live="polite"></p>
-
-            <div class="ipod-wheel">
-              <button class="ipod-btn ipod-btn-menu" type="button" data-act="menu"
-                      aria-label="menu, back to the playlist list">menu</button>
-              <button class="ipod-btn ipod-btn-prev" type="button" data-act="prev"
-                      aria-label="previous playlist">&#8249;&#8249;</button>
-              <button class="ipod-btn ipod-btn-next" type="button" data-act="next"
-                      aria-label="next playlist">&#8250;&#8250;</button>
-              <button class="ipod-btn ipod-btn-play" type="button" data-act="play"
-                      aria-label="play or pause">&#9654;&#10073;&#10073;</button>
-              <button class="ipod-btn ipod-btn-select" type="button" data-act="select"
-                      aria-label="select, play the highlighted playlist"></button>
-            </div>
-
-            <p class="ipod-noscript">this player needs JavaScript.</p>
-          </div>
-        </div>
-      </div>`;
-}
-```
-
-The only interpolated value is the count, so nothing here needs
-`escapeHtml`. `ipod.js` removes the `.ipod-noscript` line on boot, so it is
-only ever seen by someone with scripting off.
-
-The device is a fixed `292px` wide with `max-width: 100%`, which means
-`.plantbed.freeform > .win { width: max-content }` measures it correctly —
-the window hugs the iPod at 323px rather than stretching. Confirmed.
+Same reasoning for the dock: docking and parking are **transforms**, never
+`display` changes, so the music keeps playing in both states.
 
 ---
 
-## 4. the four edits to `grow.js`
+## 4. the `music/` folder
 
-**a. read the folder once, in `growSite()`**, next to the other ctx fields:
-
-```js
-const ctx = {
-  root,
-  // ...
-  music: readMusic(path.join(root, 'music')),
-  written: { count: 0 },
-};
-```
-
-**b. pass it through `grow()` into `renderPage()`:**
-
-```js
-const html = renderPage({
-  siteName: ctx.siteName,
-  // ...
-  music: ctx.music,
-});
-```
-
-**c. in `renderPage({ ..., music, assetPrefix, isRoot })`** — emit the window
-on the root page only, the way the guestbook is, and re-base the covers:
-
-```js
-// Covers are stored relative to the site root; a subpage needs the prefix.
-const musicData = (music ?? []).map(t =>
-  t.cover ? { ...t, cover: assetPrefix + t.cover } : t);
-
-const musicHtml = isRoot && musicData.length ? '\n' + musicWindow(musicData) : '';
-```
-
-then add `${musicHtml}` into the `.plantbed`, right after `${windows}`:
-
-```js
-    <div class="plantbed${positioned ? ' freeform' : ''}">
-${windows}${musicHtml}
-${isRoot ? guestbookWindow() + '\n      <div id="gb-notes"></div>' : ''}
-    </div>
-```
-
-**d. the tags.** One `<link>` in `<head>`, after the existing stylesheet:
-
-```html
-  <link rel="stylesheet" href="${assetPrefix}garden-assets/style.css">
-  <link rel="stylesheet" href="${assetPrefix}garden-assets/ipod.css">
-```
-
-and two `<script>`s at the end of `<body>`, after `app.js`:
-
-```html
-  <script src="${assetPrefix}garden-assets/app.js"></script>
-  <script>window.GARDEN_MUSIC = ${JSON.stringify(musicData).replace(/</g, '\\u003c')};</script>
-  <script src="${assetPrefix}garden-assets/ipod.js"></script>
-```
-
-The `replace` matters: playlist names and notes come from the owner's own
-text files, and an unescaped `</script>` in one would end the tag early.
-
-If you would rather not ship `ipod.css`/`ipod.js` on pages that have no
-player, gate `musicHtml` and both tags on the same `isRoot && musicData.length`.
+One text file per playlist. A bare YouTube URL on a line is enough;
+`key: value` lines (`url`, `youtube`, `spotify`, `link`, `playlist`,
+`cover`, `note`) are the longer form. `README.txt` is ignored. Ordering is
+by filename, so a numeric prefix chooses the order and is stripped for
+display. `music/README.txt` is written for the owner and explains all of it.
 
 ---
 
-## 5. the `music/` folder on the site
+## 5. the diff to `grow.js`
 
-`grow.js` will walk `music/` like any other folder and give it its own page
-and a directory window. That is usually what you want — the folder is the
-site, and a visitor can look at the text files. Two things to know:
+Everything above is already true of `ipod.js` and `ipod.css`. This is the
+remaining half. Applied against `src/grow.js`; it touches only the music
+section, `musicWindow()`, and `renderPage()`.
 
-- `music/covers/` gets its own `index.html` too. Harmless; add
-  `music/covers/` to `.gardenignore` if you would rather it stayed quiet.
-- `music/README.txt` is under the 2kB inline limit, so the folder page shows
-  the instructions in full. That is a feature.
+In prose, six changes:
 
-To hide the folder entirely and leave only the player, add `music/` to
-`.gardenignore`. The cover images still deploy — `.gardenignore` only decides
-what gets an `index.html` entry, not what exists in the repo.
+1. `parseYouTube()` added; `parseSpotify()` now returns `src: 'spotify'`;
+   `parseSource()` tries YouTube first. `embedUrl()`/`openUrl()` build the
+   right URL per source.
+2. `readMusic()` looks at `fields.youtube`/`fields.video` too, parses with
+   `parseSource`, and emits `src`.
+3. `musicWindow()` no longer wraps the device in a `.item` with an `<h3>`;
+   it returns `#ipod-shell` directly. Empty-state copy says YouTube.
+4. `showMusic` drops the `isRoot` condition — the player goes on every page.
+5. The `#music { top; left }` rules and the `+ 560` plantbed padding are
+   deleted from both layout branches; the player is no longer laid out.
+6. The page-specific `<style>` gets `id="page-style"` so `app.js` can find
+   it to swap. (`app.js` falls back to the first `<style>` in `<head>` if
+   the id is absent, so this one is a nicety, not a requirement.)
+
+```diff
+@@ -278,31 +278,75 @@
+ 
+ /* -------------------------------------------------------------------- music
+    The music/ folder is the playlist list: one text file per playlist, each
+-   holding a Spotify link (see music/README.txt). No audio is ever hosted --
+-   playback happens inside Spotify's own embed, so nothing here is a copy.
++   holding a YouTube link (see music/README.txt). No audio is ever hosted --
++   playback happens inside YouTube's own player, so nothing here is a copy.
++   Spotify links still work; they play in Spotify's embed, which offers no
++   controls, so the click wheel can do less with them. YouTube is primary.
+    ------------------------------------------------------------------------ */
+ 
+ const MUSIC_EXT = ['.txt', '.md', '.markdown', '.mdown'];
+ const COVER_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
+ const SPOTIFY_KINDS = ['playlist', 'album', 'track', 'artist', 'episode', 'show'];
+ 
+-/** Pulls {kind, id} out of a Spotify URL, a spotify: URI, or a bare id. */
++// YouTube list ids: PL (made by hand), UU (a channel's uploads), OL, LL, FL,
++// RD (a generated radio). Anything else has to arrive as a URL, so a bare
++// Spotify id can never be mistaken for a YouTube one.
++const YT_LIST = /^(?:PL|UU|OL|LL|FL|RD)[A-Za-z0-9_-]{8,}$/;
++const YT_HOST = /(?:^|\/\/|\.)(?:youtube\.com|youtube-nocookie\.com|youtu\.be|music\.youtube\.com)/i;
++
++/** Pulls {src, kind, id} out of a YouTube URL, or a bare playlist id. */
++function parseYouTube(raw) {
++  const str = String(raw ?? '').trim();
++  if (!str) return null;
++
++  if (YT_LIST.test(str)) return { src: 'youtube', kind: 'playlist', id: str };
++  if (!YT_HOST.test(str)) return null;
++
++  // A playlist wins over the video it happens to point at: someone sharing
++  // "watch?v=...&list=..." is sharing their playlist.
++  const list = str.match(/[?&;]list=([A-Za-z0-9_-]{10,})/);
++  if (list) return { src: 'youtube', kind: 'playlist', id: list[1] };
++
++  const watch = str.match(/[?&;]v=([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/)
++             ?? str.match(/youtu\.be\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/)
++             ?? str.match(/\/(?:embed|shorts|live|v)\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/);
++  if (watch) return { src: 'youtube', kind: 'video', id: watch[1] };
++
++  return null;
++}
++
++/** Pulls {src, kind, id} out of a Spotify URL, a spotify: URI, or a bare id. */
+ function parseSpotify(raw) {
+   const str = String(raw ?? '').trim();
+   if (!str) return null;
+ 
+   const uri = str.match(/^spotify:([a-z]+):([A-Za-z0-9]+)/i);
+   if (uri && SPOTIFY_KINDS.includes(uri[1].toLowerCase())) {
+-    return { kind: uri[1].toLowerCase(), id: uri[2] };
++    return { src: 'spotify', kind: uri[1].toLowerCase(), id: uri[2] };
+   }
+   const url = str.match(/open\.spotify\.com\/(?:embed\/)?(?:intl-[a-z-]+\/)?([a-z]+)\/([A-Za-z0-9]+)/i);
+   if (url && SPOTIFY_KINDS.includes(url[1].toLowerCase())) {
+-    return { kind: url[1].toLowerCase(), id: url[2] };
++    return { src: 'spotify', kind: url[1].toLowerCase(), id: url[2] };
+   }
+-  if (/^[A-Za-z0-9]{16,30}$/.test(str)) return { kind: 'playlist', id: str };
++  if (/^[A-Za-z0-9]{16,30}$/.test(str)) return { src: 'spotify', kind: 'playlist', id: str };
+   return null;
+ }
+ 
++/** YouTube first: it is the house source now. */
++const parseSource = (raw) => parseYouTube(raw) ?? parseSpotify(raw);
++
++const embedUrl = (f) => f.src === 'youtube'
++  ? (f.kind === 'playlist'
++      ? `https://www.youtube.com/embed/videoseries?list=${f.id}`
++      : `https://www.youtube.com/embed/${f.id}`)
++  : `https://open.spotify.com/embed/${f.kind}/${f.id}?utm_source=generator`;
++
++const openUrl = (f) => f.src === 'youtube'
++  ? (f.kind === 'playlist'
++      ? `https://www.youtube.com/playlist?list=${f.id}`
++      : `https://www.youtube.com/watch?v=${f.id}`)
++  : `https://open.spotify.com/${f.kind}/${f.id}`;
++
+ const slug = (str) => String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+ 
+ /**
+@@ -353,9 +397,10 @@
+       loose.push(line);
+     }
+ 
+-    const found = [fields.spotify, fields.url, fields.link, fields.playlist,
+-                   fields.album, fields.track, ...loose]
+-      .map(v => parseSpotify(v)).find(Boolean);
++    const found = [fields.youtube, fields.spotify, fields.url, fields.link,
++                   fields.playlist, fields.album, fields.track, fields.video,
++                   ...loose]
++      .map(v => parseSource(v)).find(Boolean);
+     if (!found) continue;
+ 
+     const stem = path.basename(e.name, path.extname(e.name));
+@@ -367,10 +412,11 @@
+     out.push({
+       name,
+       file: e.name,
++      src: found.src,
+       kind: found.kind,
+       id: found.id,
+-      embed: `https://open.spotify.com/embed/${found.kind}/${found.id}?utm_source=generator`,
+-      link: `https://open.spotify.com/${found.kind}/${found.id}`,
++      embed: embedUrl(found),
++      link: openUrl(found),
+       cover: rel ? encodeURI(`${base}/${rel}`) : null,
+       note: fields.note || fields.caption || '',
+     });
+@@ -378,10 +424,15 @@
+   return out;
+ }
+ 
++/**
++ * The player is NOT part of the page. It is emitted outside <main>, beside
++ * the clock, because app.js replaces <main> wholesale when a visitor walks
++ * into a folder -- and anything still inside <main> at that moment is
++ * destroyed, iframe and all. Out here it simply never stops.
++ * ipod.css fixes the shell to the corner of the screen and docks it.
++ */
+ function musicWindow(music) {
+-  const n = music.length;
+-  return `      <div class="item kind-ipod" id="music" data-key="__music">
+-        <h3>music <span class="meta">(${n} playlist${n === 1 ? '' : 's'})</span></h3>
++  return `  <div id="ipod-shell" class="ipod-shell">
+           <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
+                data-view="list" data-player="off">
+ 
+@@ -408,7 +459,7 @@
+               <div class="ipod-view ipod-view-empty">
+                 <div class="ipod-empty">
+                   <strong>no music yet</strong>
+-                  <span>put a Spotify link in a text file in <code>music/</code> and regrow.</span>
++                  <span>put a YouTube link in a text file in <code>music/</code> and regrow.</span>
+                 </div>
+               </div>
+             </div>
+@@ -430,7 +481,7 @@
+ 
+             <p class="ipod-noscript">this player needs JavaScript.</p>
+           </div>
+-      </div>`;
++  </div>`;
+ }
+ 
+ function guestbookWindow() {
+@@ -462,7 +513,10 @@
+   // Covers are stored relative to the site root; a subpage needs the prefix.
+   const musicData = (music ?? []).map(t =>
+     t.cover ? { ...t, cover: assetPrefix + t.cover } : t);
+-  const showMusic = isRoot && musicData.length > 0;
++  // On every page, not just the front one: the player has to already exist
++  // wherever a visitor happens to land, and it is no longer laid out as part
++  // of the plantbed, so it costs the folder pages no space.
++  const showMusic = musicData.length > 0;
+ 
+   // Freeform positions live in a media query so phones get the plain stack
+   // defined in the base stylesheet and wide screens get the Finder layout.
+@@ -487,16 +541,10 @@
+     const rules = laid.map(l =>
+       `      #p${l.i} { top: ${l.y}px; left: ${l.x}px; }`).join('\n');
+ 
+-    // The player has no icon in .DS_Store to inherit a spot from, so it sits
+-    // below the scatter -- pushing it off to the right would put it past the
+-    // window edge, and the body clips horizontally.
+-    const musicRule = showMusic ? `\n      #music { top: ${maxY}px; left: 0px; }` : '';
+-    const bedHeight = showMusic ? maxY + 560 : maxY;
+-
+     freeform = `
+     @media (min-width: 560px) {
+-      .plantbed { min-height: ${bedHeight}px; max-width: 68rem; margin: 0 auto; }
+-${rules}${musicRule}
++      .plantbed { min-height: ${maxY}px; max-width: 68rem; margin: 0 auto; }
++${rules}
+     }`;
+   }
+ 
+@@ -511,16 +559,10 @@
+     const rules = files.map((f, i) =>
+       `      #p${i} { top: ${f.y - minY + TOP_PADDING}px; left: ${f.x - minX}px; }`).join('\n');
+ 
+-    // The player has no icon in .DS_Store to inherit a spot from, so it sits
+-    // below the arrangement -- pushing it off to the right would put it past
+-    // the window edge, and the body clips horizontally.
+-    const musicRule = showMusic ? `\n      #music { top: ${height}px; left: 0px; }` : '';
+-    const bedHeight = showMusic ? height + 560 : height;
+-
+     freeform = `
+     @media (min-width: 560px) {
+-      .plantbed { min-height: ${bedHeight}px; margin-left: max(0px, calc(50% - ${halfWidth}px - 13rem)); }
+-${rules}${musicRule}
++      .plantbed { min-height: ${height}px; margin-left: max(0px, calc(50% - ${halfWidth}px - 13rem)); }
++${rules}
+     }`;
+   }
+ 
+@@ -560,7 +602,7 @@
+   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+   <link rel="stylesheet" href="${assetPrefix}garden-assets/style.css">
+ ${showMusic ? `  <link rel="stylesheet" href="${assetPrefix}garden-assets/ipod.css">\n` : ''}\
+-  <style>${freeform}
++  <style id="page-style">${freeform}
+   </style>
+ </head>
+ 
+@@ -569,11 +611,12 @@
+     <pre id="clock"></pre>
+     <p id="clock-date"></p>
+   </div>
++${showMusic ? musicWindow(musicData) + '\n' : ''}\
+ 
+   <main>
+ ${head}
+     <div class="plantbed${positioned ? ' freeform' : ' scattered'}">
+-${items}${showMusic ? '\n' + musicWindow(musicData) : ''}
++${items}
+     </div>
+ ${showGuestbook ? `
+     <section class="guestbed" id="gb-notes">
+```
 
 ---
 
 ## 6. what the player does, so you can describe it
 
-- **tiles** — album grid in the screen; click one to play it.
-- **click wheel** — `menu` backs out of the player (and scrolls the list to
-  the top when already in the list); `‹‹`/`››` move the highlight, or switch
-  playlist while playing; the centre button selects; `▶❙❙` plays the
-  highlighted playlist, and while playing tears the iframe down and back up,
-  which is the only way to stop a cross-origin embed from outside it.
-- **keyboard** — the tile grid is a `role="listbox"` with `tabindex="0"` and
-  `aria-activedescendant`. Arrow keys move (up/down by a computed column
-  count), `Home`/`End` jump, `Enter`/`Space` select, `Escape`/`Backspace`
-  go back. Every wheel button is a real focusable `<button>` with an
-  `aria-label`. The whole thing works with no mouse.
-- **lazy** — no iframe and zero requests to Spotify until someone selects
-  something. Verified with `performance.getEntriesByType('resource')`.
-- **memory** — the last-played playlist's `file` is stored under
-  `garden:<siteName>:ipod.last`, using the same `get`/`set` helpers as
-  `app.js`. On the next visit it is highlighted but **not** loaded, so the
-  page stays fast.
-- **covers** — a missing `cover:` or a 404 falls back to a gradient derived
-  from a hash of the name, with the initials on it; hues are held inside the
-  site's ochre-to-olive band so it never fights the palette.
+- Nothing third-party is requested until the visitor presses play — not the
+  iframe, not the YouTube API script itself.
+- Selecting a tile starts it. MENU goes back to the tiles **without**
+  stopping it.
+- On YouTube the wheel is a real wheel: `▶❙❙` plays and pauses, `‹‹` and
+  `››` are previous and next **track**. On Spotify, which exposes no
+  controls, `▶❙❙` mounts and unmounts the embed and `‹‹`/`››` step to the
+  previous/next **playlist**.
+- Walking into a folder does not stop the music. Neither does Back.
+- `‹‹` in the player's top bar pushes it off the left edge, leaving a small
+  labelled tab. The tab brings it back. It keeps playing while docked.
+- `music` in the taskbar parks it entirely. It keeps playing while parked.
+- Both states are remembered in `localStorage` (`ipod.docked`,
+  `toggle.music`), wrapped in try/catch because storage throws in private
+  windows. A first visit starts docked below 900px and open above it.
+- Playback itself is deliberately **not** resumed after a full reload. The
+  last-played tile is highlighted, nothing more; starting audio on arrival
+  is rude and browsers block it anyway.
 
-## 7. a note on the stylesheet it was drawn to
+---
 
-`ipod.css` was written against the current `style.css` — the paper/ink
-palette (`--paper`, `--surface`, `--ink`, `--ochre`, `--olive`, `--rule`,
-`--serif`/`--sans`/`--mono`) and its rules: hairlines, no bevels, nothing
-glows. Every token is used with a literal fallback (`var(--ochre, #A9752F)`),
-so a renamed variable degrades to a sane colour instead of an invisible one.
-`body.theme-ink` gets an explicit override block; `theme-olive` and
-`theme-clean` need none, since they only move `--paper`.
+## 7. the stylesheet it was drawn to
+
+`ipod.css` is scoped entirely under `.ipod`, `.ipod-shell` and `.ipod-tab`,
+uses only the tokens at the top of `style.css` — bone paper, ink, one ochre,
+one olive — and gives every `var()` a literal fallback, so it cannot break
+if a token is renamed. It handles the alternate papers, including
+`theme-ink`. It introduces no colours of its own.
+
+**No change to `style.css` is needed.** The one page-level rule the
+navigation wants (`body.is-navigating { cursor: progress }`) is carried in
+`ipod.css`, which now ships on every page. If `music/` is ever emptied, that
+rule stops shipping and internal navigation simply loses its busy cursor —
+a cosmetic loss and nothing more. Move it into `style.css` if that ever
+matters; do not put it in both.

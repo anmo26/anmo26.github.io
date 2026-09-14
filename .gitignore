@@ -6,3 +6,7 @@ node_modules/
 
 # the compiled icon helper and its cache — rebuilt on demand, never published
 .garden-cache/
+
+# generated image derivatives and the untouched originals they came from
+.thumbs/
+.originals/
