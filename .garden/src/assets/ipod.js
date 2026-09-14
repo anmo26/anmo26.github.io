@@ -429,9 +429,39 @@
     };
   }
 
-  function updateOffscreenVar(shell) {
+  /**
+   * The shell's left edge with any current dock/park transform undone --
+   * plain getBoundingClientRect() answers "where is it drawn right now",
+   * which is wrong the moment it is already off-screen.
+   *
+   * This one was the real shape of "the ipod not going to the side" on a
+   * phone. iOS Safari fires `resize` constantly on a phone -- the address
+   * bar collapsing as you scroll is a resize, not just a rotation -- and
+   * the old version measured the CURRENT (already-transformed) rect. Once
+   * docked, that rect's left edge already sat off-screen, so recomputing
+   * from it shrank the offscreen distance every time, and it would reach
+   * ~0 within one or two scrolls -- at which point "docked" stopped moving
+   * the shell at all and it sat there in the open, fully on screen. Two
+   * resizes later the same feedback would send it careening the other way.
+   * Measuring from the untransformed position breaks that loop: however
+   * many times this runs, it always starts from the same place.
+   */
+  function naturalLeft(shell) {
     var rect = shell.getBoundingClientRect();
-    var away = Math.ceil(rect.left + shell.offsetWidth + 60);
+    var m = getComputedStyle(shell).transform;
+    if (!m || m === 'none') return rect.left;
+    // A plain 2D matrix: matrix(a, b, c, d, tx, ty). Docking and parking
+    // are both a translateX and nothing else, so the 5th term is the
+    // whole of what needs undoing.
+    var parts = m.match(/^matrix\(([^)]+)\)$/);
+    if (!parts) return rect.left;               // a 3D matrix: not ours to undo
+    var nums = parts[1].split(',');
+    var tx = parseFloat(nums[4]) || 0;
+    return rect.left - tx;
+  }
+
+  function updateOffscreenVar(shell) {
+    var away = Math.ceil(naturalLeft(shell) + shell.offsetWidth + 60);
     shell.style.setProperty('--ipod-offscreen-x', '-' + away + 'px');
   }
 

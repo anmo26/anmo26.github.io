@@ -240,7 +240,18 @@ body.is-navigating main { opacity: .45; transition-delay: .13s; }
 .item.kind-directory.focused h3 a,
 .item.kind-directory.focused h3 a:visited { background: var(--olive); }
 
-.item img, .item video { display: block; max-width: 100%; height: auto; margin-top: .3rem; }
+/* -webkit-user-drag stops iOS reading a long press on a photo or a video
+   frame as "pick this up and drag it out of the page" -- Safari's own
+   drag-to-share gesture, which grabs the touch before our own pointer
+   listeners ever see a pointermove. draggable=false (set in mountItems)
+   only turns off the desktop HTML5 drag-and-drop; it does nothing here.
+   The small Finder icons already had this rule -- these are the bigger
+   thumbnails a visitor is far more likely to actually reach for. */
+.item img, .item video {
+  display: block; max-width: 100%; height: auto; margin-top: .3rem;
+  -webkit-user-drag: none;
+  user-select: none;
+}
 .item audio { width: 100%; margin-top: .3rem; }
 .item pre {
   margin: .3rem 0 0;

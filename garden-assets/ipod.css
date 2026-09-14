@@ -524,7 +524,10 @@ body.theme-ink .ipod-tile-art.is-generated {
 /* The window column can be narrow long before the viewport is, so the
    breakpoint is on the device, not the page. Usable down to 360px. */
 @media (max-width: 430px) {
-  .ipod { --ipod-pad: 9px; --ipod-radius: 14px; }
+  /* Narrower too, not just tighter padding: at the old 250px this covered
+     two thirds of a 375px phone whenever it was open, which is most of
+     what "swallows the whole screen" meant. */
+  .ipod { --ipod-w: 220px; --ipod-pad: 9px; --ipod-radius: 14px; }
   .ipod-list {
     grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
     gap: 6px;
@@ -855,4 +858,60 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
    now, so the row only needs to say the same thing in ink. */
 .ipod-queue-row[aria-current="true"] .ipod-queue-name {
   color: var(--ipod-mark, #A9752F);
+}
+
+/* ------------------------------------------------------ now playing, in bars
+
+   Three bars, drawn once in ipod.js (buildEq) and left alone from then on --
+   what moves them is a class on <body>, the same `music-playing` toggle the
+   docked tab's dot already used, so no JS ever ticks a frame by hand. At
+   rest they sit flattened, which reads as "loaded but quiet"; playback adds
+   the animation, and losing playback drops it again rather than leaving a
+   bar frozen mid-bounce. */
+
+.ipod-eq {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  width: 11px;
+  height: 9px;
+  color: var(--ipod-mark, #A9752F);
+}
+.ipod-eq-bar {
+  width: 2px;
+  height: 100%;
+  background: currentColor;
+  transform: scaleY(.28);
+  transform-origin: bottom;
+}
+body.music-playing .ipod-eq-bar {
+  animation: ipod-eq-bounce 1s ease-in-out infinite;
+}
+/* Three different rates, so the bars actually read as bouncing rather than
+   marching in lockstep. */
+body.music-playing .ipod-eq-bar:nth-child(1) { animation-duration: .78s; animation-delay: -.5s; }
+body.music-playing .ipod-eq-bar:nth-child(2) { animation-duration: 1.04s; animation-delay: -.1s; }
+body.music-playing .ipod-eq-bar:nth-child(3) { animation-duration: .86s; animation-delay: -.82s; }
+
+@keyframes ipod-eq-bounce {
+  0%, 100% { transform: scaleY(.28); }
+  50%      { transform: scaleY(1); }
+}
+
+/* In the tracks panel: only the row actually loaded carries one. */
+.ipod-queue-row .ipod-eq { visibility: hidden; }
+.ipod-queue-row[aria-current="true"] .ipod-eq { visibility: visible; }
+
+/* On the device itself, beside the ticker: nothing to show until a track
+   has been picked at least once (see the data-loaded attribute in select() in
+   ipod.js). */
+.ipod:not([data-loaded]) .ipod-eq-strip { visibility: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.music-playing .ipod-eq-bar {
+    animation: none;
+    transform: scaleY(1);   /* static and filled, not stuck bouncing */
+  }
 }

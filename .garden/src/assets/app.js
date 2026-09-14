@@ -635,6 +635,9 @@
 
     handle.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
+      // A second finger already down means this press is one half of a
+      // pinch, not the start of a drag -- see activeTouches, below.
+      if (activeTouches.length > 1) return;
       // Real controls keep their own behaviour; a press on one is never a drag.
       if (e.target.closest('button, input, textarea, select, video, audio, iframe')) return;
       if (inResizeGrip(e)) return;     // that corner belongs to the browser
@@ -824,6 +827,38 @@
   var MOBILE_MIN_SCALE = 0.5;
   var TASKBAR_H = 44;
 
+  /** clientWidth is <main>'s padding box; the bed lives inside its content
+   *  box, inset by that padding on both sides. Shared by fitBed and the
+   *  pinch/double-tap code below, so the two can never disagree about how
+   *  much room the phone actually has. */
+  function mobileAvailW(bed) {
+    var cs = window.getComputedStyle(bed.parentNode);
+    return bed.parentNode.clientWidth -
+      (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+  }
+
+  /** The plain width-fit a phone lands on when nobody has pinched or
+   *  double-tapped: as close to full size as the screen allows, floored at
+   *  the point past which a filename stops being legible. */
+  function mobileFitWidthScale(availW, contentW) {
+    var k = Math.min(1, availW / contentW);
+    return k < MOBILE_MIN_SCALE ? MOBILE_MIN_SCALE : k;
+  }
+
+  /** The scale at which the whole arrangement fits the phone's own screen,
+   *  width AND height both -- the same sum a laptop's fit already does,
+   *  just against a phone's window instead of needing a click to trigger
+   *  it. This is the floor a pinch can zoom out to, and what a double-tap
+   *  zooms out to when it is not already there: past it there is nothing
+   *  left to see, only an arrangement shrunk to specks. */
+  function fitEverythingScale(bed, size) {
+    if (!size.w || !size.h) return MOBILE_MIN_SCALE;
+    var availW = mobileAvailW(bed);
+    var availH = window.innerHeight - taskbarHeight() - 24;
+    if (availW < 40 || availH < 40) return MOBILE_MIN_SCALE;
+    return Math.max(0.16, Math.min(availW / size.w, availH / size.h));
+  }
+
   function taskbarHeight() {
     var bar = document.getElementById('taskbar-toggles');
     var tb = bar ? bar.closest('.taskbar') : document.querySelector('.taskbar');
@@ -887,10 +922,76 @@
 
     // The class carries the same freeform sizing rules style.css already
     // gives a desktop item (width: max-content, the icon column, the log's
-    // margin), just without that rule's own 560px gate.
+    // margin), just without that rule's own 560px gate. It has to land
+    // before deoverlapItems below measures anything, or every item is
+    // still whatever width the flowed phone stack left it at.
     bed.classList.add('mobile-freeform');
+
+    deoverlapItems(items);
+
     bed.setAttribute('data-frozen', '');
     growBed(bed);
+  }
+
+  // A gap to leave between two items once one has been dropped below the
+  // other -- small enough to still read as one arrangement, wide enough
+  // that a finger can tell the two apart.
+  var MOBILE_ITEM_GAP = 14;
+
+  /**
+   * A folder's Finder coordinates are laid out for the small icon Finder
+   * itself draws at that spot. On the desktop page that is still roughly
+   * what ends up there, but on a phone every item is full width -- a photo
+   * or a page of writing dropped at an icon's old (x, y) reaches straight
+   * into whatever else Finder happened to put nearby, and the two become
+   * unusable stacked on top of each other.
+   *
+   * Rather than throw the arrangement out, this keeps the Finder ordering
+   * and nudges each item straight down past anything already claiming its
+   * space -- the same gravity a masonry layout uses. The x Finder chose is
+   * never touched, only y, so the result still reads as the owner's own
+   * columns settling into a clear run rather than a shuffled stack.
+   */
+  function deoverlapItems(items) {
+    var placed = [];
+    var i, j, el, rect, p, hit, guard;
+
+    for (i = 0; i < items.length; i++) {
+      el = items[i];
+      rect = {
+        left: parseFloat(el.style.left) || 0,
+        top: parseFloat(el.style.top) || 0,
+        width: el.offsetWidth,
+        height: el.offsetHeight
+      };
+      rect.right = rect.left + rect.width;
+      rect.bottom = rect.top + rect.height;
+
+      // Settle straight down until clear of everything already placed. A
+      // second pass over the list is needed because dropping past one
+      // collision can land squarely on top of another one that started
+      // out lower -- each pass only ever pushes further down, so this is
+      // guaranteed to finish, but the guard is there in case a rounding
+      // quirk ever disagrees with that math.
+      hit = true;
+      guard = 0;
+      while (hit && guard < 500) {
+        hit = false;
+        for (j = 0; j < placed.length; j++) {
+          p = placed[j];
+          if (rect.left < p.right && rect.right > p.left &&
+              rect.top < p.bottom && rect.bottom > p.top) {
+            rect.top = p.bottom + MOBILE_ITEM_GAP;
+            rect.bottom = rect.top + rect.height;
+            hit = true;
+          }
+        }
+        guard++;
+      }
+
+      el.style.top = Math.round(rect.top) + 'px';
+      placed.push(rect);
+    }
   }
 
   function bedContent(bed) {
@@ -941,9 +1042,7 @@
     // really was -- barely visible on a laptop's wide margins, but on a
     // phone's much narrower ones it was enough to leave the bed's own right
     // edge hanging past the screen.
-    var mainCs = window.getComputedStyle(bed.parentNode);
-    var availW = bed.parentNode.clientWidth -
-      (parseFloat(mainCs.paddingLeft) || 0) - (parseFloat(mainCs.paddingRight) || 0);
+    var availW = mobileAvailW(bed);
     if (availW < 80) return;
 
     var k;
@@ -960,8 +1059,16 @@
       // it a folder needs a sideways scroll to read at all, which is the
       // exact complaint this whole thing exists to fix. The floor is just a
       // safety net against a filename shrinking to nothing, not a target.
-      k = Math.min(1, availW / size.w);
-      if (k < MOBILE_MIN_SCALE) k = MOBILE_MIN_SCALE;
+      //
+      // Unless a pinch or a double-tap has already picked a scale on
+      // purpose -- that choice has to survive a resize or a rotation
+      // rather than being clobbered back to the width-fit the moment the
+      // window so much as twitches.
+      if (mobileZoom != null) {
+        k = Math.max(fitEverythingScale(bed, size), Math.min(ZOOM_MAX, mobileZoom));
+      } else {
+        k = mobileFitWidthScale(availW, size.w);
+      }
     }
 
     bedScale = k;
@@ -994,6 +1101,165 @@
     clearTimeout(fitTimer);
     fitTimer = setTimeout(fitBed, 60);
   }
+
+  /* ============================================================ PINCH ZOOM
+     Swiping sideways used to be the only way past what MOBILE_MIN_SCALE
+     would fit -- a whole wide arrangement, or a close look at one corner
+     of it, were both out of reach. A two-finger pinch changes the scale
+     directly; a double-tap jumps between the two ends of that range.
+     Panning while zoomed is nothing new -- it is just the ordinary
+     sideways scroll <main> already has, and the page's own vertical one.
+
+     This has to be Touch events, not Pointer events. A pinch is only
+     legible as two touches arriving on the same gesture, which is what
+     TouchEvent hands over directly (`e.touches`); Pointer events would mean
+     reassembling that out of two independent pointerdowns by hand. More to
+     the point, preventDefault() on a pointer event does not stop Safari's
+     own page-zoom gesture -- only preventing the matching touchmove does.
+     ------------------------------------------------------------------- */
+
+  var ZOOM_MAX = 2.2;      // close enough to make out a photo's corner
+  var mobileZoom = null;   // a scale the visitor chose on purpose; null = automatic
+  var pinch = null;        // { dist, scale, bed, size } while two fingers are down
+
+  function touchDistance(t0, t1) {
+    var dx = t1.clientX - t0.clientX, dy = t1.clientY - t0.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /** Sets the bed to an explicit scale, the same way the tail of fitBed
+   *  does -- but this is a scale a visitor picked, not one fitBed itself
+   *  worked out, so it is recorded in mobileZoom rather than recomputed. */
+  function applyZoom(bed, k, size) {
+    bedScale = k;
+    mobileZoom = k;
+    bed.style.transformOrigin = 'top left';
+    bed.style.transform = 'scale(' + k + ')';
+    bed.style.width = (100 / k) + '%';
+    bed.style.height = Math.ceil(size.h * k) + 'px';
+    bed.style.minHeight = bed.style.height;
+  }
+
+  function onPinchStart(e) {
+    if (wide() || e.touches.length !== 2) return;
+    var bed = document.querySelector('.plantbed');
+    if (!bed || !bed.classList.contains('freeform') || !bed.hasAttribute('data-frozen')) return;
+
+    // A second finger landing means whatever the first one was starting --
+    // a tap, a held drag -- was never that; get out of its way entirely.
+    clearTimeout(holdTimer);
+    if (pending) { drop(pending); pending = null; }
+    if (drag) { drop(drag); drag = null; }
+
+    e.preventDefault();
+    pinch = {
+      dist: touchDistance(e.touches[0], e.touches[1]),
+      scale: bedScale || 1,
+      bed: bed,
+      size: bedContent(bed)
+    };
+  }
+
+  function onPinchMove(e) {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+
+    var bed = pinch.bed, size = pinch.size;
+    if (!size.w || !size.h) return;
+
+    var floor = Math.min(fitEverythingScale(bed, size), MOBILE_MIN_SCALE);
+    var d = touchDistance(e.touches[0], e.touches[1]);
+    var k = pinch.scale * (d / pinch.dist);
+    if (k < floor) k = floor;
+    if (k > ZOOM_MAX) k = ZOOM_MAX;
+
+    // Keep the point between the two fingers under the two fingers: read
+    // where it falls in the bed's own unscaled coordinates before the
+    // scale changes, then pull the page's scroll back to put it there
+    // again after. A transform never moves anything by itself -- only the
+    // scroll containers around it do.
+    var midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    var midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    var before = bed.getBoundingClientRect();
+    var contentX = (midX - before.left) / (bedScale || 1);
+    var contentY = (midY - before.top) / (bedScale || 1);
+
+    applyZoom(bed, k, size);
+
+    var after = bed.getBoundingClientRect();
+    var main = bed.parentNode;
+    main.scrollLeft += after.left - (midX - contentX * k);
+    window.scrollBy(0, after.top - (midY - contentY * k));
+  }
+
+  function onPinchEnd(e) {
+    if (pinch && e.touches.length < 2) pinch = null;
+  }
+
+  document.addEventListener('touchstart', onPinchStart, { passive: false });
+  document.addEventListener('touchmove', onPinchMove, { passive: false });
+  document.addEventListener('touchend', onPinchEnd, { passive: false });
+  document.addEventListener('touchcancel', onPinchEnd, { passive: false });
+
+  /* A press-and-drag already answers to two fingers landing at once (see
+     onPinchStart) but not to two independent fingers, one after another,
+     each getting its own pointerdown. Count how many touches are actually
+     down and refuse to arm a drag once a second one lands, so a finger
+     steadying the phone while the other pinches can never be mistaken for
+     a second thing to pick up. */
+  var activeTouches = [];
+  window.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse') return;
+    if (activeTouches.indexOf(e.pointerId) === -1) activeTouches.push(e.pointerId);
+  }, true);
+  function releaseTouch(e) {
+    var i = activeTouches.indexOf(e.pointerId);
+    if (i !== -1) activeTouches.splice(i, 1);
+  }
+  window.addEventListener('pointerup', releaseTouch, true);
+  window.addEventListener('pointercancel', releaseTouch, true);
+
+  /* Double-tap toggles between the two ends of the same range a pinch
+     reaches: the whole folder at once, or the ordinary reading scale. It
+     only answers on the bare paper of the bed, never on an item -- a tap
+     on a file already opens it the instant it lifts, with no wait to see
+     whether a second one is coming, so a "double tap" over an item is
+     really just two single taps in a row, and it has to stay that. */
+  var lastTapAt = 0, lastTapX = 0, lastTapY = 0;
+
+  function onPossibleDoubleTap(e) {
+    if (wide() || pinch) return;
+    if (e.changedTouches.length !== 1 || e.touches.length !== 0) return;
+    if (e.target.closest && e.target.closest('.item')) return;
+
+    var t = e.changedTouches[0];
+    var now = Date.now();
+    var close = Math.abs(t.clientX - lastTapX) < 30 && Math.abs(t.clientY - lastTapY) < 30;
+    var isDouble = close && (now - lastTapAt) < 350;
+
+    // A third tap landing quickly is not a second double-tap; make it
+    // start the count over instead of toggling the zoom straight back.
+    lastTapAt = isDouble ? 0 : now;
+    lastTapX = t.clientX;
+    lastTapY = t.clientY;
+    if (!isDouble) return;
+
+    var bed = document.querySelector('.plantbed');
+    if (!bed || !bed.classList.contains('freeform') || !bed.hasAttribute('data-frozen')) return;
+    var size = bedContent(bed);
+    if (!size.w || !size.h) return;
+
+    e.preventDefault();
+
+    var everything = fitEverythingScale(bed, size);
+    var comfortable = mobileFitWidthScale(mobileAvailW(bed), size.w);
+
+    var current = mobileZoom == null ? comfortable : mobileZoom;
+    var goingOut = current > (everything + comfortable) / 2;
+    applyZoom(bed, goingOut ? everything : comfortable, size);
+  }
+
+  document.addEventListener('touchend', onPossibleDoubleTap, { passive: false });
 
   /* The last word in the taskbar is an instruction, and the gesture it names
      is not the same one on both. A phone was being told to drag. */
