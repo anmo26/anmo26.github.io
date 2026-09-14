@@ -201,3 +201,23 @@ export function liveSnapshot() {
   }
   return out;
 }
+
+/**
+ * Looks one folder up in a liveSnapshot(), or null if Finder had nothing for
+ * it. Separate from plain property access because Finder reports resolved
+ * paths while a walker may hold an unresolved one -- through a symlinked
+ * source folder the two spellings differ and every lookup would quietly miss.
+ *
+ * Pass the whole snapshot once per build rather than calling livePositions()
+ * per folder: that is one osascript round trip instead of one for every
+ * directory in the garden.
+ */
+export function positionsFor(snapshot, dir) {
+  if (!snapshot) return null;
+  if (snapshot[dir]) return snapshot[dir];
+  try {
+    return snapshot[fs.realpathSync(dir)] ?? null;
+  } catch {
+    return null;
+  }
+}
