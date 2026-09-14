@@ -360,62 +360,78 @@
 
   var zTop = 100;
 
+  /* Only one thing is ever being dragged, so the move and up listeners go on
+     the window once, here, rather than once per draggable element. They used
+     to be attached inside makeDraggable, which was harmless when the page was
+     built exactly once -- but the page is now rebuilt on every internal
+     navigation, and that version would have left a fresh set of window
+     listeners behind after every folder the visitor walked into. */
+
+  var drag = null;
+
+  function dragMove(e) {
+    if (!drag) return;
+    var x = Math.max(0, drag.originX + (e.clientX - drag.startX));
+    var y = Math.max(0, drag.originY + (e.clientY - drag.startY));
+    drag.el.style.left = x + 'px';
+    drag.el.style.top = y + 'px';
+  }
+
+  function dragEnd() {
+    if (!drag) return;
+    var d = drag;
+    drag = null;
+    d.el.classList.remove('focused');
+
+    var x = parseInt(d.el.style.left, 10);
+    var y = parseInt(d.el.style.top, 10);
+
+    if (d.onDrop) {
+      // Guestbook notes carry their own position, so where a visitor drops
+      // one is where everybody sees it.
+      d.onDrop(x, y);
+    } else if (d.key) {
+      var moved = get('moved', {});
+      moved[d.key] = { x: x, y: y };
+      set('moved', moved);
+    }
+  }
+
+  window.addEventListener('pointermove', dragMove);
+  window.addEventListener('pointerup', dragEnd);
+  window.addEventListener('pointercancel', dragEnd);
+
   function makeDraggable(el, handle, key, onDrop) {
     handle = handle || el;
-    var startX, startY, originX, originY, dragging = false;
 
-    function down(e) {
+    handle.addEventListener('pointerdown', function (e) {
       if (e.target.closest('a, button, input, textarea, select')) return;
       if (!window.matchMedia('(min-width: 560px)').matches) return;
 
-      dragging = true;
-      var rect = el.getBoundingClientRect();
-      var parent = el.offsetParent.getBoundingClientRect();
-      originX = rect.left - parent.left;
-      originY = rect.top - parent.top;
-      startX = e.clientX;
-      startY = e.clientY;
+      var offset = el.offsetParent;
+      if (!offset) return;
 
-      el.style.left = originX + 'px';
-      el.style.top = originY + 'px';
+      var rect = el.getBoundingClientRect();
+      var parent = offset.getBoundingClientRect();
+
+      drag = {
+        el: el,
+        key: key,
+        onDrop: onDrop,
+        originX: rect.left - parent.left,
+        originY: rect.top - parent.top,
+        startX: e.clientX,
+        startY: e.clientY
+      };
+
+      el.style.left = drag.originX + 'px';
+      el.style.top = drag.originY + 'px';
       el.style.zIndex = ++zTop;
       el.classList.add('focused');
 
       handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
       e.preventDefault();
-    }
-
-    function move(e) {
-      if (!dragging) return;
-      var x = Math.max(0, originX + (e.clientX - startX));
-      var y = Math.max(0, originY + (e.clientY - startY));
-      el.style.left = x + 'px';
-      el.style.top = y + 'px';
-    }
-
-    function up() {
-      if (!dragging) return;
-      dragging = false;
-      el.classList.remove('focused');
-
-      var x = parseInt(el.style.left, 10);
-      var y = parseInt(el.style.top, 10);
-
-      if (onDrop) {
-        // Guestbook notes carry their own position, so where a visitor drops
-        // one is where everybody sees it.
-        onDrop(x, y);
-      } else if (key) {
-        var moved = get('moved', {});
-        moved[key] = { x: x, y: y };
-        set('moved', moved);
-      }
-    }
-
-    handle.addEventListener('pointerdown', down);
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
+    });
   }
 
   function restorePositions() {
@@ -450,7 +466,18 @@
       apply: function (on) { document.body.classList.toggle('grain', on); } },
     { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
-                             if (c) c.style.display = on ? '' : 'none'; } }
+                             if (c) c.style.display = on ? '' : 'none'; } },
+
+    // The music player. This parks the whole thing off the side of the
+    // screen and brings it back; `‹‹` on the player itself only docks it.
+    // Both are transforms in ipod.css, so neither one stops the music --
+    // hiding the player is not the same as turning it off.
+    //
+    // It is a body class rather than a reach for the element, because
+    // ipod.js builds #ipod-shell after this file has already run.
+    { id: 'music', label: 'music', def: true,
+      only: function () { return !!(window.GARDEN_MUSIC && window.GARDEN_MUSIC.length); },
+      apply: function (on) { document.body.classList.toggle('music-off', !on); } }
   ];
 
   var THEMES = ['', 'theme-clean', 'theme-olive', 'theme-ink'];
@@ -461,6 +488,7 @@
     if (!bar) return;
 
     TOGGLES.forEach(function (t) {
+      if (t.only && !t.only()) return;
       var on = get('toggle.' + t.id, !!t.def);
       var btn = document.createElement('button');
       btn.className = 'toggle';
@@ -651,14 +679,197 @@
     });
   }
 
-  /* ================================================================ boot */
+  /* =========================================================== NAVIGATION
+     Every folder on this site is a real page, which is the whole idea --
+     and it meant that walking into one threw the music player away with the
+     rest of the document. This turns an internal click into a fetch and a
+     swap of <main>, so the furniture outside <main> (the clock, the taskbar,
+     the iPod) is never rebuilt and never stops.
+
+     It is a progressive enhancement and nothing more. With JavaScript off,
+     or on any fetch that does not come back cleanly, the link does exactly
+     what it always did: a full page load. Nobody is ever left on a blank
+     page -- the failure path is `location.href = url`.
+     ------------------------------------------------------------------- */
+
+  var navToken = 0;                 // so a slow fetch cannot overwrite a fast one
+
+  /** The one <style> the generator writes per page: the Finder coordinates. */
+  function pageStyle(doc) {
+    return doc.getElementById('page-style') || doc.head.querySelector('style');
+  }
+
+  /**
+   * Is this a link to another folder page on this site?
+   *
+   * Deliberately narrow. Only paths that end in "/" or "/index.html" are
+   * pages; everything else in a garden is a real file -- an image, a text
+   * file, a download -- and must be left to the browser. Modifier clicks,
+   * middle clicks, new-tab targets and other origins are left alone too,
+   * because every one of them means "not here".
+   */
+  function pageLink(a) {
+    if (!a || !a.getAttribute) return false;
+    if (a.hasAttribute('download')) return false;
+    if (a.getAttribute('target')) return false;
+    if ((a.getAttribute('rel') || '').indexOf('external') !== -1) return false;
+
+    var href = a.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return false;
+
+    var url;
+    try { url = new URL(a.href); } catch (e) { return false; }
+
+    if (url.origin !== location.origin) return false;
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    if (url.href.split('#')[0] === location.href.split('#')[0]) return false;
+
+    return /\/$/.test(url.pathname) || /\/index\.html$/i.test(url.pathname);
+  }
+
+  /**
+   * Rewrite the incoming page's relative URLs so they still point where they
+   * did before it was lifted out of its own folder.
+   *
+   * This is the part that has to be right. A page two folders down writes
+   * `src="../../garden-assets/x.png"` and `href="older/"`, both relative to
+   * ITS folder; dropped into a document sitting at the root they would
+   * resolve against the wrong base and every link on the page would break.
+   * Resolving each one against the URL it was fetched from makes them
+   * absolute, which is correct from anywhere.
+   */
+  var URL_ATTRS = ['href', 'src', 'poster'];
+
+  function absolutise(scope, base) {
+    var nodes = scope.querySelectorAll('[href],[src],[poster],[srcset]');
+    var i, a, raw, node;
+
+    for (i = 0; i < nodes.length; i++) {
+      node = nodes[i];
+
+      for (a = 0; a < URL_ATTRS.length; a++) {
+        raw = node.getAttribute(URL_ATTRS[a]);
+        if (raw === null || raw === '') continue;
+        // already absolute, protocol-relative, a fragment, or a data: URI
+        if (raw.charAt(0) === '#' || raw.indexOf('//') === 0) continue;
+        if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) continue;
+        try { node.setAttribute(URL_ATTRS[a], new URL(raw, base).href); } catch (e) {}
+      }
+
+      raw = node.getAttribute('srcset');
+      if (raw) {
+        try {
+          node.setAttribute('srcset', raw.split(',').map(function (part) {
+            var bits = part.trim().split(/\s+/);
+            if (!bits[0]) return part;
+            bits[0] = new URL(bits[0], base).href;
+            return bits.join(' ');
+          }).join(', '));
+        } catch (e) {}
+      }
+    }
+  }
+
+  function go(url, push, scrollY) {
+    var token = ++navToken;
+    document.body.classList.add('is-navigating');
+
+    fetch(url, { credentials: 'same-origin', headers: { 'accept': 'text/html' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var type = r.headers.get('content-type') || '';
+        if (type && type.indexOf('text/html') === -1) throw new Error('not a page');
+        return r.text();
+      })
+      .then(function (html) {
+        if (token !== navToken) return;              // a later click already won
+
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var incoming = doc.querySelector('main');
+        var here = document.querySelector('main');
+        if (!incoming || !here) throw new Error('no main');
+
+        absolutise(incoming, url);
+
+        // Remember where we were standing before leaving, so Back lands
+        // on the same part of the page.
+        if (push) {
+          history.replaceState({ garden: 1, y: window.pageYOffset }, '', location.href);
+          history.pushState({ garden: 1, y: 0 }, '', url);
+        }
+
+        here.parentNode.replaceChild(document.importNode(incoming, true), here);
+
+        // The page-specific <style> is the Finder layout for THIS folder.
+        var mine = pageStyle(document);
+        var theirs = pageStyle(doc);
+        if (mine) mine.textContent = theirs ? theirs.textContent : '';
+
+        if (doc.title) document.title = doc.title;
+
+        bootPage();
+        window.scrollTo(0, scrollY || 0);
+        document.body.classList.remove('is-navigating');
+
+        // Put the reader at the top of the new page rather than leaving
+        // focus on a link that no longer exists.
+        var h1 = document.querySelector('main h1');
+        if (h1) {
+          h1.setAttribute('tabindex', '-1');
+          try { h1.focus({ preventScroll: true }); } catch (e) { h1.focus(); }
+        }
+      })
+      .catch(function () {
+        if (token !== navToken) return;
+        document.body.classList.remove('is-navigating');
+        location.href = url;          // whatever went wrong, just load the page
+      });
+  }
+
+  function mountNav() {
+    if (!window.fetch || !window.history || !history.pushState || !window.DOMParser) return;
+
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    history.replaceState({ garden: 1, y: window.pageYOffset }, '', location.href);
+
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      var a = e.target.closest ? e.target.closest('a') : null;
+      if (!pageLink(a)) return;
+
+      e.preventDefault();
+      go(a.href, true, 0);
+    });
+
+    window.addEventListener('popstate', function (e) {
+      go(location.href, false, (e.state && e.state.y) || 0);
+    });
+  }
+
+  /* ================================================================ boot
+
+     Split in two, because the page is no longer built exactly once. Anything
+     that belongs to the document as a whole -- the clock, the taskbar, the
+     link interception -- is mounted once and left alone. Anything that
+     belongs to the contents of <main> is mounted again after every swap,
+     because those nodes are new. The iPod is in neither list: ipod.js moves
+     it out of <main> on load and nothing here ever touches it again.
+     ------------------------------------------------------------------- */
+
+  function bootPage() {
+    mountItems();
+    mountGuestbook();
+    restorePositions();
+  }
 
   function boot() {
     mountClock();
-    mountItems();
     mountToggles();
-    mountGuestbook();
-    restorePositions();
+    mountNav();
+    bootPage();
   }
 
   if (document.readyState === 'loading') {

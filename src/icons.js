@@ -65,7 +65,7 @@ function getHelper(name, root) {
  * every file wants one. The first path to claim a name keeps it; a later
  * collision gets a suffix, so two files can never quietly share a picture.
  */
-const claimed = new Map();    // icon filename -> the relative path that owns it
+let claimed = new Map();      // icon filename -> the relative path that owns it
 
 function iconName(relPath, prefix = '') {
   const flat = relPath.replace(/\/+$/, '').replace(/[^a-zA-Z0-9]+/g, '-')
@@ -173,4 +173,40 @@ export function fileThumb(fullPath, root) {
 
   const size = render(bin, fullPath, out, stampFile, stamp, THUMB_PX);
   return size ? { href: 'garden-assets/icons/' + file, w: size.w, h: size.h } : null;
+}
+
+/* -------------------------------------------------------------- housekeeping
+   Every file on the site now owns a PNG, and files get renamed and thrown
+   away constantly. Without a sweep the icon folder only ever grows, and it is
+   committed to a public repo -- so a year of tidying would be published as
+   dead weight. Bracket a build with these two.
+   ------------------------------------------------------------------------ */
+
+export function beginIconRun() {
+  claimed = new Map();
+}
+
+/** Drops any icon no path claimed during the run that just finished. */
+export function sweepIcons(root) {
+  // Nothing claimed means the helper never ran -- a non-Mac build, or a
+  // broken toolchain. Deleting the committed icons on that basis would throw
+  // away work this machine cannot redo, so leave them alone.
+  if (claimed.size === 0) return 0;
+
+  const live = new Set(claimed.keys());
+  let removed = 0;
+
+  const sweep = (dir, suffix, nameOf) => {
+    let names = [];
+    try { names = fs.readdirSync(dir); } catch { return; }
+    for (const name of names) {
+      if (!name.endsWith(suffix) || live.has(nameOf(name))) continue;
+      try { fs.unlinkSync(path.join(dir, name)); removed++; } catch { /* already gone */ }
+    }
+  };
+
+  sweep(path.join(root, 'garden-assets', 'icons'), '.png', n => n.slice(0, -4));
+  sweep(path.join(root, '.garden-cache'), '.stamp', n => n.slice(0, -'.png.stamp'.length));
+
+  return removed;
 }

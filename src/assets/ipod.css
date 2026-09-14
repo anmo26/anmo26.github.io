@@ -3,7 +3,9 @@
    The music window: a click-wheel iPod, drawn in CSS.
 
    Pairs with ipod.js. The chassis markup is emitted by grow.js — see
-   src/ipod-integration.md for the exact block.
+   src/ipod-integration.md for the exact block. ipod.js lifts that chassis
+   into a fixed `#ipod-shell` on <body> so it outlives a page swap, and the
+   shell is what docks to the edge of the screen.
 
    Drawn to style.css's rules rather than to a photograph of a real iPod:
    bone paper, ink, one ochre and one olive; hairlines instead of bevels;
@@ -141,11 +143,13 @@
 .ipod[data-view="player"] .ipod-view-player { display: flex; flex-direction: column; }
 .ipod[data-view="empty"]  .ipod-view-empty  { display: flex; }
 
-/* Inside the player view the embed is either mounted or torn down. Tearing
-   it down is what play/pause does — the only honest way to stop playback
-   from outside a cross-origin iframe. */
-.ipod[data-player="on"]  .ipod-paused { display: none; }
-.ipod[data-player="off"] .ipod-stage  { display: none; }
+/* The views are opaque, because the stage sits behind them rather than
+   inside them — see below. */
+.ipod-view { position: relative; z-index: 1; background: var(--ipod-lcd); }
+
+/* The paused card belongs to the Spotify half only; the YouTube player
+   draws its own paused state inside the iframe. */
+.ipod[data-player="on"] .ipod-paused { display: none; }
 
 /* --------------------------------------------------------------- the tiles */
 
@@ -248,13 +252,42 @@
 
 /* --------------------------------------------------------------- the player */
 
+/* The stage is a LAYER of the screen, not a child of the player view.
+   A view is toggled with `display: none`, and an iframe in a box that gets
+   display:none is an iframe that has stopped — which is the bug this whole
+   player was rewritten to kill. Here the list simply covers the stage, and
+   the music carries on behind it. Nothing is ever unmounted except the
+   Spotify embed, which has no other pause. */
 .ipod-stage {
-  flex: 1 1 auto;
-  min-height: 0;
-  background: #121212;              /* Spotify's own backdrop, so the embed
-                                       has nothing to seam against */
+  position: absolute;
+  top: var(--ipod-bar-h, 1.6rem);   /* measured by ipod.js, so it tracks the bar */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: #121212;              /* a dark backdrop, so neither embed seams */
 }
-.ipod-stage iframe {
+/* Covered, not removed. */
+.ipod[data-view="list"]  .ipod-stage,
+.ipod[data-view="empty"] .ipod-stage {
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Both halves of the stage stay built once they exist: switching source
+   pauses the other one rather than tearing it down. */
+.ipod-stage-box {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.ipod-stage[data-mode="yt"] .is-yt,
+.ipod-stage[data-mode="sp"] .is-sp { opacity: 1; pointer-events: auto; }
+
+.ipod-stage iframe,
+.ipod-stage .ipod-yt-host {
   display: block;
   width: 100%;
   height: 100%;
@@ -441,4 +474,135 @@ body.theme-ink .ipod-tile-art.is-generated {
 @media (prefers-reduced-motion: reduce) {
   .ipod-btn { transition: none; }
   .ipod-list { scroll-behavior: auto; }
+}
+
+/* ==========================================================================
+   the shell — where the player lives, and how it gets out of the way
+
+   ipod.js moves the device out of <main> into this shell on <body>, because
+   <main> is replaced wholesale when you walk into a folder and anything
+   still inside it at that moment is destroyed. The shell is fixed to the
+   page, above the content and below the taskbar.
+
+   Two controls act on it, and neither one ever touches the iframe:
+
+     `‹‹` in the player's own bar   → docks it to the left edge (a transform)
+     `music` in the taskbar          → parks it off-screen (app.js, a body class)
+
+   Both are transforms, so the music keeps playing in either state. That is
+   the whole trick: nothing is unmounted, it is only moved.
+   ========================================================================== */
+
+.ipod-shell {
+  position: fixed;
+  left: 0;
+  bottom: 2.9rem;               /* clear of the taskbar */
+  z-index: 9997;                /* over the page, under the taskbar (9999) */
+  padding-left: 1.1rem;         /* the inset lives here so the dock transform
+                                   can be a plain -100% and land flush */
+  transition: transform .22s ease;
+}
+
+/* Docked: slid left until only the tab is showing. */
+.ipod-shell[data-docked="on"] {
+  transform: translateX(calc(-100% + 26px));
+}
+
+/* Parked: off entirely, from the taskbar toggle. `visibility` takes it out
+   of the tab order without unloading anything — an iframe keeps playing
+   through both of these. */
+body.music-off .ipod-shell {
+  transform: translateX(-130%);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* The grab tab. Only drawn when docked; ipod.js hides it otherwise. */
+.ipod-tab {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 26px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-deep, #E4E0D6);
+  border: 1px solid var(--rule, rgba(38, 36, 31, .16));
+  border-radius: 0 3px 3px 0;
+  color: var(--ink-soft, #55514A);
+  font-family: var(--mono, Menlo, monospace);
+  cursor: pointer;
+}
+.ipod-tab:hover { color: var(--ink, #26241F); }
+.ipod-tab:focus-visible { outline: 1px solid var(--ochre, #A9752F); outline-offset: 1px; }
+
+.ipod-tab-label {
+  writing-mode: vertical-rl;
+  font-size: .6rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+/* A tick of ochre on the tab while something is actually playing, so a
+   docked player still tells you it is running. One dot, nothing more. */
+.ipod-tab::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-faint, #8A8477);
+}
+body.music-playing .ipod-tab::after {
+  background: var(--ochre, #A9752F);
+  border-color: var(--ochre, #A9752F);
+}
+
+/* The dock button, sitting at the end of the player's own bar. Drawn as a
+   hairline, like `.ipod-back`. */
+.ipod-dock {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  height: 15px;
+  padding: 0 .3rem;
+  margin-left: -.2rem;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--ipod-faint, #8A8477);
+  font: inherit;
+  font-size: .6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.ipod-dock:hover { color: var(--ipod-ink, #26241F); border-color: var(--rule, rgba(38, 36, 31, .16)); }
+.ipod-dock:focus-visible { outline: 1px solid var(--ipod-mark, #A9752F); outline-offset: 1px; }
+
+/* -------------------------------------------------------- navigating
+   app.js fetches the next folder and swaps <main> in place. The only tell
+   is the cursor — the page it replaces stays readable until it lands, and
+   decorating that would be noise. */
+body.is-navigating { cursor: progress; }
+
+/* ----------------------------------------------------------- dark paper */
+
+body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
+
+/* --------------------------------------------------------------- narrow */
+
+/* The owner's window sits near 720px; below that the device is parked at
+   the edge by default (ipod.js decides on first visit) and the paddings
+   tighten so the tab does not crowd the content. */
+@media (max-width: 700px) {
+  .ipod-shell { bottom: 2.6rem; padding-left: .6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ipod-shell { transition: none; }
 }

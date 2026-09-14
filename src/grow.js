@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 import { parseDSStore } from './dsstore.js';
 import { imageSize, videoSize } from './imagesize.js';
 import { markdown, escapeHtml } from './markdown.js';
-import { folderIcon, fileThumb } from './icons.js';
+import { folderIcon, fileThumb, beginIconRun, sweepIcons } from './icons.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DEFAULT = path.join(__dirname, '..');
@@ -708,6 +708,7 @@ export function growSite(opts = {}) {
   }
 
   copyAssets(root);
+  beginIconRun();
 
   const ctx = {
     root,
@@ -733,10 +734,17 @@ export function growSite(opts = {}) {
   };
 
   grow(root, ctx);
+
+  // Renamed and deleted files leave their thumbnails behind, and these are
+  // committed -- so clear out whatever this walk didn't ask for. A dry run
+  // promises to leave the folder exactly as it found it.
+  const swept = ctx.dryRun ? 0 : sweepIcons(root);
+
   return {
     root,
     pages: ctx.written.count,
     changed: ctx.written.changed ?? 0,
+    swept,
     siteName: ctx.siteName,
   };
 }
@@ -767,11 +775,12 @@ if (isMain) {
       dryRun: argv.includes('--dry-run'),
     };
     console.log('growing...');
-    const { root, pages, changed, siteName } = growSite(opts);
+    const { root, pages, changed, swept, siteName } = growSite(opts);
     console.log(`grew ${siteName} from ${root}`);
     console.log(opts.dryRun
       ? `would write ${pages} page${pages === 1 ? '' : 's'}`
-      : `${pages} page${pages === 1 ? '' : 's'} visited, ${changed} written`);
+      : `${pages} page${pages === 1 ? '' : 's'} visited, ${changed} written` +
+        (swept ? `, ${swept} stale icon file${swept === 1 ? '' : 's'} removed` : ''));
   } catch (e) {
     console.error(e.message);
     process.exit(1);

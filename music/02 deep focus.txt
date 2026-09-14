@@ -1,3 +1,0 @@
-spotify: spotify:playlist:37i9dQZF1DWZeKCadgRdKQ
-cover: covers/deep-focus.jpg
-note: for the hours that need to disappear

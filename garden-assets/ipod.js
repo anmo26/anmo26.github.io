@@ -1,31 +1,48 @@
 /* ==========================================================================
    garden — ipod.js
-   The music window: a click-wheel iPod whose screen holds album tiles and,
-   on select, a Spotify embed.
+   The music window: a click-wheel iPod whose screen holds playlist tiles
+   and, on select, a YouTube player.
 
-   No audio is ever hosted by this site. Playback goes through Spotify's
-   official embed iframe (open.spotify.com/embed/...), which is free, needs
-   no API key, gives anonymous visitors 30-second previews and full tracks
-   to anyone signed in to Spotify. The iframe is created only when a
-   playlist is selected — never on page load.
+   No audio is ever hosted by this site. Playback goes through YouTube's
+   official IFrame Player API, so the click wheel really does drive play,
+   pause, next and previous — the media stays on YouTube, nothing is copied
+   here. Spotify links still work; they play in Spotify's own embed, which
+   has no control API, so there the wheel can only mount and unmount it.
+
+   TWO PROPERTIES THIS FILE MUST KEEP
+
+   1. LAZY. Nothing third-party is requested until the visitor picks
+      something: no iframe, and the YouTube API script itself is injected
+      on first play, not on page load. A page with the player on it makes
+      zero requests off this origin until somebody presses a button.
+
+   2. ALIVE ACROSS PAGES. app.js swaps <main> on internal navigation. The
+      player must therefore live OUTSIDE <main> and never be rebuilt. On
+      boot this file lifts the device into #ipod-shell on <body> (a move
+      done before any iframe exists, so nothing is torn down), and from
+      then on nothing detaches it. The stage keeps its iframe even when the
+      screen is showing the list, so walking back to the menu — or into
+      another folder — does not stop the music.
 
    DATA CONTRACT — the generator injects, before this script:
 
      window.GARDEN_MUSIC = [
        {
-         name:  "dream pop",                         // display name (required)
-         file:  "01 dream pop.txt",                  // source file, for keys
-         kind:  "playlist",                          // playlist | album | track
-         id:    "37i9dQZF1DX0hvSv6cNiG3",            // Spotify id (required)
-         embed: "https://open.spotify.com/embed/playlist/37i9dQZF1DX0hvSv6cNiG3",
-         link:  "https://open.spotify.com/playlist/37i9dQZF1DX0hvSv6cNiG3",
-         cover: "music/covers/dream-pop.jpg",        // href or null
-         note:  "for the train ride home"            // string, may be ""
+         name:  "music",                             // display name (required)
+         file:  "01 music.txt",                      // source file, for keys
+         src:   "youtube",                           // youtube | spotify
+         kind:  "playlist",                          // playlist | video | album ...
+         id:    "PLXWFWrURanY0",
+         embed: "https://www.youtube.com/embed/videoseries?list=PLXWFWrURanY0",
+         link:  "https://www.youtube.com/playlist?list=PLXWFWrURanY0",
+         cover: "music/covers/whatever.jpg",         // href or null
+         note:  "a line under the tile"              // string, may be ""
        }
      ];
 
    Only `name` plus one of `id` / `embed` / `link` is strictly required;
-   everything else is repaired or defaulted here. See src/ipod-integration.md.
+   everything else is repaired or defaulted here, and a `src` that is
+   missing or wrong is re-derived from the URL. See src/ipod-integration.md.
    ========================================================================== */
 (function () {
   'use strict';
@@ -49,32 +66,10 @@
 
   /* -------------------------------------------------------------- utils */
 
-  var KINDS = { playlist: 1, album: 1, track: 1, artist: 1, episode: 1, show: 1 };
-
-  /** Pull {kind, id} out of any Spotify URL, URI or bare id we are handed. */
-  function parseSpotify(raw) {
-    if (!raw) return null;
-    var s = String(raw).trim();
-
-    // spotify:playlist:37i9dQZF1DX0hvSv6cNiG3
-    var uri = s.match(/^spotify:([a-z]+):([A-Za-z0-9]+)/);
-    if (uri && KINDS[uri[1]]) return { kind: uri[1], id: uri[2] };
-
-    // https://open.spotify.com/[embed/][intl-de/]playlist/ID?si=...
-    var url = s.match(/open\.spotify\.com\/(?:embed\/)?(?:intl-[a-z-]+\/)?([a-z]+)\/([A-Za-z0-9]+)/);
-    if (url && KINDS[url[1]]) return { kind: url[1], id: url[2] };
-
-    // a bare base62 id — assume a playlist, which is what this folder is for
-    if (/^[A-Za-z0-9]{16,30}$/.test(s)) return { kind: 'playlist', id: s };
-
-    return null;
-  }
-
-  function embedUrl(kind, id) {
-    return 'https://open.spotify.com/embed/' + kind + '/' + id + '?utm_source=generator';
-  }
-  function openUrl(kind, id) {
-    return 'https://open.spotify.com/' + kind + '/' + id;
+  function el(tag, cls) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    return node;
   }
 
   /** Stable small hash, so a playlist always gets the same fallback colours. */
@@ -89,19 +84,95 @@
 
   function initials(name) {
     var words = String(name)
-      .replace(/['\u2019]/g, '')          // don't let "today's" split into two words
+      .replace(/['’]/g, '')          // don't let "today's" split into two words
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/).filter(Boolean);
-    if (!words.length) return '♪';                    // eighth note
+    if (!words.length) return '♪';                // eighth note
     if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
     return (words[0][0] + words[1][0]).toUpperCase();
   }
 
-  function el(tag, cls) {
-    var node = document.createElement(tag);
-    if (cls) node.className = cls;
-    return node;
+  /* ------------------------------------------------------------ parsing */
+
+  var SPOTIFY_KINDS = { playlist: 1, album: 1, track: 1, artist: 1, episode: 1, show: 1 };
+
+  // YouTube list ids: PL (made by hand), UU (a channel's uploads), OL, LL,
+  // FL, RD (a generated radio). Anything else we insist on seeing a URL for,
+  // so a bare Spotify id can never be mistaken for one.
+  var YT_LIST = /^(?:PL|UU|OL|LL|FL|RD)[A-Za-z0-9_-]{8,}$/;
+  var YT_HOST = /(?:^|\/\/|\.)(?:youtube\.com|youtube-nocookie\.com|youtu\.be|music\.youtube\.com)/i;
+
+  /** Pull {src, kind, id} out of any YouTube URL, or a bare list id. */
+  function parseYouTube(raw) {
+    if (!raw) return null;
+    var s = String(raw).trim();
+    if (!s) return null;
+
+    if (YT_LIST.test(s)) return { src: 'youtube', kind: 'playlist', id: s };
+    if (!YT_HOST.test(s)) return null;
+
+    // A playlist wins over the video it happens to be pointing at: a
+    // "watch?v=...&list=..." link is somebody sharing their playlist.
+    var list = s.match(/[?&;]list=([A-Za-z0-9_-]{10,})/);
+    if (list) return { src: 'youtube', kind: 'playlist', id: list[1] };
+
+    var watch = s.match(/[?&;]v=([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/) ||
+                s.match(/youtu\.be\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/) ||
+                s.match(/\/(?:embed|shorts|live|v)\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/);
+    if (watch) return { src: 'youtube', kind: 'video', id: watch[1] };
+
+    return null;
   }
+
+  /** Pull {src, kind, id} out of any Spotify URL, URI or bare id. */
+  function parseSpotify(raw) {
+    if (!raw) return null;
+    var s = String(raw).trim();
+    if (!s) return null;
+
+    // spotify:playlist:37i9dQZF1DX0hvSv6cNiG3
+    var uri = s.match(/^spotify:([a-z]+):([A-Za-z0-9]+)/i);
+    if (uri && SPOTIFY_KINDS[uri[1].toLowerCase()]) {
+      return { src: 'spotify', kind: uri[1].toLowerCase(), id: uri[2] };
+    }
+
+    // https://open.spotify.com/[embed/][intl-de/]playlist/ID?si=...
+    var url = s.match(/open\.spotify\.com\/(?:embed\/)?(?:intl-[a-z-]+\/)?([a-z]+)\/([A-Za-z0-9]+)/i);
+    if (url && SPOTIFY_KINDS[url[1].toLowerCase()]) {
+      return { src: 'spotify', kind: url[1].toLowerCase(), id: url[2] };
+    }
+
+    // a bare base62 id — assume a playlist, which is what this folder is for
+    if (/^[A-Za-z0-9]{16,30}$/.test(s)) return { src: 'spotify', kind: 'playlist', id: s };
+
+    return null;
+  }
+
+  /** YouTube first: it is the house source now. */
+  function parseSource(raw) {
+    return parseYouTube(raw) || parseSpotify(raw);
+  }
+
+  function embedUrl(found) {
+    if (found.src === 'youtube') {
+      return found.kind === 'playlist'
+        ? 'https://www.youtube.com/embed/videoseries?list=' + found.id
+        : 'https://www.youtube.com/embed/' + found.id;
+    }
+    return 'https://open.spotify.com/embed/' + found.kind + '/' + found.id +
+           '?utm_source=generator';
+  }
+
+  function openUrl(found) {
+    if (found.src === 'youtube') {
+      return found.kind === 'playlist'
+        ? 'https://www.youtube.com/playlist?list=' + found.id
+        : 'https://www.youtube.com/watch?v=' + found.id;
+    }
+    return 'https://open.spotify.com/' + found.kind + '/' + found.id;
+  }
+
+  function sourceName(src) { return src === 'youtube' ? 'YouTube' : 'Spotify'; }
 
   /* ---------------------------------------------------------- the data */
 
@@ -113,22 +184,31 @@
       var t = raw[i];
       if (!t || typeof t !== 'object') continue;
 
+      // Trust an explicit {src, kind, id} triple, but only when it is whole;
+      // otherwise re-derive everything from whatever URL we can find.
       var found = null;
-      if (t.kind && t.id && KINDS[t.kind]) found = { kind: t.kind, id: t.id };
-      if (!found) found = parseSpotify(t.embed);
-      if (!found) found = parseSpotify(t.link);
-      if (!found) found = parseSpotify(t.spotify);   // tolerate the raw key name
-      if (!found) continue;                          // nothing playable — skip
+      if (t.src === 'youtube' && t.id && (t.kind === 'playlist' || t.kind === 'video')) {
+        found = { src: 'youtube', kind: t.kind, id: t.id };
+      } else if (t.src === 'spotify' && t.id && SPOTIFY_KINDS[t.kind]) {
+        found = { src: 'spotify', kind: t.kind, id: t.id };
+      }
+      if (!found) found = parseSource(t.embed);
+      if (!found) found = parseSource(t.link);
+      if (!found) found = parseSource(t.url);
+      if (!found) found = parseSource(t.youtube);
+      if (!found) found = parseSource(t.spotify);   // tolerate the raw key names
+      if (!found && t.id) found = parseSource(t.id);
+      if (!found) continue;                         // nothing playable — skip
 
       var name = String(t.name || t.title || t.file || found.id).trim();
       out.push({
         name: name,
         file: t.file || name,
+        src: found.src,
         kind: found.kind,
         id: found.id,
-        embed: t.embed && /open\.spotify\.com\/embed\//.test(t.embed)
-          ? t.embed : embedUrl(found.kind, found.id),
-        link: t.link || openUrl(found.kind, found.id),
+        embed: embedUrl(found),
+        link: t.link && /^https?:/i.test(t.link) ? t.link : openUrl(found),
         cover: t.cover || null,
         note: t.note ? String(t.note) : ''
       });
@@ -136,24 +216,154 @@
     return out;
   }
 
+  /* -------------------------------------------------- the YouTube API
+     Injected on first play, never on load. Everything that wants the API
+     waits on this one promise, so the script tag is added at most once. */
+
+  var ytLoad = null;
+
+  function loadYouTubeAPI() {
+    if (ytLoad) return ytLoad;
+    ytLoad = new Promise(function (resolve, reject) {
+      if (window.YT && window.YT.Player) { resolve(window.YT); return; }
+
+      // Another script may already own this hook; chain rather than clobber.
+      var previous = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () {
+        if (typeof previous === 'function') { try { previous(); } catch (e) {} }
+        resolve(window.YT);
+      };
+
+      var s = document.createElement('script');
+      s.src = 'https://www.youtube.com/iframe_api';
+      s.async = true;
+      s.onerror = function () { reject(new Error('could not reach YouTube')); };
+      document.head.appendChild(s);
+
+      // A rejection after a resolution is a no-op, so this is just a floor
+      // under "the wheel does nothing and never says why".
+      setTimeout(function () {
+        if (!(window.YT && window.YT.Player)) reject(new Error('YouTube did not answer'));
+      }, 15000);
+    });
+    return ytLoad;
+  }
+
+  /* ------------------------------------------------------------ chassis
+     Two structural moves, both made once, both made while the device is
+     still empty — so neither can interrupt playback. */
+
+  /**
+   * Lift the device out of <main> into a fixed shell on <body>. app.js
+   * replaces <main> wholesale when you walk into a folder; anything still
+   * inside it at that moment is destroyed, iframe and all.
+   */
+  function shellFor(pod) {
+    var parent = pod.parentNode;
+    if (parent && parent.id === 'ipod-shell') return parent;   // generator did it
+
+    var shell = el('div', 'ipod-shell');
+    shell.id = 'ipod-shell';
+    document.body.appendChild(shell);
+
+    // The window the generator wrapped it in goes with it — an empty
+    // "music (1 playlist)" heading left lying in the plantbed is litter.
+    var item = pod.closest ? pod.closest('.item.kind-ipod') : null;
+    shell.appendChild(pod);
+    if (item && item.parentNode && !item.querySelector('.ipod')) {
+      item.parentNode.removeChild(item);
+    }
+    return shell;
+  }
+
+  /**
+   * Move the stage out of the player view and make it a layer of the screen.
+   * Inside the view it would be inside a `display: none` box every time the
+   * visitor pressed MENU, and a detached box is a stopped iframe. As a layer
+   * it is merely covered by the list, and keeps playing underneath it.
+   */
+  function stageFor(root) {
+    var screen = root.querySelector('.ipod-screen');
+    var stage = root.querySelector('.ipod-stage');
+    if (!stage) { stage = el('div', 'ipod-stage'); }
+    if (screen && stage.parentNode !== screen) screen.appendChild(stage);
+    stage.setAttribute('data-mode', 'none');
+    return stage;
+  }
+
+  /* ------------------------------------------------------- the dock
+     The player is furniture: it can be pushed to the edge of the screen and
+     pulled back, and it keeps playing either way, because docking is a
+     transform and nothing else. The taskbar's `music` toggle in app.js
+     parks it entirely; these two controls only slide it aside. */
+
+  function buildDock(shell, root) {
+    var tab = el('button', 'ipod-tab');
+    tab.type = 'button';
+    tab.setAttribute('aria-label', 'bring the music player back');
+    tab.title = 'bring the music player back';
+    tab.appendChild(el('span', 'ipod-tab-label')).textContent = 'music';
+    shell.appendChild(tab);
+
+    var dock = el('button', 'ipod-dock');
+    dock.type = 'button';
+    dock.setAttribute('aria-label', 'push the music player to the side');
+    dock.title = 'push it to the side';
+    dock.innerHTML = '&#8249;&#8249;';
+    var bar = root.querySelector('.ipod-bar');
+    if (bar) bar.appendChild(dock);
+
+    function apply(on, save) {
+      shell.setAttribute('data-docked', on ? 'on' : 'off');
+      document.body.classList.toggle('music-docked', on);
+      tab.hidden = !on;
+      dock.setAttribute('aria-expanded', on ? 'false' : 'true');
+      if (save) set('ipod.docked', on);
+    }
+
+    dock.addEventListener('click', function () { apply(true, true); tab.focus(); });
+    tab.addEventListener('click', function () {
+      apply(false, true);
+      var select = root.querySelector('.ipod-btn-select');
+      if (select) select.focus();
+    });
+
+    // A narrow window has no room for a 292px device sitting over the page,
+    // so it starts pushed aside. A wide one starts open.
+    apply(get('ipod.docked', !window.matchMedia('(min-width: 900px)').matches), false);
+  }
+
   /* ------------------------------------------------------------ device */
 
   function mount(root) {
     var tracks = normalize(window.GARDEN_MUSIC);
 
-    var bar     = root.querySelector('.ipod-bar-title');
+    var shell = shellFor(root);
+    var stage = stageFor(root);
+
+    var bar     = root.querySelector('.ipod-bar');
+    var title   = root.querySelector('.ipod-bar-title');
     var back    = root.querySelector('.ipod-back');
     var list    = root.querySelector('.ipod-list');
-    var stage   = root.querySelector('.ipod-stage');
     var ticker  = root.querySelector('.ipod-ticker');
     var paused  = root.querySelector('.ipod-paused-name');
     var noscript = root.querySelector('.ipod-noscript');
-    if (noscript) noscript.remove();
+    if (noscript) noscript.parentNode.removeChild(noscript);
+
+    buildDock(shell, root);
+
+    // The stage is an absolute layer, so it has to be told where the bar
+    // ends. Measured rather than guessed — the bar grows with the font.
+    function sizeStage() {
+      if (bar) root.style.setProperty('--ipod-bar-h', bar.offsetHeight + 'px');
+    }
+    sizeStage();
+    window.addEventListener('resize', sizeStage);
 
     // --- nothing to play: say so, plainly, and stop.
     if (!tracks.length) {
       root.setAttribute('data-view', 'empty');
-      if (bar) bar.textContent = 'no music';
+      if (title) title.textContent = 'no music';
       if (ticker) {
         ticker.textContent = window.GARDEN_MUSIC
           ? 'the music folder has no playable playlists yet'
@@ -167,8 +377,9 @@
     var state = {
       view: 'list',        // list | player
       index: 0,            // which tile the wheel is pointing at
-      playing: -1,         // which tile is loaded in the embed, -1 for none
-      live: false          // is the iframe currently mounted
+      playing: -1,         // which tile is loaded, -1 for none
+      live: false,         // is a Spotify embed currently mounted
+      now: ''              // the track title YouTube is reporting
     };
 
     /* ---------------------------------------------------------- tiles */
@@ -186,6 +397,9 @@
 
       // Fallback art is deterministic: the same name always draws the same
       // tile. Hues stay inside the site's ochre-to-olive band (see ipod.css).
+      // Deliberately NOT YouTube's thumbnail service — that would be a
+      // third-party request on page load, which is the one thing this
+      // player is not allowed to make.
       var art = el('div', 'ipod-tile-art');
       var h = hash(t.name);
       art.style.setProperty('--h1', String(26 + (h % 70)));
@@ -208,7 +422,7 @@
         // box, and a lazy image in a scroll container can sit unloaded
         // forever because the heuristic watches the document viewport.
         // Covers are a handful of small same-origin files; the thing that
-        // must stay lazy is the Spotify iframe, and it is.
+        // must stay lazy is the player iframe, and it is.
         // The listener goes on before `src`: a cached 404 fires `error`
         // synchronously, and attaching afterwards would miss it.
         img.addEventListener('error', generated);     // missing file -> gradient
@@ -255,11 +469,16 @@
 
       var cur = tracks[state.index];
       if (state.view === 'list') {
-        bar.textContent = 'playlists';
-        ticker.textContent = cur.note ? cur.name + ' — ' + cur.note : cur.name;
+        // Even on the menu, say what is still playing — the whole point of
+        // this rewrite is that it usually still is.
+        var live = tracks[state.playing];
+        title.textContent = 'playlists';
+        if (live && state.now) ticker.textContent = '♪ ' + state.now;
+        else if (live) ticker.textContent = '♪ ' + live.name;
+        else ticker.textContent = cur.note ? cur.name + ' — ' + cur.note : cur.name;
       } else {
         var now = tracks[state.playing] || cur;
-        bar.textContent = now.name;
+        title.textContent = state.now || now.name;
         // The link goes first so it survives the ellipsis on a narrow
         // screen; the note is the part that can afford to be cut.
         ticker.innerHTML = '';
@@ -267,7 +486,7 @@
         a.href = now.link;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
-        a.textContent = 'open in Spotify ↗';
+        a.textContent = 'open in ' + sourceName(now.src) + ' ↗';
         ticker.appendChild(a);
         if (now.note) ticker.appendChild(document.createTextNode(' · ' + now.note));
       }
@@ -276,11 +495,110 @@
       if (t && t.scrollIntoView) t.scrollIntoView({ block: 'nearest' });
     }
 
-    /* ---------------------------------------------------- the embed */
+    function say(text) { if (ticker) ticker.textContent = text; }
 
-    function loadEmbed(i) {
+    /** One place to record "something is coming out of the speakers", so a
+        docked player can still show a lit dot on its tab. */
+    function playingNow(on) {
+      root.setAttribute('data-playing', on ? 'yes' : 'no');
+      document.body.classList.toggle('music-playing', !!on);
+    }
+
+    /* -------------------------------------------------- the YouTube half */
+
+    var yt = null;         // the YT.Player, built once and kept for good
+    var ytBox = null;
+
+    function ytHost() {
+      if (ytBox) return ytBox;
+      ytBox = el('div', 'ipod-stage-box is-yt');
+      ytBox.appendChild(el('div', 'ipod-yt-host'));
+      stage.appendChild(ytBox);
+      return ytBox;
+    }
+
+    function playerVars(t) {
+      var vars = {
+        autoplay: 1,
+        playsinline: 1,
+        rel: 0,
+        modestbranding: 1
+      };
+      if (location.protocol === 'http:' || location.protocol === 'https:') {
+        vars.origin = location.origin;
+      }
+      if (t.kind === 'playlist') {
+        vars.listType = 'playlist';
+        vars.list = t.id;
+      }
+      return vars;
+    }
+
+    function ytLoadTrack(t) {
+      if (t.kind === 'playlist') yt.loadPlaylist({ list: t.id, listType: 'playlist', index: 0 });
+      else yt.loadVideoById(t.id);
+    }
+
+    function nowPlayingTitle() {
+      try {
+        var d = yt && yt.getVideoData && yt.getVideoData();
+        return (d && d.title) ? d.title : '';
+      } catch (e) { return ''; }
+    }
+
+    function playYouTube(i) {
       var t = tracks[i];
-      stage.innerHTML = '';
+      stageMode('yt');
+      state.now = '';
+      say('reaching YouTube…');
+
+      loadYouTubeAPI().then(function (YT) {
+        if (state.playing !== i) return;          // they moved on while it loaded
+
+        if (yt && yt.loadPlaylist) { ytLoadTrack(t); paint(); return; }
+
+        var opts = {
+          width: '100%',
+          height: '100%',
+          playerVars: playerVars(t),
+          events: {
+            onReady: function (e) {
+              try { e.target.playVideo(); } catch (err) {}
+              state.now = nowPlayingTitle();
+              paint();
+            },
+            onStateChange: function (e) {
+              // 1 playing, 2 paused, 0 ended, 3 buffering, 5 cued
+              playingNow(e.data === 1);
+              state.now = nowPlayingTitle();
+              paint();
+            },
+            onError: function () {
+              say('YouTube would not play that one');
+            }
+          }
+        };
+        if (t.kind !== 'playlist') opts.videoId = t.id;
+
+        yt = new YT.Player(ytHost().firstChild, opts);
+      }).catch(function (err) {
+        if (state.playing !== i) return;
+        say(err && err.message ? err.message : 'could not reach YouTube');
+      });
+    }
+
+    /* -------------------------------------------------- the Spotify half */
+
+    var spBox = null;
+
+    function playSpotify(i) {
+      var t = tracks[i];
+      stageMode('sp');
+      if (!spBox) {
+        spBox = el('div', 'ipod-stage-box is-sp');
+        stage.appendChild(spBox);
+      }
+      spBox.innerHTML = '';
       var frame = document.createElement('iframe');
       frame.src = t.embed;
       frame.title = 'Spotify player: ' + t.name;
@@ -289,38 +607,65 @@
       // `allow` already grants fullscreen; the legacy attribute only warns.
       frame.setAttribute('allow',
         'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');
-      stage.appendChild(frame);
+      spBox.appendChild(frame);
       state.live = true;
+      state.now = '';
       root.setAttribute('data-player', 'on');
+      playingNow(true);
     }
 
-    function unloadEmbed() {
-      stage.innerHTML = '';                 // the only way to stop a cross-origin embed
+    function unloadSpotify() {
+      if (spBox) spBox.innerHTML = '';     // the only way to stop a cross-origin embed
       state.live = false;
       root.setAttribute('data-player', 'off');
+      playingNow(false);
       if (paused) paused.textContent = (tracks[state.playing] || {}).name || '';
     }
+
+    /**
+     * Which half of the stage is on top. Nothing is ever removed: switching
+     * from YouTube to Spotify pauses YouTube rather than destroying it, so
+     * switching back costs no reload.
+     */
+    function stageMode(mode) {
+      stage.setAttribute('data-mode', mode);
+      if (mode === 'yt') {
+        if (state.live) unloadSpotify();
+        root.setAttribute('data-player', 'on');
+      } else if (mode === 'sp' && yt) {
+        try { yt.pauseVideo(); } catch (e) {}
+      }
+    }
+
+    /* ------------------------------------------------------ the controls */
 
     function select() {
       state.playing = state.index;
       state.view = 'player';
       root.setAttribute('data-view', 'player');
-      loadEmbed(state.playing);
-      set('ipod.last', tracks[state.playing].file);
+
+      var t = tracks[state.playing];
+      if (t.src === 'youtube') playYouTube(state.playing);
+      else playSpotify(state.playing);
+
+      set('ipod.last', t.file);
       paint();
-      back.focus();
+      if (back) back.focus();
     }
 
+    /**
+     * MENU no longer stops anything. It used to tear the iframe down, which
+     * is exactly the behaviour this rewrite exists to get rid of — the list
+     * simply covers the stage while the music carries on behind it.
+     */
     function toMenu() {
       if (state.view === 'list') {
         list.scrollTop = 0;
         state.index = 0;
       } else {
-        unloadEmbed();
         state.view = 'list';
         root.setAttribute('data-view', 'list');
         state.index = state.playing >= 0 ? state.playing : state.index;
-        state.playing = -1;
       }
       paint();
       list.focus();
@@ -328,6 +673,17 @@
 
     function step(delta) {
       if (state.view === 'player') {
+        var t = tracks[state.playing];
+        // On YouTube the wheel means what it means on a real iPod: the next
+        // track. Spotify's embed exposes no controls, so there it still
+        // steps to the next playlist.
+        if (t && t.src === 'youtube' && yt) {
+          try {
+            if (delta > 0) yt.nextVideo();
+            else yt.previousVideo();
+          } catch (e) {}
+          return;
+        }
         state.index = (state.playing + delta + tracks.length) % tracks.length;
         select();
         return;
@@ -338,8 +694,21 @@
 
     function playPause() {
       if (state.view === 'list') { select(); return; }
-      if (state.live) unloadEmbed();
-      else loadEmbed(state.playing);
+
+      var t = tracks[state.playing];
+      if (!t) { select(); return; }
+
+      if (t.src === 'youtube') {
+        if (!yt) { playYouTube(state.playing); return; }
+        try {
+          if (yt.getPlayerState && yt.getPlayerState() === 1) yt.pauseVideo();
+          else yt.playVideo();
+        } catch (e) {}
+        return;
+      }
+
+      if (state.live) unloadSpotify();
+      else playSpotify(state.playing);
       paint();
     }
 
@@ -349,7 +718,7 @@
       menu: toMenu,
       prev: function () { step(-1); },
       next: function () { step(1); },
-      select: function () { if (state.view === 'list') select(); else back.focus(); },
+      select: function () { if (state.view === 'list') select(); else playPause(); },
       play: playPause
     };
 
@@ -365,7 +734,9 @@
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       // Let the wheel buttons handle their own Enter/Space.
       var onButton = e.target && e.target.classList &&
-                     e.target.classList.contains('ipod-btn');
+                     (e.target.classList.contains('ipod-btn') ||
+                      e.target.classList.contains('ipod-dock') ||
+                      e.target.classList.contains('ipod-back'));
 
       switch (e.key) {
         case 'ArrowLeft':  step(-1); break;
@@ -393,7 +764,8 @@
     /* ------------------------------------------------------- first run */
 
     // Restore where the visitor left off — highlight only. Loading the embed
-    // here would defeat the whole point of lazy-loading it.
+    // here would defeat the whole point of lazy-loading it, and starting
+    // audio on arrival is rude besides.
     var last = get('ipod.last', null);
     if (last) {
       for (var i = 0; i < tracks.length; i++) {
@@ -403,9 +775,10 @@
 
     root.setAttribute('data-view', 'list');
     root.setAttribute('data-player', 'off');
+    playingNow(false);
     paint();
     if (last && tracks[state.index].file === last) {
-      ticker.textContent = 'last played: ' + tracks[state.index].name;
+      say('last played: ' + tracks[state.index].name);
     }
   }
 
@@ -414,6 +787,8 @@
   function boot() {
     var pods = document.querySelectorAll('.ipod');
     for (var i = 0; i < pods.length; i++) {
+      if (pods[i].getAttribute('data-mounted') === 'yes') continue;
+      pods[i].setAttribute('data-mounted', 'yes');
       try {
         mount(pods[i]);
       } catch (err) {
