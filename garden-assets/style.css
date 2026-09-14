@@ -70,6 +70,23 @@ body.theme-ink    {
 }
 body.theme-clean  { --paper: #F4F2EC; --paper-deep: #EAE7DF; }
 
+/* pocari: the cold, almost-white of the bottle, with its one green. Cooler
+   than the bone paper -- the greys go blue rather than brown. */
+body.theme-pocari {
+  --paper: #F2F6F4; --paper-deep: #E4EBE8; --surface: #FAFCFB; --surface-2: #FFFFFF;
+  --ink: #1F2A27; --ink-soft: #4C5C57; --ink-faint: #849690;
+  --ochre: #1B7A57; --ochre-pale: #A9D6C3;
+  --olive: #3D8F6B; --olive-pale: #B9DECB;
+  --rule: rgba(31,42,39,.15); --rule-soft: rgba(31,42,39,.07);
+}
+/* The tooth on the body is painted in warm rgba, which left this theme
+   reading brown however cold the paper underneath it was. */
+body.theme-pocari {
+  background-image:
+    radial-gradient(circle at 15% 12%, rgba(27,122,87,.05) 0, transparent 38%),
+    radial-gradient(circle at 85% 78%, rgba(61,143,107,.06) 0, transparent 42%);
+}
+
 /* an optional paper grain, off by default */
 body.grain::after {
   content: "";

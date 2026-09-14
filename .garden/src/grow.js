@@ -130,6 +130,33 @@ function isIgnored(name, isDir, rules) {
   return false;
 }
 
+/**
+ * How much a folder actually holds, counted all the way down. Finder puts a
+ * size on a folder and so should the page -- "4 items" tells you nothing
+ * about whether opening it costs a megabyte or a gigabyte.
+ *
+ * Walks with the same rules the site is built with, so what is reported is
+ * what a visitor could actually reach.
+ */
+function folderBytes(dir, rules, depth = 0) {
+  if (depth > 12) return 0;            // a symlink loop should not hang a build
+  let total = 0;
+
+  let entries = [];
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return 0; }
+
+  for (const e of entries) {
+    if (isIgnored(e.name, e.isDirectory(), rules)) continue;
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) total += folderBytes(full, rules, depth + 1);
+    else if (e.isFile()) {
+      try { total += fs.statSync(full).size; } catch { /* vanished mid-build */ }
+    }
+  }
+
+  return total;
+}
+
 function countItems(dir, rules) {
   try {
     return fs.readdirSync(dir, { withFileTypes: true })
@@ -160,9 +187,11 @@ function describe(dir, entry, rules, root, isRoot) {
     const n = countItems(full, rules);
     // The icon macOS itself draws for this folder, so a custom one or a tag
     // colour carries through. null off a Mac -- the name stands alone then.
+    const bytes = folderBytes(full, rules);
     return { name: name + '/', href, type: 'directory', iconOnly: true,
              icon: folderIcon(full, root),
-             contents: `${n} item${n === 1 ? '' : 's'}` };
+             contents: `${n} item${n === 1 ? '' : 's'}` +
+                       (bytes ? `, ${prettyBytes(bytes)}` : '') };
   }
 
   const stat = fs.statSync(full);

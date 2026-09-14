@@ -480,8 +480,8 @@
       apply: function (on) { document.body.classList.toggle('music-off', !on); } }
   ];
 
-  var THEMES = ['', 'theme-clean', 'theme-olive', 'theme-ink'];
-  var THEME_NAMES = ['bone', 'paper', 'olive', 'ink'];
+  var THEMES = ['', 'theme-clean', 'theme-pocari', 'theme-olive', 'theme-ink'];
+  var THEME_NAMES = ['bone', 'paper', 'pocari', 'olive', 'ink'];
 
   function mountToggles() {
     var bar = document.getElementById('taskbar-toggles');
@@ -528,7 +528,8 @@
     var reset = document.createElement('button');
     reset.className = 'toggle';
     reset.type = 'button';
-    reset.innerHTML = '<span class="led"></span>reset';
+    reset.innerHTML = '<span class="led"></span>put back';
+    reset.title = 'put every item back where Finder has it';
     reset.addEventListener('click', function () {
       set('moved', {});
       location.reload();
@@ -865,10 +866,54 @@
     restorePositions();
   }
 
+  /* ============================================================== BROADCAST
+     The ticker says what the world is reading on Wikipedia right now. It is
+     the closest thing to live news that a page with no server can honestly
+     get: one public feed, no key, no tracking, and it allows the request
+     from a browser.
+
+     The owner's own words are already in the HTML. This only ever appends,
+     so with no JS, no network, or a feed that moved, the ticker still reads
+     exactly as it did before.
+     ========================================================================= */
+
+  function mountBroadcast() {
+    var span = document.querySelector('.marquee span');
+    if (!span || !window.fetch) return;
+
+    var d = new Date();
+    // Yesterday: the current day's ranking is still being counted, and an
+    // empty list would leave the ticker looking broken for no reason.
+    d.setDate(d.getDate() - 1);
+    var ymd = d.getFullYear() + '/' +
+      ('0' + (d.getMonth() + 1)).slice(-2) + '/' + ('0' + d.getDate()).slice(-2);
+
+    fetch('https://api.wikimedia.org/feed/v1/wikipedia/en/featured/' + ymd)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var list = j && j.mostread && j.mostread.articles;
+        if (!list || !list.length) return;
+
+        var titles = [];
+        for (var i = 0; i < list.length && titles.length < 8; i++) {
+          var t = list[i].normalizedtitle;
+          // Wikipedia's own furniture is not news.
+          if (t && t.indexOf('Main Page') < 0 && t.indexOf('Special:') < 0) titles.push(t);
+        }
+        if (!titles.length) return;
+
+        // textContent, not innerHTML: this string comes off the network.
+        span.textContent = span.textContent +
+          '  the world is reading  *  ' + titles.join('  *  ') + '  *';
+      })
+      .catch(function () { /* offline, or the feed moved. The ticker stands. */ });
+  }
+
   function boot() {
     mountClock();
     mountToggles();
     mountNav();
+    mountBroadcast();
     bootPage();
   }
 
