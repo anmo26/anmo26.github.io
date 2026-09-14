@@ -877,7 +877,7 @@
   function mountHint() {
     var hint = document.getElementById('taskbar-clock');
     if (!hint) return;
-    hint.textContent = wide() ? 'drag things around →' : 'hold an item to move it';
+    hint.textContent = wide() ? 'drag things around →' : 'hold to move';
   }
 
   window.addEventListener('resize', fitSoon);

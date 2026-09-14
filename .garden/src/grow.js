@@ -677,6 +677,13 @@ function renderPage({ siteName, title, files, positioned, description, socialIma
          lying on the page may be wider than the page. */
       .plantbed [data-resizable] { max-width: 100%; }
       .plantbed img, .plantbed video { max-width: 100%; height: auto; }
+      /* A filename is one unbreakable line, which is right under an icon and
+         wrong above a paragraph: "Screenshot 2026-09-14 at 10.09.54 AM.png"
+         is wider than a phone all by itself, and it was dragging the whole
+         page sideways with it. */
+      .plantbed > .item:not(.as-icon) h3 {
+        white-space: normal; overflow-wrap: anywhere;
+      }
     }`;
 
   if (!positioned && files.length) {

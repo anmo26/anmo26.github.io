@@ -18,10 +18,15 @@
    ========================================================================== */
 
 .ipod {
-  /* Geometry. One knob sets the size of the whole device. */
-  --ipod-w: 292px;
-  --ipod-pad: 15px;
-  --ipod-radius: 20px;
+  /* Geometry. One knob sets the size of the whole device.
+     It came down from 292px: the owner wanted the player smaller and its
+     writing bigger, and those pull against each other, so the space came
+     out of the chassis — the padding, the corner radius and above all the
+     click wheel, which was the largest thing on the device and the one
+     with the least to say. Every piece of type on it went UP. */
+  --ipod-w: 250px;
+  --ipod-pad: 11px;
+  --ipod-radius: 16px;
 
   /* Chassis. Paper, one shade up from the window it sits in. */
   --ipod-body: linear-gradient(172deg,
@@ -60,9 +65,13 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  /* The resting shape, used while nothing is loaded. Once something is
+     playing, ipod.js sets an explicit height from the shape of that video
+     and this is no longer what decides it. */
   aspect-ratio: 4 / 3;
-  min-height: 172px;
+  min-height: 104px;
   overflow: hidden;
+  transition: height .18s ease;
   background: var(--ipod-lcd);
   border: 1px solid var(--ipod-edge);
   border-radius: 2px;
@@ -74,18 +83,38 @@
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: .5rem;
-  padding: .32rem .5rem;
+  gap: .34rem;
+  padding: .3rem .42rem;
   background: var(--paper-deep, #E4E0D6);
   border-bottom: 1px solid var(--rule-soft, rgba(38, 36, 31, .08));
-  font-size: .62rem;
-  letter-spacing: .09em;
+  /* Bigger, and with much of the letter-spacing taken back out: wide
+     tracking on 10px uppercase is the thing that made this line hard to
+     read at a glance. */
+  font-size: .7rem;
+  letter-spacing: .04em;
   text-transform: uppercase;
   color: var(--ipod-soft);
 }
 
+/* The bar holds at most three things at once, and never the same three.
+   On the menu: what you are looking at, the battery, and the switch that
+   decides whether music starts by itself. In the player: the way back, the
+   name of the song, and the track list. Laid out by `order` because
+   ipod.js appends its own buttons and DOM order is not reading order. */
+.ipod-back      { order: 0; }
+.ipod-bar-title { order: 1; }
+.ipod-battery   { order: 2; }
+.ipod-auto      { order: 3; }
+.ipod-queuebtn  { order: 4; }
+
+.ipod[data-view="player"] .ipod-battery,
+.ipod[data-view="player"] .ipod-auto,
+.ipod[data-view="list"]   .ipod-queuebtn,
+.ipod[data-view="empty"]  .ipod-queuebtn { display: none; }
+
 .ipod-bar-title {
   flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -117,14 +146,14 @@
   flex: 0 0 auto;
   display: none;
   align-items: center;
-  padding: 0 .35rem;
-  height: 15px;
+  padding: 0 .3rem;
+  height: 16px;
   background: none;
   border: 1px solid var(--rule, rgba(38, 36, 31, .16));
   color: var(--ipod-soft);
   font: inherit;
-  font-size: .58rem;
-  letter-spacing: .09em;
+  font-size: .64rem;
+  letter-spacing: .03em;
   text-transform: uppercase;
   cursor: pointer;
 }
@@ -158,7 +187,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   gap: 7px;
   padding: 7px;
   margin: 0;
@@ -212,7 +241,7 @@
 }
 .ipod-tile-initials {
   font-family: var(--serif, Georgia, serif);
-  font-size: 17px;
+  font-size: 19px;
   line-height: 1;
   font-weight: 400;
   letter-spacing: .04em;
@@ -220,8 +249,8 @@
 }
 
 .ipod-tile-name {
-  font-size: 10px;
-  line-height: 1.3;
+  font-size: 11.5px;
+  line-height: 1.32;
   color: var(--ipod-soft);
   overflow: hidden;
   display: -webkit-box;
@@ -258,13 +287,23 @@
    player was rewritten to kill. Here the list simply covers the stage, and
    the music carries on behind it. Nothing is ever unmounted except the
    Spotify embed, which has no other pause. */
+/* The stage is cut to the shape of whatever is playing. ipod.js gives it an
+   explicit width and height from the video's real proportions — read off
+   YouTube's oEmbed answer, which is the only public way to know that
+   something was filmed upright before it is on the screen — and `margin:
+   auto` centres what is left. A phone video therefore stands up in the
+   middle of the screen at full height instead of being squeezed into a
+   widescreen slot, and a widescreen video fills the width with no bars.
+   Both halves stay mounted through the resize, so nothing stops. */
 .ipod-stage {
   position: absolute;
   top: var(--ipod-bar-h, 1.6rem);   /* measured by ipod.js, so it tracks the bar */
   left: 0;
   right: 0;
   bottom: 0;
+  margin: 0 auto;                   /* with an explicit width, this centres it */
   z-index: 2;
+  overflow: hidden;
   background: #121212;              /* a dark backdrop, so neither embed seams */
 }
 /* Covered, not removed. */
@@ -322,29 +361,44 @@
   color: var(--ipod-mark);
 }
 
-/* The line under the screen: now playing, or a hint. */
+/* The line under the screen: now playing, or a hint. It shares its row
+   with `hide`, which ipod.js moves down here out of the crowded bar. */
+.ipod-strip {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin: .5rem .05rem .55rem;
+}
+
 .ipod-ticker {
-  margin: .6rem .1rem .75rem;
-  height: 1.1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  height: 1.2rem;
   overflow: hidden;
   font-family: var(--mono, Menlo, monospace);
-  font-size: .62rem;
-  line-height: 1.1rem;
-  letter-spacing: .03em;
-  text-align: center;
+  font-size: .7rem;
+  line-height: 1.2rem;
+  letter-spacing: 0;
+  text-align: left;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--ipod-faint);
+  /* Was --ipod-faint. A line nobody can read is not a quiet line, it is a
+     wasted one, and this is where the player says what it is doing. */
+  color: var(--ipod-soft);
 }
 .ipod-ticker a { color: var(--ipod-mark); text-underline-offset: 2px; }
 
 /* ----------------------------------------------------------- the click wheel */
 
+/* The wheel gave up the most room. It was up to 184px of blank circle on a
+   292px device — more height than the screen had — and it still reads as a
+   click wheel at 138px. */
 .ipod-wheel {
   position: relative;
-  width: 68%;
-  min-width: 130px;
-  max-width: 184px;
+  width: 60%;
+  min-width: 112px;
+  max-width: 138px;
   aspect-ratio: 1 / 1;
   margin: 0 auto;
   border-radius: 50%;
@@ -360,11 +414,11 @@
   padding: 0;
   background: none;
   border: 0;
-  color: var(--ipod-faint);
+  color: var(--ipod-soft);
   font-family: var(--mono, Menlo, monospace);
-  font-size: .56rem;
+  font-size: .6rem;
   line-height: 1;
-  letter-spacing: .14em;
+  letter-spacing: .1em;
   text-transform: uppercase;
   cursor: pointer;
   transition: color .12s ease;
@@ -388,7 +442,7 @@
   width: 48%; height: 26%;
   align-items: center;
   padding-bottom: 8%;
-  font-size: .66rem;
+  font-size: .7rem;
   letter-spacing: 0;
 }
 .ipod-btn-prev {
@@ -397,7 +451,7 @@
   width: 26%; height: 48%;
   justify-items: center;
   padding-left: 6%;
-  font-size: .72rem;
+  font-size: .78rem;
   letter-spacing: 0;
 }
 .ipod-btn-next {
@@ -406,7 +460,7 @@
   width: 26%; height: 48%;
   justify-items: center;
   padding-right: 6%;
-  font-size: .72rem;
+  font-size: .78rem;
   letter-spacing: 0;
 }
 
@@ -460,20 +514,21 @@ body.theme-ink .ipod-tile-art.is-generated {
 /* The window column can be narrow long before the viewport is, so the
    breakpoint is on the device, not the page. Usable down to 360px. */
 @media (max-width: 430px) {
-  .ipod { --ipod-pad: 11px; --ipod-radius: 16px; }
+  .ipod { --ipod-pad: 9px; --ipod-radius: 14px; }
   .ipod-list {
     grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
     gap: 6px;
     padding: 6px;
   }
-  .ipod-tile-name { font-size: 9.5px; }
-  .ipod-tile-initials { font-size: 15px; }
+  .ipod-tile-name { font-size: 11px; }
+  .ipod-tile-initials { font-size: 17px; }
   .win.kind-ipod .win-body { padding: .85rem .6rem .7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ipod-btn { transition: none; }
   .ipod-list { scroll-behavior: auto; }
+  .ipod-screen { transition: none; }
 }
 
 /* ==========================================================================
@@ -585,9 +640,8 @@ body.music-playing .ipod-tab::after {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  height: 15px;
-  padding: 0 .3rem;
-  margin-left: -.2rem;
+  height: 17px;
+  padding: 0 .32rem;
   background: none;
   /* Visible at rest. This is the control that gets the player out of the
      way, so it should not have to be hunted for. */
@@ -595,9 +649,10 @@ body.music-playing .ipod-tab::after {
   border-radius: 2px;
   color: var(--ipod-ink, #26241F);
   font: inherit;
-  font-size: .6rem;
-  letter-spacing: .04em;
+  font-size: .64rem;
+  letter-spacing: .02em;
   line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
 }
 .ipod-dock:hover { color: var(--ipod-mark, #A9752F); border-color: var(--ipod-mark, #A9752F); }
@@ -630,20 +685,40 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
    The rest of the playlist, over the video rather than instead of it: the
    iframe keeps playing underneath, which is the whole point. */
 
-.ipod-queuebtn {
+/* The two chips in the bar. Same hairline as `hide`, one line of type. */
+.ipod-queuebtn,
+.ipod-auto {
   flex: 0 0 auto;
-  margin-left: auto;
-  height: 15px;
-  padding: 0 .35rem;
+  height: 16px;
+  padding: 0 .32rem;
   background: none;
   border: 1px solid var(--rule, rgba(38, 36, 31, .16));
   border-radius: 2px;
   color: var(--ipod-ink, #26241F);
   font: inherit;
-  font-size: .6rem;
-  letter-spacing: .04em;
+  font-size: .64rem;
+  letter-spacing: .02em;
   line-height: 1;
+  text-transform: lowercase;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+/* `auto`: whether music starts when the site opens. Lit in ochre when it
+   will, drawn back to a hairline when it will not, so the answer is
+   readable without hovering it. */
+.ipod-auto[aria-pressed="true"] {
+  color: var(--ochre, #A9752F);
+  border-color: var(--ochre, #A9752F);
+}
+.ipod-auto[aria-pressed="false"] {
+  color: var(--ink-faint, #8A8477);
+  border-color: var(--rule-soft, rgba(38, 36, 31, .08));
+}
+.ipod-auto:focus-visible,
+.ipod-queuebtn:focus-visible {
+  outline: 1px solid var(--ochre, #A9752F);
+  outline-offset: 1px;
 }
 
 .ipod-queuebtn[hidden] { display: none; }
@@ -662,7 +737,7 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
   z-index: 3;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: var(--ipod-screen, #F7F5F0);
+  background: var(--ipod-lcd, #EDEAE2);
 }
 
 .ipod-queue[hidden] { display: none; }
@@ -674,13 +749,13 @@ body.theme-ink .ipod-tab { background: var(--paper-deep, #1B1B18); }
 .ipod-queue-name {
   display: block;
   width: 100%;
-  padding: .38rem .5rem;
+  padding: .42rem .5rem;
   background: none;
   border: 0;
   color: var(--ipod-ink, #26241F);
   font-family: var(--mono, Menlo, monospace);
-  font-size: .62rem;
-  line-height: 1.35;
+  font-size: .72rem;
+  line-height: 1.38;
   text-align: left;
   cursor: pointer;
 }
