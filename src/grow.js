@@ -245,10 +245,11 @@ function renderItem(f, i, assetPrefix = '') {
   // The icon and the name are one link, because in Finder they are one thing.
   const icon = f.icon
     ? `<a class="icon" href="${f.href}" tabindex="-1" aria-hidden="true">` +
-      `<img src="${assetPrefix}${f.icon}" alt="" width="${ICON_PX}" height="${ICON_PX}"></a>\n        `
+      `<img src="${assetPrefix}${f.icon}" alt="" ` +
+      `width="${f.iconW ?? ICON_PX}" height="${f.iconH ?? ICON_PX}"></a>\n        `
     : '';
 
-  return `      <div class="item kind-${f.type}" id="p${i}" data-key="${escapeHtml(f.name)}">
+  return `      <div class="item kind-${f.type}${f.iconOnly ? ' as-icon' : ''}" id="p${i}" data-key="${escapeHtml(f.name)}">
         ${icon}<h3><a href="${f.href}">${escapeHtml(f.name)}</a>` +
           (meta ? ` <span class="meta">(${escapeHtml(meta)})</span>` : '') + `</h3>` +
           (body ? `\n        ${body}` : '') + `
