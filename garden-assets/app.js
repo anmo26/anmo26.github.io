@@ -867,6 +867,172 @@
       });
   }
 
+
+  /* ============================================================== VIEWERS
+     Opening a file used to hand the whole browser window over to it, which
+     is the one thing a folder never does. A file opens in a panel on top of
+     the page instead: draggable, closeable, and as many at once as you like,
+     so two things can sit side by side while the site carries on behind them.
+     ---------------------------------------------------------------------- */
+
+  var VIEWER_KIND = {
+    image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'bmp'],
+    video: ['mp4', 'mov', 'webm', 'm4v', 'ogv'],
+    audio: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'aiff'],
+    frame: ['pdf'],
+    text:  ['txt', 'text', 'md', 'markdown', 'log', 'csv', 'json', 'js', 'mjs',
+            'css', 'html', 'py', 'sh', 'yml', 'yaml', 'toml', 'ini', 'rb', 'go',
+            'rs', 'c', 'h', 'cpp', 'java', 'sql', 'conf']
+  };
+
+  var openViewers = 0;
+
+  function viewerKind(pathname) {
+    var m = /\.([A-Za-z0-9]+)$/.exec(pathname);
+    if (!m) return null;
+    var ext = m[1].toLowerCase();
+    for (var kind in VIEWER_KIND) {
+      if (VIEWER_KIND[kind].indexOf(ext) !== -1) return kind;
+    }
+    return null;
+  }
+
+  /** A link to a file we can show ourselves, rather than a folder to walk into. */
+  function fileLink(a) {
+    if (!a || !a.getAttribute) return false;
+    if (a.hasAttribute('download') || a.getAttribute('target')) return false;
+
+    var href = a.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return false;
+
+    var url;
+    try { url = new URL(a.href); } catch (e) { return false; }
+    if (url.origin !== location.origin) return false;
+    if (/\/$/.test(url.pathname) || /\/index\.html$/i.test(url.pathname)) return false;
+
+    return viewerKind(url.pathname);
+  }
+
+  function closeViewer(panel) {
+    // Stop the sound before the node goes: a detached <video> can keep
+    // playing in some browsers, and a torn-off iframe keeps downloading.
+    panel.querySelectorAll('video, audio').forEach(function (m) {
+      try { m.pause(); m.removeAttribute('src'); m.load(); } catch (e) {}
+    });
+    panel.querySelectorAll('iframe').forEach(function (f) { f.src = 'about:blank'; });
+    if (panel.parentNode) panel.parentNode.removeChild(panel);
+    openViewers = Math.max(0, openViewers - 1);
+  }
+
+  function openViewer(href, name, kind) {
+    var panel = document.createElement('div');
+    panel.className = 'viewer';
+
+    // Cascade, so a second one does not land exactly on the first.
+    var step = (openViewers % 6) * 26;
+    panel.style.left = (70 + step) + 'px';
+    panel.style.top = (70 + step) + 'px';
+    panel.style.zIndex = ++zTop;
+    openViewers++;
+
+    var bar = document.createElement('div');
+    bar.className = 'viewer-bar';
+
+    var label = document.createElement('span');
+    label.className = 'viewer-name';
+    label.textContent = name;
+    bar.appendChild(label);
+
+    var out = document.createElement('a');
+    out.className = 'viewer-out';
+    out.href = href;
+    out.target = '_blank';
+    out.rel = 'noopener';
+    out.title = 'open the real file in a new tab';
+    out.textContent = '↗';
+    bar.appendChild(out);
+
+    var shut = document.createElement('button');
+    shut.className = 'viewer-shut';
+    shut.type = 'button';
+    shut.title = 'close';
+    shut.setAttribute('aria-label', 'close ' + name);
+    shut.textContent = '✕';
+    shut.addEventListener('click', function () { closeViewer(panel); });
+    bar.appendChild(shut);
+
+    panel.appendChild(bar);
+
+    var body = document.createElement('div');
+    body.className = 'viewer-body';
+    panel.appendChild(body);
+
+    if (kind === 'image') {
+      var img = document.createElement('img');
+      img.alt = name;
+      img.src = href;
+      img.draggable = false;
+      body.appendChild(img);
+    } else if (kind === 'video') {
+      var v = document.createElement('video');
+      v.controls = true;
+      v.src = href;
+      body.appendChild(v);
+    } else if (kind === 'audio') {
+      var au = document.createElement('audio');
+      au.controls = true;
+      au.src = href;
+      body.appendChild(au);
+    } else if (kind === 'frame') {
+      var f = document.createElement('iframe');
+      f.src = href;
+      f.title = name;
+      body.appendChild(f);
+    } else {
+      var pre = document.createElement('pre');
+      pre.textContent = 'reading…';
+      body.appendChild(pre);
+      fetch(href).then(function (r) {
+        return r.ok ? r.text() : Promise.reject(new Error(r.status));
+      }).then(function (t) {
+        // textContent, never innerHTML: this is a file off the disk.
+        pre.textContent = t;
+      }).catch(function () {
+        pre.textContent = 'could not read this file. the ↗ opens it directly.';
+      });
+    }
+
+    document.body.appendChild(panel);
+    panel.addEventListener('pointerdown', function () { panel.style.zIndex = ++zTop; });
+    makeDraggable(panel, bar, null);
+    shut.focus();
+    return panel;
+  }
+
+  function mountViewers() {
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      // Modifier-clicks still mean "give me a real tab".
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      var a = e.target.closest ? e.target.closest('a') : null;
+      var kind = fileLink(a);
+      if (!kind) return;
+
+      e.preventDefault();
+      openViewer(a.href, a.getAttribute('data-name') || decodeURIComponent(
+        a.pathname.split('/').pop()), kind);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var all = document.querySelectorAll('.viewer');
+      if (!all.length) return;
+      closeViewer(all[all.length - 1]);
+    });
+  }
+
   function mountNav() {
     if (!window.fetch || !window.history || !history.pushState || !window.DOMParser) return;
 
@@ -953,6 +1119,7 @@
     mountClock();
     mountToggles();
     mountNav();
+    mountViewers();
     mountBroadcast();
     bootPage();
   }

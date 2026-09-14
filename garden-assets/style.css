@@ -491,3 +491,104 @@ a:visited { color: var(--olive); }
   #clock { font-size: 8px; }
   #clock-date { font-size: 8px; }
 }
+
+/* ------------------------------------------------------------- viewers
+   A file opens in a panel over the page, not by handing the whole browser
+   window to it. This is the one place a frame is right: it has to read as
+   a thing lying on top, and it has to have an edge you can grab. */
+
+.viewer {
+  position: absolute;
+  z-index: 9990;
+  max-width: min(62vw, 46rem);
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  box-shadow: 0 8px 28px rgba(38, 36, 31, .13);
+  resize: both;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 14rem;
+  min-height: 7rem;
+}
+
+.viewer-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem .45rem;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper-deep);
+  cursor: grab;
+  user-select: none;
+}
+
+.viewer-bar:active { cursor: grabbing; }
+
+.viewer-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: .68rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.viewer-out,
+.viewer-shut {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: .7rem;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.viewer-out:hover,
+.viewer-shut:hover { color: var(--ochre); border-color: var(--ochre); }
+
+.viewer-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: .5rem;
+  max-height: 70vh;
+}
+
+.viewer-body img,
+.viewer-body video { display: block; max-width: 100%; height: auto; }
+.viewer-body audio { width: 100%; }
+
+.viewer-body iframe {
+  display: block;
+  width: 100%;
+  height: 60vh;
+  border: 0;
+  background: var(--surface);
+}
+
+.viewer-body pre {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: .72rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+}
+
+/* A phone has no room for floating panels; let the file just open. */
+@media (max-width: 559px) {
+  .viewer { position: fixed; inset: 1rem; max-width: none; resize: none; }
+}
