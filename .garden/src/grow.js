@@ -1323,6 +1323,7 @@ export function growSite(opts = {}) {
   beginIconRun();
   thumbsClaimed = new Set();
   bundleClaimed = new Set();
+  clippingClaimed = new Set();
 
   const ctx = {
     root,
