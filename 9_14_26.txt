@@ -13,4 +13,9 @@ Thigns to add in future updates:
    3. Make things slightly bigger so its more readable
    4. Make grain more noticeable/make other textures available
    5. Make the video player format the video the actual video and make it all smaller/more readable!!!!
+   6. Make sure deleting is smooth, like why is there that r thing?
+   7. Make sure this app is usable on iphone, its kinda wierd rn
+
+
 4. Make the sight cooler!!!!!!!!!
+5. Have music play the moment the website opens
