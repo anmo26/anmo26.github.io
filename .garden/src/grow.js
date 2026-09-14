@@ -91,6 +91,13 @@ const INLINE_LIMIT = { markdown: 200000, text: 20000, raw: 4096 };
 const LOG_TAIL_LINES = 20;
 const ROOT_FONT_PX = 14;
 
+// Long writing on the front page used to just keep going -- a full essay
+// pushed every item below it off the screen. Anything past this many
+// characters gets folded behind a "read more" <details> (see splitForReadMore
+// and renderBody); the first chunk stays visible so the page still reads as
+// writing rather than a stack of collapsed boxes.
+const READMORE_CHARS = 600;
+
 // Drawn size of a folder icon. The PNG is written at 2x this for retina.
 // Finder's icon grid is 112px, so anything near that wide crowds its
 // neighbours; 72 leaves the name room and the slot some air.
@@ -649,7 +656,57 @@ function estimateHeight(file) {
   }
 }
 
+/**
+ * A one-line, plain-English answer to "what does this site actually do with
+ * my files?" -- classify()'s catch-all 'other' type means "no preview, just
+ * a link to the real thing," and that used to be silent: the file still
+ * showed up as an icon, but nothing on the page said why it looked different
+ * from its neighbours or what would happen on click. Rather than write that
+ * explanation into any one folder (which would mean writing into the owner's
+ * folder, off limits -- see readFolderDescription), it's computed here from
+ * whatever the folder actually contains and only appears when it's true of
+ * this folder, book (.epub) and clipping (.textClipping) count as previewable
+ * here because both get repacked into something real to click; see
+ * packBundle and packClipping.
+ */
+function unrenderedNote(files) {
+  const exts = new Set();
+  for (const f of files) {
+    if (f.type === 'other') exts.add(path.extname(f.name).toLowerCase() || 'no extension');
+  }
+  if (exts.size === 0) return null;
+
+  const list = [...exts].sort().join(', ');
+  return `this folder also holds ${list} — this site has no inline preview or reader for ` +
+    `those, so each is just a plain link to the real file (a browser may still open some of ` +
+    `them itself, a PDF for instance). what it CAN preview: images, video, audio, markdown ` +
+    `and plain-text files, and folders that are actually .epub books, packed into one real ` +
+    `file to download and read elsewhere.`;
+}
+
 /* ----------------------------------------------------------------- the page */
+
+/**
+ * Where to cut a long piece of writing for the read-more <details>. Only
+ * ever cuts on a blank line -- a paragraph boundary -- so a code fence, a
+ * list or a sentence never gets sawn in half; this stays safe to feed back
+ * into the markdown renderer as two independent chunks. Looks for the first
+ * boundary AT OR PAST the budget rather than the nearest one on either side,
+ * so a preview is never shorter than the budget promises. A file with no
+ * boundary that early (one giant paragraph) is left whole rather than cut
+ * somewhere that would break it -- returns null, same as "short enough".
+ */
+function splitForReadMore(text, minChars) {
+  if (text.length <= minChars) return null;
+  const boundary = /\n[ \t]*\n/g;
+  let m;
+  while ((m = boundary.exec(text))) {
+    if (m.index >= minChars) {
+      return { head: text.slice(0, m.index), tail: text.slice(m.index).replace(/^\s+/, '') };
+    }
+  }
+  return null;
+}
 
 function renderBody(f, assetPrefix = '') {
   // An icon stands for the file rather than opening it, so there is no body
@@ -670,11 +727,25 @@ function renderBody(f, assetPrefix = '') {
              `<source src="${f.href}"></video>`;
     case 'audio':
       return `<audio controls preload="none"><source src="${f.href}"></audio>`;
-    case 'markdown':
-      return `<div class="md">${markdown(f.contents)}</div>`;
+    case 'markdown': {
+      // .garden.log is already tailed to its last 20 lines (see the /\.log$/
+      // branch in describe) and must stay exactly as-is -- it is a feed, not
+      // an essay, and folding half of a 20-line log behind a click would just
+      // be annoying. Nothing else on the front page gets that exemption.
+      const split = f.name === '.garden.log' ? null : splitForReadMore(f.contents, READMORE_CHARS);
+      if (!split) return `<div class="md">${markdown(f.contents)}</div>`;
+      return `<div class="read-more"><div class="md">${markdown(split.head)}</div>` +
+             `<details class="read-more-toggle"><summary class="read-more-summary">read more</summary>` +
+             `<div class="md">${markdown(split.tail)}</div></details></div>`;
+    }
     case 'text':
-    case 'raw':
-      return `<pre>${escapeHtml(f.contents)}</pre>`;
+    case 'raw': {
+      const split = f.name === '.garden.log' ? null : splitForReadMore(f.contents, READMORE_CHARS);
+      if (!split) return `<pre>${escapeHtml(f.contents)}</pre>`;
+      return `<div class="read-more"><pre>${escapeHtml(split.head)}</pre>` +
+             `<details class="read-more-toggle"><summary class="read-more-summary">read more</summary>` +
+             `<pre>${escapeHtml(split.tail)}</pre></details></div>`;
+    }
     default:
       return `<a href="${f.href}">download</a>`;
   }
@@ -975,6 +1046,7 @@ function renderPage({ siteName, title, files, positioned, description, folderDes
                       socialImage, assetPrefix, isRoot, tagline, marquee, guestbook, music,
                       assetStamps }) {
   const items = files.map((f, i) => renderItem(f, i, assetPrefix)).join('\n');
+  const unrendered = unrenderedNote(files);
 
   // A guestbook needs a server to hold visitor notes, which GitHub Pages
   // cannot do. Off until there is a backend; flip "enabled" in the config.
@@ -1078,6 +1150,7 @@ ${rules}
     : `    <header class="masthead">
       <h1>${escapeHtml(title.replace(/\/$/, ''))}</h1>
 ${folderDescription ? `      <p class="folder-description" style="white-space:pre-line">${escapeHtml(folderDescription)}</p>\n` : ''}\
+${unrendered ? `      <p class="folder-note">${escapeHtml(unrendered)}</p>\n` : ''}\
       <p><a href="..">&larr; back to ${escapeHtml(siteName)}</a></p>
       <div class="rule"></div>
     </header>
@@ -1364,7 +1437,7 @@ export function growSite(opts = {}) {
   // Renamed and deleted files leave their thumbnails behind, and these are
   // committed -- so clear out whatever this walk didn't ask for. A dry run
   // promises to leave the folder exactly as it found it.
-  const swept = ctx.dryRun ? 0 : sweepIcons(root) + sweepThumbs(root) + sweepBundles(root);
+  const swept = ctx.dryRun ? 0 : sweepIcons(root) + sweepThumbs(root) + sweepBundles(root) + sweepClippings(root);
 
   return {
     root,
