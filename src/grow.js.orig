@@ -316,74 +316,30 @@ function renderItem(f, i, assetPrefix = '') {
 
 /* -------------------------------------------------------------------- music
    The music/ folder is the playlist list: one text file per playlist, each
-   holding a YouTube link (see music/README.txt). No audio is ever hosted --
-   playback happens inside YouTube's own player, so nothing here is a copy.
-   Spotify links still work; they play in Spotify's embed, which offers no
-   controls, so the click wheel can do less with them. YouTube is primary.
+   holding a Spotify link (see music/README.txt). No audio is ever hosted --
+   playback happens inside Spotify's own embed, so nothing here is a copy.
    ------------------------------------------------------------------------ */
 
 const MUSIC_EXT = ['.txt', '.md', '.markdown', '.mdown'];
 const COVER_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
 const SPOTIFY_KINDS = ['playlist', 'album', 'track', 'artist', 'episode', 'show'];
 
-// YouTube list ids: PL (made by hand), UU (a channel's uploads), OL, LL, FL,
-// RD (a generated radio). Anything else has to arrive as a URL, so a bare
-// Spotify id can never be mistaken for a YouTube one.
-const YT_LIST = /^(?:PL|UU|OL|LL|FL|RD)[A-Za-z0-9_-]{8,}$/;
-const YT_HOST = /(?:^|\/\/|\.)(?:youtube\.com|youtube-nocookie\.com|youtu\.be|music\.youtube\.com)/i;
-
-/** Pulls {src, kind, id} out of a YouTube URL, or a bare playlist id. */
-function parseYouTube(raw) {
-  const str = String(raw ?? '').trim();
-  if (!str) return null;
-
-  if (YT_LIST.test(str)) return { src: 'youtube', kind: 'playlist', id: str };
-  if (!YT_HOST.test(str)) return null;
-
-  // A playlist wins over the video it happens to point at: someone sharing
-  // "watch?v=...&list=..." is sharing their playlist.
-  const list = str.match(/[?&;]list=([A-Za-z0-9_-]{10,})/);
-  if (list) return { src: 'youtube', kind: 'playlist', id: list[1] };
-
-  const watch = str.match(/[?&;]v=([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/)
-             ?? str.match(/youtu\.be\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/)
-             ?? str.match(/\/(?:embed|shorts|live|v)\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/);
-  if (watch) return { src: 'youtube', kind: 'video', id: watch[1] };
-
-  return null;
-}
-
-/** Pulls {src, kind, id} out of a Spotify URL, a spotify: URI, or a bare id. */
+/** Pulls {kind, id} out of a Spotify URL, a spotify: URI, or a bare id. */
 function parseSpotify(raw) {
   const str = String(raw ?? '').trim();
   if (!str) return null;
 
   const uri = str.match(/^spotify:([a-z]+):([A-Za-z0-9]+)/i);
   if (uri && SPOTIFY_KINDS.includes(uri[1].toLowerCase())) {
-    return { src: 'spotify', kind: uri[1].toLowerCase(), id: uri[2] };
+    return { kind: uri[1].toLowerCase(), id: uri[2] };
   }
   const url = str.match(/open\.spotify\.com\/(?:embed\/)?(?:intl-[a-z-]+\/)?([a-z]+)\/([A-Za-z0-9]+)/i);
   if (url && SPOTIFY_KINDS.includes(url[1].toLowerCase())) {
-    return { src: 'spotify', kind: url[1].toLowerCase(), id: url[2] };
+    return { kind: url[1].toLowerCase(), id: url[2] };
   }
-  if (/^[A-Za-z0-9]{16,30}$/.test(str)) return { src: 'spotify', kind: 'playlist', id: str };
+  if (/^[A-Za-z0-9]{16,30}$/.test(str)) return { kind: 'playlist', id: str };
   return null;
 }
-
-/** YouTube first: it is the house source now. */
-const parseSource = (raw) => parseYouTube(raw) ?? parseSpotify(raw);
-
-const embedUrl = (f) => f.src === 'youtube'
-  ? (f.kind === 'playlist'
-      ? `https://www.youtube.com/embed/videoseries?list=${f.id}`
-      : `https://www.youtube.com/embed/${f.id}`)
-  : `https://open.spotify.com/embed/${f.kind}/${f.id}?utm_source=generator`;
-
-const openUrl = (f) => f.src === 'youtube'
-  ? (f.kind === 'playlist'
-      ? `https://www.youtube.com/playlist?list=${f.id}`
-      : `https://www.youtube.com/watch?v=${f.id}`)
-  : `https://open.spotify.com/${f.kind}/${f.id}`;
 
 const slug = (str) => String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -435,10 +391,9 @@ function readMusic(dir) {
       loose.push(line);
     }
 
-    const found = [fields.youtube, fields.spotify, fields.url, fields.link,
-                   fields.playlist, fields.album, fields.track, fields.video,
-                   ...loose]
-      .map(v => parseSource(v)).find(Boolean);
+    const found = [fields.spotify, fields.url, fields.link, fields.playlist,
+                   fields.album, fields.track, ...loose]
+      .map(v => parseSpotify(v)).find(Boolean);
     if (!found) continue;
 
     const stem = path.basename(e.name, path.extname(e.name));
@@ -450,11 +405,10 @@ function readMusic(dir) {
     out.push({
       name,
       file: e.name,
-      src: found.src,
       kind: found.kind,
       id: found.id,
-      embed: embedUrl(found),
-      link: openUrl(found),
+      embed: `https://open.spotify.com/embed/${found.kind}/${found.id}?utm_source=generator`,
+      link: `https://open.spotify.com/${found.kind}/${found.id}`,
       cover: rel ? encodeURI(`${base}/${rel}`) : null,
       note: fields.note || fields.caption || '',
     });
@@ -462,15 +416,10 @@ function readMusic(dir) {
   return out;
 }
 
-/**
- * The player is NOT part of the page. It is emitted outside <main>, beside
- * the clock, because app.js replaces <main> wholesale when a visitor walks
- * into a folder -- and anything still inside <main> at that moment is
- * destroyed, iframe and all. Out here it simply never stops.
- * ipod.css fixes the shell to the corner of the screen and docks it.
- */
 function musicWindow(music) {
-  return `  <div id="ipod-shell" class="ipod-shell">
+  const n = music.length;
+  return `      <div class="item kind-ipod" id="music" data-key="__music">
+        <h3>music <span class="meta">(${n} playlist${n === 1 ? '' : 's'})</span></h3>
           <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
                data-view="list" data-player="off">
 
@@ -497,7 +446,7 @@ function musicWindow(music) {
               <div class="ipod-view ipod-view-empty">
                 <div class="ipod-empty">
                   <strong>no music yet</strong>
-                  <span>put a YouTube link in a text file in <code>music/</code> and regrow.</span>
+                  <span>put a Spotify link in a text file in <code>music/</code> and regrow.</span>
                 </div>
               </div>
             </div>
@@ -519,7 +468,7 @@ function musicWindow(music) {
 
             <p class="ipod-noscript">this player needs JavaScript.</p>
           </div>
-  </div>`;
+      </div>`;
 }
 
 function guestbookWindow() {
@@ -551,10 +500,7 @@ function renderPage({ siteName, title, files, positioned, description, socialIma
   // Covers are stored relative to the site root; a subpage needs the prefix.
   const musicData = (music ?? []).map(t =>
     t.cover ? { ...t, cover: assetPrefix + t.cover } : t);
-  // On every page, not just the front one: the player has to already exist
-  // wherever a visitor happens to land, and it is no longer laid out as part
-  // of the plantbed, so it costs the folder pages no space.
-  const showMusic = musicData.length > 0;
+  const showMusic = isRoot && musicData.length > 0;
 
   // Freeform positions live in a media query so phones get the plain stack
   // defined in the base stylesheet and wide screens get the Finder layout.
@@ -579,10 +525,16 @@ function renderPage({ siteName, title, files, positioned, description, socialIma
     const rules = laid.map(l =>
       `      #p${l.i} { top: ${l.y}px; left: ${l.x}px; }`).join('\n');
 
+    // The player has no icon in .DS_Store to inherit a spot from, so it sits
+    // below the scatter -- pushing it off to the right would put it past the
+    // window edge, and the body clips horizontally.
+    const musicRule = showMusic ? `\n      #music { top: ${maxY}px; left: 0px; }` : '';
+    const bedHeight = showMusic ? maxY + 560 : maxY;
+
     freeform = `
     @media (min-width: 560px) {
-      .plantbed { min-height: ${maxY}px; max-width: 68rem; margin: 0 auto; }
-${rules}
+      .plantbed { min-height: ${bedHeight}px; max-width: 68rem; margin: 0 auto; }
+${rules}${musicRule}
     }`;
   }
 
@@ -597,10 +549,16 @@ ${rules}
     const rules = files.map((f, i) =>
       `      #p${i} { top: ${f.y - minY + TOP_PADDING}px; left: ${f.x - minX}px; }`).join('\n');
 
+    // The player has no icon in .DS_Store to inherit a spot from, so it sits
+    // below the arrangement -- pushing it off to the right would put it past
+    // the window edge, and the body clips horizontally.
+    const musicRule = showMusic ? `\n      #music { top: ${height}px; left: 0px; }` : '';
+    const bedHeight = showMusic ? height + 560 : height;
+
     freeform = `
     @media (min-width: 560px) {
-      .plantbed { min-height: ${height}px; margin-left: max(0px, calc(50% - ${halfWidth}px - 13rem)); }
-${rules}
+      .plantbed { min-height: ${bedHeight}px; margin-left: max(0px, calc(50% - ${halfWidth}px - 13rem)); }
+${rules}${musicRule}
     }`;
   }
 
@@ -640,7 +598,7 @@ ${rules}
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="${assetPrefix}garden-assets/style.css">
 ${showMusic ? `  <link rel="stylesheet" href="${assetPrefix}garden-assets/ipod.css">\n` : ''}\
-  <style id="page-style">${freeform}
+  <style>${freeform}
   </style>
 </head>
 
@@ -649,12 +607,11 @@ ${showMusic ? `  <link rel="stylesheet" href="${assetPrefix}garden-assets/ipod.c
     <pre id="clock"></pre>
     <p id="clock-date"></p>
   </div>
-${showMusic ? musicWindow(musicData) + '\n' : ''}\
 
   <main>
 ${head}
     <div class="plantbed${positioned ? ' freeform' : ' scattered'}">
-${items}
+${items}${showMusic ? '\n' + musicWindow(musicData) : ''}
     </div>
 ${showGuestbook ? `
     <section class="guestbed" id="gb-notes">

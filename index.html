@@ -13,17 +13,18 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="garden-assets/style.css">
-  <style>
+  <link rel="stylesheet" href="garden-assets/ipod.css">
+  <style id="page-style">
     @media (min-width: 560px) {
-      .plantbed { min-height: 883px; margin-left: max(0px, calc(50% - 552px - 13rem)); }
-      #p0 { top: 50px; left: 1104px; }
-      #p1 { top: 50px; left: 330px; }
-      #p2 { top: 345px; left: 710px; }
-      #p3 { top: 90px; left: 1104px; }
-      #p4 { top: 510px; left: 0px; }
-      #p5 { top: 691px; left: 824px; }
-      #p6 { top: 373px; left: 393px; }
-      #p7 { top: 321px; left: 211px; }
+      .plantbed { min-height: 1036px; margin-left: max(0px, calc(50% - 611px - 13rem)); }
+      #p0 { top: 50px; left: 1222px; }
+      #p1 { top: 159px; left: 330px; }
+      #p2 { top: 454px; left: 710px; }
+      #p3 { top: 50px; left: 374px; }
+      #p4 { top: 619px; left: 0px; }
+      #p5 { top: 844px; left: 942px; }
+      #p6 { top: 482px; left: 393px; }
+      #p7 { top: 430px; left: 211px; }
     }
   </style>
 </head>
@@ -32,6 +33,56 @@
   <div id="clock-shell" title="click to change format">
     <pre id="clock"></pre>
     <p id="clock-date"></p>
+  </div>
+  <div id="ipod-shell" class="ipod-shell">
+          <div class="ipod" id="ipod" role="group" aria-label="iPod music player"
+               data-view="list" data-player="off">
+
+            <div class="ipod-screen">
+              <div class="ipod-bar">
+                <button class="ipod-back" type="button"
+                        aria-label="menu, back to the playlist list">&#8249; menu</button>
+                <span class="ipod-bar-title" aria-live="polite">playlists</span>
+                <span class="ipod-battery" aria-hidden="true"></span>
+              </div>
+
+              <div class="ipod-view ipod-view-list">
+                <div class="ipod-list" role="listbox" tabindex="0" aria-label="playlists"></div>
+              </div>
+
+              <div class="ipod-view ipod-view-player">
+                <div class="ipod-stage"></div>
+                <div class="ipod-paused">
+                  <strong class="ipod-paused-name">paused</strong>
+                  <span>press &#9654;&#10073;&#10073; to start it again</span>
+                </div>
+              </div>
+
+              <div class="ipod-view ipod-view-empty">
+                <div class="ipod-empty">
+                  <strong>no music yet</strong>
+                  <span>put a YouTube link in a text file in <code>music/</code> and regrow.</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="ipod-ticker" aria-live="polite"></p>
+
+            <div class="ipod-wheel">
+              <button class="ipod-btn ipod-btn-menu" type="button" data-act="menu"
+                      aria-label="menu, back to the playlist list">menu</button>
+              <button class="ipod-btn ipod-btn-prev" type="button" data-act="prev"
+                      aria-label="previous playlist">&#8249;&#8249;</button>
+              <button class="ipod-btn ipod-btn-next" type="button" data-act="next"
+                      aria-label="next playlist">&#8250;&#8250;</button>
+              <button class="ipod-btn ipod-btn-play" type="button" data-act="play"
+                      aria-label="play or pause">&#9654;&#10073;&#10073;</button>
+              <button class="ipod-btn ipod-btn-select" type="button" data-act="select"
+                      aria-label="select, play the highlighted playlist"></button>
+            </div>
+
+            <p class="ipod-noscript">this player needs JavaScript.</p>
+          </div>
   </div>
 
   <main>
@@ -44,11 +95,14 @@
 
     <div class="plantbed freeform">
       <div class="item kind-text" id="p0" data-key=".garden.log">
-        <h3><a href=".garden.log">.garden.log</a> <span class="meta">(191B)</span></h3>
+        <h3><a href=".garden.log">.garden.log</a> <span class="meta">(312B)</span></h3>
         <pre>[03:49:02] watching /Users/anmoli/Desktop/garden
 [03:49:02] publish: on
 [03:49:02] finder poll: every 1500ms
-[03:49:03] converted IMG_6491.HEIC -&gt; IMG_6491.jpg (original kept in .originals/)</pre>
+[03:49:03] converted IMG_6491.HEIC -&gt; IMG_6491.jpg (original kept in .originals/)
+[03:49:10] regrew 1 of 6 pages
+[03:49:10] pushing...
+[03:49:14] published — live in ~1 min at https://anmo26.github.io</pre>
       </div>
       <div class="item kind-markdown" id="p1" data-key="about.md">
         <h3><a href="about.md">about.md</a> <span class="meta">(468B)</span></h3>
@@ -98,6 +152,8 @@ made in CSS. it is wherever i dragged the icons in a Finder window.</p>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
   <script src="garden-assets/app.js"></script>
+  <script>window.GARDEN_MUSIC = [{"name":"music","file":"01 music.txt","src":"youtube","kind":"playlist","id":"PLXWFWrURanY0","embed":"https://www.youtube.com/embed/videoseries?list=PLXWFWrURanY0","link":"https://www.youtube.com/playlist?list=PLXWFWrURanY0","cover":null,"note":""}];</script>
+  <script src="garden-assets/ipod.js"></script>
 </body>
 <!--
 a file.gallery in the spirit of kevin.garden by Kevin N. Chen (CC BY-NC 4.0)
