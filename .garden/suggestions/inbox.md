@@ -3,9 +3,93 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 15/09/2026, 16:58:57. 18 notes in the ledger.
+Read 15/09/2026, 18:00:29. 30 notes in the ledger.
 
-## new (1)
+## new (13)
+
+### 1789509563803pqcg
+
+- **idea**, front page · stories/
+- by Anmo (r5u3jewz), today
+
+> i think there is some small issue with the notes. like i think i wasn't able to see someone elses note and for some reason my signature dissapeared from my notes. please troubleshoot this. 
+
+### 17895080503948j39
+
+- **idea**, /BOTTOM CRYPT/
+- by unsigned (1cee3n80), today
+
+> 
+
+### 1789507931694w871
+
+- **idea**, front page · personal philosophy/
+- by unsigned (1cee3n80), today
+
+> hi
+
+### 17895077260956g23
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> god damn the minifigs r ugly. make them better but still the same size!
+
+### 1789507480134r38b
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!
+
+### 1789507445293l23a
+
+- **idea**, /THE FORUM/
+- by unsigned (r5u3jewz), today
+
+> is this forum page broken? i just posted something but nobody is responding
+
+### 1789507297001j52u
+
+- **idea**, front page · the masthead
+- by Anmo (r5u3jewz), today
+
+> SORRY EVERYONE IF THE TOGGLES AT THE BOTTOM ARENT WORKING PROPERLY!!! I RAN OUT OF USAGE CREDITS. ILL FIX IT SOON!!!!!! as well as all the ui sticky note ideas posted everywhere else on the site. big things coming!
+
+### 1789507266851shjk
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> i think only I or claude should be able to delete other peoples notes. and I dont want ranodm users to be able to delete my notes.
+
+### 178950707598022cd
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> upload all the idea sticky notes into gardeners log somehow?? help me work out the complexities and like logic of this. i need all the files into making this sight organized so i can reference or fix things in the future. 
+
+### 17895070087502hnj
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> Def need to host on cloudflare or a personal domain soon so i can upload more thigns and also make things run smoother (less lag) and also so that people can't easily find all the files to this project.
+
+### 1789506876038nb4h
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> For the flying one, make it sorta inspired by sunwukong when he flies on a cloud. combine jump and run because its supposed to just be a guy running and jumping around where the cursor goes.
+
+### 1789506848670b2fy
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.
 
 ### 1789505682452de1g
 
@@ -19,22 +103,18 @@ Read 15/09/2026, 16:58:57. 18 notes in the ledger.
 ### 17895052380903b28
 
 - **idea**, front page
-- by unsigned (r5u3jewz), today
+- by Anmo (r5u3jewz), today
 
 > the iphone version of this site IS BUTTCHEEKS!!!!! NEED MASSIVE UI OVERHAUL!!!!! might have to operate completely from desktop. DONT FIX THIS RN. WE DONT HAVE ENOUGH USAGE LEFT ON CLAUDE!!!!
-
-  - *claude (via anmo):* agreed, and it needs a session of its own rather than a corner of this one. tell me what you do on your phone — look at photos? show it to someone? — and i will rebuild the phone layout around that instead of shrinking the desktop one.
 
 **decided:** needs a session of its own and your eye on it
 
 ### 1789504711825155i
 
 - **idea**, front page
-- by unsigned (r5u3jewz), today
+- by Anmo (r5u3jewz), today
 
-> i want an easy way to upload things to this site from my iphone. i dont want to always like upload photos to my computer, then drag them into the garden folder from there. any easy way to streamline this process? connect the garden folder into my iphone???
-
-  - *claude (via anmo):* parked, and not because it is a bad idea — it is not a change to the site. the site is a folder on your mac; nothing on the web can put a photo into it. the two real answers are (1) move the garden folder into icloud drive and save straight to it from your phone, or (2) an apple shortcut on the phone that drops a photo into a synced folder. say which and i will set it up.
+> i want an easy way to upload things to this site from my iphone. i dont want to always like upload photos to my computer, then drag them into the garden folder from there. any easy way to streamline this process? connect the garden folder into my iphone??? DO THIS IN A FUTURE UPDATE
 
 **decided:** not a change to the site — see the answer
 
