@@ -777,7 +777,17 @@ function renderBody(f, assetPrefix = '') {
  * weighs, and then the thing itself. No frame around it -- the page is the
  * folder, and the items are lying on it.
  */
-function renderItem(f, i, assetPrefix = '') {
+/**
+ * The folders that are not on the map. A name listed here is still built and
+ * still has a real address -- it is simply not drawn on the page it lives on
+ * until the visitor has found the way in (twenty rapid clicks on the clock;
+ * see app.js). Hiding it in the generator rather than the stylesheet alone
+ * would mean rebuilding the site to let somebody in, which is not a secret,
+ * it is a deployment.
+ */
+const SECRET = [/^library/i];
+
+function renderItem(f, i, assetPrefix = '', isRoot = false) {
   const meta = f.type === 'directory' ? f.contents
     : f.type === 'clipping' && f.contents ? `${f.size} — “${f.contents}”`
     : (f.size ?? '');
@@ -799,7 +809,11 @@ function renderItem(f, i, assetPrefix = '') {
   // describe's `!isRoot` short-circuit) -- iconOnly is exactly that signal.
   const todoClass = f.name === 'todo.md' && !f.iconOnly ? ' kind-todo' : '';
 
-  return `      <div class="item kind-${f.type}${todoClass}${f.iconOnly ? ' as-icon' : ''}" id="p${i}" data-key="${escapeHtml(f.name)}">
+  // Secret only where it lives. Inside the folder itself the files are the
+  // point; it is the door on the front page that is meant to be invisible.
+  const secret = isRoot && SECRET.some(re => re.test(f.name)) ? ' data-secret' : '';
+
+  return `      <div class="item kind-${f.type}${todoClass}${f.iconOnly ? ' as-icon' : ''}" id="p${i}" data-key="${escapeHtml(f.name)}"${secret}>
         ${icon}<h3><a href="${f.href}">${escapeHtml(f.name)}</a>` +
           (meta ? ` <span class="meta">(${escapeHtml(meta)})</span>` : '') + `</h3>` +
           (body ? `\n        ${body}` : '') + `
@@ -1075,7 +1089,7 @@ function guestbookWindow() {
 function renderPage({ siteName, title, files, positioned, description, folderDescription,
                       socialImage, assetPrefix, isRoot, tagline, marquee, guestbook, music,
                       assetStamps }) {
-  const items = files.map((f, i) => renderItem(f, i, assetPrefix)).join('\n');
+  const items = files.map((f, i) => renderItem(f, i, assetPrefix, isRoot)).join('\n');
   const unrendered = unrenderedNote(files);
 
   // A guestbook needs a server to hold visitor notes, which GitHub Pages
@@ -1212,6 +1226,11 @@ ${showMusic ? `  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamp
 </head>
 
 <body>
+  <div id="cactus-shell" title="click to water">
+    <pre id="cactus" role="img" aria-label="a prickly pear cactus"></pre>
+    <div id="cactus-bar" aria-hidden="true"><i id="cactus-fill"></i></div>
+    <p id="cactus-say">water me</p>
+  </div>
   <div id="clock-shell" title="click to change format">
     <pre id="clock"></pre>
     <p id="clock-date"></p>
