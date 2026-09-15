@@ -5580,7 +5580,7 @@
   }
 
   /* =============================================================== OCEAN
-     Found by clicking the photograph of the sea three times, which is what
+     Found by clicking the photograph of the sea five times, which is what
      anybody does with a photograph of the sea.
 
      Down here the man on the pogo stick stops bouncing. There is nothing
@@ -5711,10 +5711,10 @@
   }
 
   /* ------------------------------------------------ the sea, three clicks
-     One photograph on the front page is of the sea. Click it three times
-     and it lets you in. It has to be three clicks and not one, because one
-     click on a photograph means "show me the photograph", and that is
-     already what it does. */
+     One photograph on the front page is of the sea. Click it five times
+     and it lets you in -- and it is the one picture on the site that will
+     not open, because a photograph that showed you a big version of itself
+     on the first click would never be tried a second time. */
 
   var SEA_PHOTO = 'IMG_3427.JPG';
   var SEA_CLICKS = 5;
