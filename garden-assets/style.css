@@ -2699,6 +2699,29 @@ body[data-scene="crypt"] {
 .pile-item video,
 .pile-item audio,
 .pile-item .read-more { display: none; }
+/* one thing at a time, back up the shaft */
+.pile-item { position: relative; }
+.pile-back, .pile-missing .pile-back {
+  display: block;
+  margin: .25rem auto 0;
+  border: 1px solid var(--rule);
+  background: none;
+  padding: .05rem .4rem;
+  font-family: var(--mono);
+  font-size: .55rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.pile-item:hover .pile-back,
+.pile-missing:hover .pile-back,
+.pile-back:focus-visible { opacity: 1; }
+.pile-back:hover { color: var(--ink); border-color: var(--ink-faint); }
+@media (hover: none) { .pile-back { opacity: .7; } }
+
 .pile-missing {
   font-family: var(--mono);
   font-size: .72rem;
@@ -3044,12 +3067,12 @@ body[data-scene] #tex { display: none; }
 
 /* Each one hangs at a slightly different angle, so a wall of them reads as
    paper somebody stuck up rather than as a grid of boxes. */
-.sticky.c0 { rotate: -1.1deg; }
-.sticky.c1 { rotate:  0.8deg; }
-.sticky.c2 { rotate: -0.5deg; }
-.sticky.c3 { rotate:  1.3deg; }
-.sticky.c4 { rotate: -1.4deg; }
-.sticky.c5 { rotate:  0.4deg; }
+.sticky.c0 { --sticky-rot: -1.1deg; rotate: var(--sticky-rot); }
+.sticky.c1 { --sticky-rot: 0.8deg; rotate: var(--sticky-rot); }
+.sticky.c2 { --sticky-rot: -0.5deg; rotate: var(--sticky-rot); }
+.sticky.c3 { --sticky-rot: 1.3deg; rotate: var(--sticky-rot); }
+.sticky.c4 { --sticky-rot: -1.4deg; rotate: var(--sticky-rot); }
+.sticky.c5 { --sticky-rot: 0.4deg; rotate: var(--sticky-rot); }
 .sticky:hover { box-shadow: 0 1px 2px rgba(38, 36, 31, .2), 0 16px 30px -14px rgba(38, 36, 31, .55); }
 /* Deliberately NOT straightened while it is being dragged: taking the
    rotation off mid-drag moves the box two pixels out from under the
@@ -3202,6 +3225,14 @@ body[data-scene] #tex { display: none; }
 
 /* Somebody who would rather read the site than the wall. */
 body.notes-off .sticky { display: none; }
+
+/* The mini fig has gone head first into this one. */
+@keyframes sticky-caught {
+  0%, 100% { rotate: var(--sticky-rot, 0deg); }
+  25% { rotate: calc(var(--sticky-rot, 0deg) - 2.5deg); }
+  60% { rotate: calc(var(--sticky-rot, 0deg) + 2deg); }
+}
+.sticky.caught { animation: sticky-caught .5s ease-in-out 3; }
 
 /* A note is paper. It does not change colour with the room -- but on the
    dark theme a bright square would be a floodlight, so it is dimmed. */

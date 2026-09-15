@@ -1706,9 +1706,6 @@
   var TOGGLES = [
     { id: 'sound', label: 'sound', def: true,
       apply: function (on) { soundOn = on; ambSync(); } },
-    { id: 'pogo', label: 'pogo', def: true,
-      apply: function (on) { var m = document.getElementById('pogo');
-                             if (m) m.hidden = !on; } },
     // The cactus and the still are one thing to anybody looking at them:
     // the living corner of the page. One switch, not two.
     { id: 'plants', label: 'plants', def: true,
@@ -1872,6 +1869,26 @@
       });
       bar.appendChild(btn);
       t.apply(on);
+    });
+
+    /* The mini fig. He was called "pogo" and could only be turned off,
+       which named him after the one thing he happened to be holding. The
+       stick is one of four ways to get about now, and away puts him away.
+       The physics is the same engine in all of them. */
+    mountPicker(bar, {
+      label: 'mini fig',
+      names: ['pogo', 'run', 'fly', 'jump', 'away'],
+      pressed: function (i) { return i < 4; },
+      value: function () {
+        var i = get('minifig', 0);
+        return (i >= 0 && i <= 4) ? i : 0;
+      },
+      save: function (i) { set('minifig', i); },
+      apply: function (i) {
+        var m = document.getElementById('pogo');
+        if (m) m.hidden = (i === 4);
+        if (i < 4) pogoGait(GAITS[i]);
+      }
     });
 
     /* the paper. Clamped, because somebody sitting on the fifth theme from
@@ -3821,11 +3838,31 @@
     ['     ', ' -o- ', '  |  ', ' <T> ', ' ~~  ']
   ];
 
+  /* He was only ever a man on a pogo stick, which is a strange thing to be
+     stuck as. He is a MINI FIG now and the stick is one of four ways to get
+     about: pogo, run, fly, jump. The physics underneath is the same engine
+     in all four -- what changes is what happens the moment his feet touch
+     something, and whether they ever do. */
+  var POGO_RUN = [
+    ['     ', '  o  ', ' /|\\ ', ' / \\ ', '     '],
+    ['     ', '  o  ', ' <|> ', ' /|  ', '     ']
+  ];
+  var POGO_FLY = [
+    ['     ', ' __o ', '/  |\\', '   |\\', '  ~~ '],
+    ['     ', ' __o ', '/  |\\', '   |/', '  ~~ ']
+  ];
+  var POGO_JUMP = [' \\o/ ', '  |  ', ' /|\\ ', ' / \\ ', '     '];
+  // Head first into somebody's note, legs in the air.
+  var POGO_STUCK = ['     ', '     ', ' _|_ ', ' /|\\ ', '  v  '];
+
+  var GAITS = ['pogo', 'run', 'fly', 'jump'];
+
   // Set by mountPogo. The garden scene asks him to go and water the tree,
   // and tells him where he is standing -- the moon pulls a sixth as hard.
   var pogoErrand = function () {};
   var pogoGravity = function () {};
   var pogoSwim = function () {};
+  var pogoGait = function () {};
 
   var GRAVITY = 2100;        // px per second per second
   var POGO_H = 56;           // how tall he is, near enough
@@ -3870,6 +3907,9 @@
     var errand = null;         // somewhere he has been asked to go
     var grav = 1;              // 1 on earth, a sixth of that on the moon
     var swimming = false;      // in the sea nothing below applies at all
+    var gait = GAITS[get('minifig', 0)] || 'pogo';
+    var stuck = 0;             // head first in a sticky note until this time
+    var runClock = 0;
     var ledges = [];
     var last = 0;
     var drawn = '';
@@ -3885,7 +3925,7 @@
        point of this site is that the visitor moves things around. */
     function readLedges() {
       var out = [];
-      var nodes = document.querySelectorAll('.plantbed > .item, .win, .viewer');
+      var nodes = document.querySelectorAll('.plantbed > .item, .win, .viewer, .sticky');
       var i, r, n;
       for (i = 0; i < nodes.length; i++) {
         n = nodes[i];
@@ -3893,7 +3933,8 @@
         r = n.getBoundingClientRect();
         if (r.width < 24 || r.height < 12) continue;
         out.push({ x1: r.left + window.pageXOffset, x2: r.right + window.pageXOffset,
-                   top: r.top + window.pageYOffset });
+                   top: r.top + window.pageYOffset,
+                   note: n.classList.contains('sticky') ? n : null });
       }
       ledges = out;
     }
@@ -3925,6 +3966,9 @@
       if (drawn === name) return;
       drawn = name;
       var rows = name === 'swim0' ? POGO_SWIM[0] : name === 'swim1' ? POGO_SWIM[1]
+               : name === 'run0' ? POGO_RUN[0] : name === 'run1' ? POGO_RUN[1]
+               : name === 'fly0' ? POGO_FLY[0] : name === 'fly1' ? POGO_FLY[1]
+               : name === 'jump' ? POGO_JUMP : name === 'stuck' ? POGO_STUCK
                : name === 'sleep' ? POGO_SLEEP : name === 'water' ? POGO_WATER
                : name === 'down' ? POGO_DOWN : POGO_UP;
       art.textContent = rows.join('\n');
@@ -3980,8 +4024,66 @@
                             Math.round(y - H) + 'px,0)';
     }
 
+    /* The same paddling as underwater, with less drag and no sinking --
+       and the ledges ignored, because a man in the air does not stand on
+       the top of a folder. */
+    function flyStep(dt) {
+      swimClock += dt;
+
+      var dx = targetX - x;
+      var dy = (targetY - y) + H * 0.45;
+      var d = Math.sqrt(dx * dx + dy * dy) || 1;
+      var pull = Math.min(1, d / 90);
+      var blend = Math.min(1, dt * 3);
+
+      vx += ((dx / d) * 380 * pull - vx) * blend;
+      vy += ((dy / d) * 380 * pull - vy) * blend;
+
+      var drag = Math.pow(0.5, dt * 2.2);
+      vx *= drag; vy *= drag;
+
+      x += vx * dt;
+      y += vy * dt + Math.sin(swimClock * 2.2) * 10 * dt;
+
+      var minX = window.pageXOffset + W / 2;
+      var maxX = window.pageXOffset + window.innerWidth - W / 2;
+      if (x < minX) { x = minX; vx = Math.abs(vx) * 0.3; }
+      if (x > maxX) { x = maxX; vx = -Math.abs(vx) * 0.3; }
+      var top = window.pageYOffset + 46;
+      var bed = floor();
+      if (y < top) { y = top; if (vy < 0) vy = -vy * 0.3; }
+      if (y > bed) { y = bed; if (vy > 0) vy = -vy * 0.3; }
+
+      lastLand = null;
+      asleep = false;
+      sprite(Math.floor(swimClock * 5) % 2 ? 'fly1' : 'fly0');
+      man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
+                            Math.round(y - H) + 'px,0)';
+    }
+
     function step(dt) {
       if (swimming) { swimStep(dt); return; }
+
+      /* Head first in somebody's note. He is going nowhere for a moment,
+         and then he comes out of it with a shove. */
+      if (stuck) {
+        if (performance.now() < stuck) {
+          sprite('stuck');
+          man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
+                                Math.round(y - H) + 'px,0)';
+          return;
+        }
+        stuck = 0;
+        vy = -HOP_MAX * 0.8;
+        energy = 0.7;
+      }
+
+      /* Flying is the sea without the sea: he goes to the cursor in both
+         directions at once and nothing below him is solid. */
+      if (gait === 'fly') {
+        flyStep(dt);
+        return;
+      }
       /* An errand overrides the cursor: somebody has asked him to go and
          stand somewhere and do something. He walks over, stops bouncing,
          does it, and then goes back to following the pointer. */
@@ -4064,13 +4166,38 @@
           }
           lastLand = y;
 
-          if (errand && Math.abs(x - errand.x) < 26) {
+          /* A sticky note is paper, not a paving slab. Land on one and
+             every so often you go straight through the top of it and
+             spend a moment upside down in somebody's handwriting. */
+          if (l.note && !stuck && Math.random() < 0.28) {
+            stuck = performance.now() + 900 + Math.random() * 700;
+            l.note.classList.add('caught');
+            (function (el) {
+              setTimeout(function () { el.classList.remove('caught'); }, 1700);
+            }(l.note));
+            vx = 0; vy = 0;
+            play('tick');
+          }
+          else if (errand && Math.abs(x - errand.x) < 26) {
             // Arrived at the thing he was asked to go and do. He stands.
             if (!errand.until) errand.until = performance.now() + errand.ms;
             vy = 0;
             vx = 0;
           }
           else if (asleep) { vy = 0; }
+          /* Running: his feet stay on the ground. He only leaves it to get
+             up onto something he is plainly trying to reach. */
+          else if (gait === 'run') {
+            vy = 0;
+            if (!idle && (y - targetY) > POGO_H * 0.8 && Math.abs(reach) < 200) {
+              vy = -HOP_MAX * 0.62;
+            }
+          }
+          /* Jumping is the pogo stick with nothing held back. */
+          else if (gait === 'jump') {
+            vy = idle && Math.abs(reach) < 48 ? 0 : -HOP_MAX;
+            if (vy === 0) asleep = true;
+          }
           else if (energy < 0.05 && Math.abs(reach) < 48) {
             // Nothing left in him and nowhere to be: this is where he stops,
             // on the ground, mid-stride -- not frozen in the air.
@@ -4085,8 +4212,15 @@
       // Fallen off the bottom of everything: put him back on the floor.
       if (y > floor() + 400) { y = floor(); vy = 0; x = targetX; }
 
+      runClock += dt;
       if (errand && errand.until) sprite('water');
       else if (asleep) sprite('sleep');
+      else if (gait === 'run') {
+        // feet on the ground: a two-frame run, paced by how fast he is going
+        var pace = Math.min(12, 3 + Math.abs(vx) / 26);
+        sprite(Math.floor(runClock * pace) % 2 ? 'run1' : 'run0');
+      }
+      else if (gait === 'jump') sprite(vy < -40 ? 'jump' : 'down');
       else sprite(vy < -40 ? 'up' : 'down');
 
       man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
@@ -4143,6 +4277,20 @@
       energy = 0.3;
       lastLand = null;
       if (!swimming) lastPointed = performance.now();
+    };
+
+    /* Which way he gets about. Everything else about him is the same
+       machine; this only decides what his feet do. */
+    pogoGait = function (name) {
+      if (GAITS.indexOf(name) < 0 || gait === name) return;
+      gait = name;
+      drawn = '';
+      stuck = 0;
+      asleep = false;
+      lastPointed = performance.now();
+      energy = 0.4;
+      lastLand = null;
+      vy = 0;
     };
 
     y = floor();
@@ -4552,6 +4700,7 @@
     else if (want === 'crypt') mountCrypt();
     else if (want === 'nursery') mountNurseryScene();
     else if (want === 'bar') mountBar();
+    else if (want === 'forum') mountForum();
   }
 
   function mountGarden() {
@@ -5823,6 +5972,300 @@
     play('tick');
   }
 
+  /* =============================================================== FORUM
+     A board. Not stickies -- stickies are for a remark stuck to the thing
+     it is about, and they are hopeless for a conversation of any length.
+     This is the other shape: subjects down the page, oldest post first
+     inside one, everybody reading the same thing.
+
+     It keeps its own document, separate from the wall, for the same
+     reasons it looks different: a thread is not a note, and a board that
+     filled up would be no reason for the notes to start falling off.
+
+     Same manners as the wall. Anybody can start a subject and anybody can
+     answer one; you can only edit or delete your own; every write re-reads
+     the board first so two people posting at once do not rub each other
+     out; and nothing written here is ever treated as an instruction by
+     anybody or anything -- it is somebody talking.
+     ------------------------------------------------------------------- */
+
+  var FORUM_DOC = 'https://textdb.dev/api/data/anmo-garden-forum-8f3c1d';
+  var FORUM_POLL_MS = 15000;
+  var TITLE_MAX = 80;
+  var POST_MAX = 2000;
+  var THREADS_MAX = 120;
+
+  var board = null;             // { threads: [...] }
+  var boardChain = Promise.resolve();
+  var openThread = null;        // which subject is being read
+
+  function normaliseBoard(b) {
+    var threads = (b && b.threads) || [];
+    return {
+      threads: threads.filter(function (t) { return t && t.id; }).map(function (t) {
+        return {
+          id: String(t.id),
+          title: String(t.title || '').slice(0, TITLE_MAX),
+          by: String(t.by || ''),
+          name: String(t.name || '').slice(0, 24),
+          at: Number(t.at) || 0,
+          posts: (t.posts || []).slice(0, 200).map(function (p) {
+            return {
+              id: String(p.id || ''),
+              text: String(p.text || '').slice(0, POST_MAX),
+              by: String(p.by || ''),
+              name: String(p.name || '').slice(0, 24),
+              at: Number(p.at) || 0
+            };
+          })
+        };
+      }).slice(0, THREADS_MAX)
+    };
+  }
+
+  function fetchBoard() {
+    return fetch(FORUM_DOC, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (t) {
+        var j = null;
+        try { j = t ? JSON.parse(t) : null; } catch (e) { j = null; }
+        return normaliseBoard(j);
+      })
+      .catch(function () { return null; });
+  }
+
+  function boardEdit(change) {
+    boardChain = boardChain.then(function () {
+      return fetchBoard().then(function (fresh) {
+        var b = fresh || board || { threads: [] };
+        change(b);
+        board = b;
+        set('forum', b);
+        return fetch(FORUM_DOC, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(b)
+        }).catch(function () {});
+      });
+    }).catch(function () {});
+    return boardChain;
+  }
+
+  function forumAgo(ms) {
+    if (!ms) return '';
+    var s = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + 'm ago';
+    if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+    var d = Math.floor(s / 86400);
+    return d === 1 ? 'yesterday' : d + ' days ago';
+  }
+
+  function forumId() { return String(Date.now()) + Math.random().toString(36).slice(2, 6); }
+
+  function mountForum() {
+    sceneOn = 'forum';
+    sceneTone = 'bar';
+
+    var main = document.querySelector('main');
+    if (!main) return;
+
+    var root = document.createElement('div');
+    root.id = 'forum';
+    root.innerHTML =
+      '<div class="forum-head">' +
+        '<h2>the forum</h2>' +
+        '<p class="forum-sub">anything at all. be nice. everyone can see this.</p>' +
+      '</div>' +
+      '<div class="forum-body"></div>';
+    main.appendChild(root);
+    sceneNodes.push(root);
+
+    var bodyEl = root.querySelector('.forum-body');
+
+    /* --------------------------------------------------------- drawing */
+
+    function nameFor(post) {
+      return (post.name || 'someone') + (post.by === myHand() ? ' (you)' : '');
+    }
+
+    function drawList() {
+      var b = board || { threads: [] };
+      var threads = b.threads.slice().sort(function (x, y) {
+        return lastAt(y) - lastAt(x);
+      });
+
+      bodyEl.innerHTML = '';
+
+      var start = document.createElement('div');
+      start.className = 'forum-start';
+      start.innerHTML =
+        '<input class="forum-title" type="text" maxlength="' + TITLE_MAX +
+          '" placeholder="start a subject">' +
+        '<div class="forum-write" contenteditable="plaintext-only" ' +
+          'data-placeholder="…and say something"></div>' +
+        '<button class="forum-post" type="button">post it</button>';
+      bodyEl.appendChild(start);
+
+      start.querySelector('.forum-post').addEventListener('click', function () {
+        var title = start.querySelector('.forum-title').value
+                      .replace(/\s+/g, ' ').trim().slice(0, TITLE_MAX);
+        var text = start.querySelector('.forum-write').textContent.trim().slice(0, POST_MAX);
+        if (!title) { start.querySelector('.forum-title').focus(); return; }
+        var thread = {
+          id: forumId(),
+          title: title,
+          by: myHand(),
+          name: mySignature(),
+          at: Date.now(),
+          posts: text ? [{ id: forumId(), text: text, by: myHand(),
+                           name: mySignature(), at: Date.now() }] : []
+        };
+        (board || (board = { threads: [] })).threads.push(thread);
+        boardEdit(function (b) { b.threads.push(thread); });
+        openThread = thread.id;
+        draw();
+        play('tick');
+      });
+
+      if (!threads.length) {
+        var none = document.createElement('p');
+        none.className = 'forum-none';
+        none.textContent = 'nobody has said anything yet.';
+        bodyEl.appendChild(none);
+        return;
+      }
+
+      var list = document.createElement('ul');
+      list.className = 'forum-list';
+      threads.forEach(function (t) {
+        var li = document.createElement('li');
+        var n = t.posts.length;
+        li.innerHTML =
+          '<button class="forum-open" type="button"></button>' +
+          '<span class="forum-meta"></span>';
+        li.querySelector('.forum-open').textContent = t.title;
+        li.querySelector('.forum-meta').textContent =
+          (t.name || 'someone') + ' · ' +
+          (n === 1 ? '1 reply' : n + ' replies') + ' · ' + forumAgo(lastAt(t));
+        li.querySelector('.forum-open').addEventListener('click', function () {
+          openThread = t.id;
+          draw();
+        });
+        list.appendChild(li);
+      });
+      bodyEl.appendChild(list);
+    }
+
+    function lastAt(t) {
+      var at = t.at || 0;
+      t.posts.forEach(function (p) { if (p.at > at) at = p.at; });
+      return at;
+    }
+
+    function drawThread(t) {
+      bodyEl.innerHTML = '';
+
+      var back = document.createElement('button');
+      back.className = 'forum-back';
+      back.type = 'button';
+      back.textContent = '← all subjects';
+      back.addEventListener('click', function () { openThread = null; draw(); });
+      bodyEl.appendChild(back);
+
+      var h = document.createElement('h3');
+      h.className = 'forum-title-line';
+      h.textContent = t.title;
+      bodyEl.appendChild(h);
+
+      var who = document.createElement('p');
+      who.className = 'forum-byline';
+      who.textContent = 'started by ' + (t.name || 'someone') + ' · ' + forumAgo(t.at);
+      bodyEl.appendChild(who);
+
+      t.posts.forEach(function (p) {
+        var post = document.createElement('div');
+        post.className = 'forum-p' + (p.by === myHand() ? ' mine' : '');
+        var head = document.createElement('p');
+        head.className = 'forum-p-head';
+        head.textContent = nameFor(p) + ' · ' + forumAgo(p.at);
+        var text = document.createElement('p');
+        text.className = 'forum-p-text';
+        text.textContent = p.text;
+        post.appendChild(head);
+        post.appendChild(text);
+
+        if (p.by === myHand()) {
+          var del = document.createElement('button');
+          del.className = 'forum-del';
+          del.type = 'button';
+          del.textContent = 'delete';
+          del.addEventListener('click', function () {
+            t.posts = t.posts.filter(function (q) { return q.id !== p.id; });
+            boardEdit(function (b) {
+              var live = b.threads.filter(function (q) { return q.id === t.id; })[0];
+              if (live) live.posts = live.posts.filter(function (q) { return q.id !== p.id; });
+            });
+            draw();
+          });
+          post.appendChild(del);
+        }
+        bodyEl.appendChild(post);
+      });
+
+      var write = document.createElement('div');
+      write.className = 'forum-reply';
+      write.innerHTML =
+        '<div class="forum-write" contenteditable="plaintext-only" ' +
+          'data-placeholder="say something"></div>' +
+        '<button class="forum-post" type="button">reply</button>';
+      bodyEl.appendChild(write);
+
+      write.querySelector('.forum-post').addEventListener('click', function () {
+        var text = write.querySelector('.forum-write').textContent.trim().slice(0, POST_MAX);
+        if (!text) return;
+        var post = { id: forumId(), text: text, by: myHand(),
+                     name: mySignature(), at: Date.now() };
+        t.posts.push(post);
+        boardEdit(function (b) {
+          var live = b.threads.filter(function (q) { return q.id === t.id; })[0];
+          if (live) live.posts.push(post);
+        });
+        draw();
+        play('tick');
+      });
+    }
+
+    function draw() {
+      var b = board || { threads: [] };
+      var t = openThread && b.threads.filter(function (q) { return q.id === openThread; })[0];
+      if (t) drawThread(t); else drawList();
+    }
+
+    /* ---------------------------------------------------------- living */
+
+    board = normaliseBoard(get('forum', null));
+    draw();
+
+    function refresh() {
+      fetchBoard().then(function (fresh) {
+        if (!fresh) return;
+        var live = document.activeElement;
+        if (live && live.closest && live.closest('#forum') &&
+            (live.isContentEditable || live.tagName === 'INPUT')) return;
+        if (JSON.stringify(fresh) === JSON.stringify(board)) return;
+        board = fresh;
+        set('forum', fresh);
+        draw();
+      });
+    }
+
+    refresh();
+    sceneTimers.push(setInterval(function () {
+      if (!document.hidden) refresh();
+    }, FORUM_POLL_MS));
+  }
+
   /* ============================================================= TOSSING
      Once the shaft is dug, the edge of the page is an edge. Drag anything
      over the side and it falls -- and it is not gone, it is in the crypt,
@@ -5845,6 +6288,26 @@
   }
 
   function pileName(key) { return String(key).replace(/\/$/, ''); }
+
+  /**
+   * Back up the shaft, one thing at a time.
+   *
+   * Throwing something down here was never a deletion -- the file has been
+   * on the disk the whole time and the crypt is the site agreeing not to
+   * draw it. So putting one back is just as small: the name comes off the
+   * list, and the next time the page it belongs to is drawn, it is drawn.
+   * "Full reset" brings back everything at once; this is for the one thing
+   * you did not mean to throw.
+   */
+  function untossItem(key) {
+    var t = tossedList();
+    if (!t[key]) return;
+    delete t[key];
+    set('tossed', t);
+    applyTossed();
+    play('tick');
+    toast(pileName(key).split('/').pop() + ' is back upstairs');
+  }
 
   /**
    * The heap, as things rather than as a list of names.
@@ -5932,16 +6395,32 @@
           node.style.zIndex = '';
           node.classList.add('pile-item');
           node.classList.remove('tossed-away');
+          node.appendChild(backBtn(k));
           bed.appendChild(node);
         } else {
           var miss = document.createElement('p');
           miss.className = 'pile-missing';
           miss.textContent = pileName(k);
+          miss.appendChild(backBtn(k));
           bed.appendChild(miss);
         }
       });
       p.innerHTML = '';
       p.appendChild(bed);
+    }
+
+    function backBtn(k) {
+      var b = document.createElement('button');
+      b.className = 'pile-back';
+      b.type = 'button';
+      b.textContent = 'put back';
+      b.title = 'send this one back up to where it came from';
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        untossItem(k);
+      });
+      return b;
     }
   }
 
