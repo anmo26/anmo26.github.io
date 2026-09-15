@@ -2589,22 +2589,49 @@ body[data-scene="crypt"] {
   letter-spacing: .24em;
 }
 .crypt-say { margin: 0 0 1.2rem !important; font-family: var(--serif) !important; opacity: .7; }
-.crypt-empty { font-family: var(--serif); font-size: .9rem; opacity: .55; }
-.crypt-heap {
-  list-style: none;
-  margin: 0 auto;
-  padding: 0;
+.crypt-empty {
+  font-family: var(--serif);
+  font-size: .9rem;
+  opacity: .55;
   max-width: 24rem;
-  text-align: left;
+  margin: 0 auto;
 }
-.crypt-heap li {
-  padding: .22rem 0;
-  border-bottom: 1px dotted rgba(207, 198, 178, .16);
+
+/* The heap is the real files, fetched back off the pages they were thrown
+   from, and they open down here the way they would have opened upstairs. */
+.pile-bed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.6rem 1.8rem;
+  margin: .4rem auto 0;
+  max-width: 44rem;
+  text-align: center;
+}
+.pile-item {
+  position: static !important;
+  margin: 0;
+  max-width: 10rem;
+}
+.pile-item h3 { margin: 0; font-size: .8rem; }
+.pile-item h3 a { color: #C8BCA0; }
+.pile-item h3 a:hover { color: var(--heap); }
+.pile-item .meta { color: #7C7361; font-size: .68rem; }
+.pile-item .icon { height: 64px; }
+.pile-item img { max-height: 120px; width: auto; }
+.pile-item .md,
+.pile-item pre,
+.pile-item video,
+.pile-item audio,
+.pile-item .read-more { display: none; }
+.pile-missing {
   font-family: var(--mono);
-  font-size: .76rem;
-  color: #A69C88;
+  font-size: .72rem;
+  color: #7C7361;
+  margin: 0;
+  align-self: center;
 }
-.heap-mark { color: var(--heap); margin-right: .4rem; }
 .crypt-up {
   margin-top: 1.6rem !important;
   font-family: var(--mono) !important;
@@ -2944,7 +2971,10 @@ body[data-scene] #tex { display: none; }
 .sticky.c2 { rotate: -0.5deg; }
 .sticky.c3 { rotate:  1.3deg; }
 .sticky:hover { box-shadow: 0 1px 2px rgba(38, 36, 31, .2), 0 16px 30px -14px rgba(38, 36, 31, .55); }
-.sticky.focused { rotate: 0deg; }
+/* Deliberately NOT straightened while it is being dragged: taking the
+   rotation off mid-drag moves the box two pixels out from under the
+   pointer, and the whole point of a drag is that it stays where you
+   grabbed it. */
 .sticky.binned { opacity: 0; transform: scale(.9) translateY(10px); }
 
 .sticky-head {

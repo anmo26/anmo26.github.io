@@ -5055,25 +5055,103 @@
 
   function pileName(key) { return String(key).replace(/\/$/, ''); }
 
+  /**
+   * The heap, as things rather than as a list of names.
+   *
+   * Every thrown item remembers the page it came off. The crypt fetches
+   * those pages, lifts the real item out of each one -- icon, thumbnail,
+   * link and all -- and stands it on the floor down here, where it opens
+   * exactly the way it would have upstairs. Nothing has moved on the disk;
+   * this is the same file, borrowed back.
+   */
   function paintPile() {
     var piles = document.querySelectorAll('.crypt-pile');
     if (!piles.length) return;
+
     var t = tossedList();
     var keys = Object.keys(t).sort(function (a, b) { return t[b].at - t[a].at; });
 
-    var html;
     if (!keys.length) {
-      html = '<p class="crypt-empty">nothing has been thrown down here yet. ' +
-             'drag something over the side of the garden.</p>';
-    } else {
-      html = '<ul class="crypt-heap">';
-      keys.forEach(function (k) {
-        html += '<li><span class="heap-mark">&#9587;</span> ' +
-                escapeText(pileName(k)) + '</li>';
+      piles.forEach(function (p) {
+        p.innerHTML = '<p class="crypt-empty">nothing has been thrown down here ' +
+          'yet. there is a bin in the corner of every page, and in the garden ' +
+          'you can shove things off the side.</p>';
       });
-      html += '</ul>';
+      return;
     }
-    piles.forEach(function (p) { p.innerHTML = html; });
+
+    piles.forEach(function (p) {
+      if (!p.querySelector('.pile-bed')) {
+        p.innerHTML = '<p class="crypt-empty">bringing it back up…</p>';
+      }
+    });
+
+    // Grouped by where each thing was thrown from, so each page is asked
+    // for once however much came off it.
+    var root = siteRoot();
+    var byPage = {};
+    keys.forEach(function (k) {
+      var from = (t[k] && t[k].from) || root.pathname;
+      if (!byPage[from]) byPage[from] = [];
+      byPage[from].push(k);
+    });
+
+    var found = {};
+    var pages = Object.keys(byPage);
+    var waiting = pages.length;
+
+    pages.forEach(function (path) {
+      var url;
+      try { url = new URL(path, location.href).href; } catch (e) { done(); return; }
+
+      fetch(url, { credentials: 'same-origin', headers: { accept: 'text/html' } })
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+          if (!html) return;
+          var doc = new DOMParser().parseFromString(html, 'text/html');
+          var main = doc.querySelector('main');
+          if (!main) return;
+          absolutise(main, url);
+          byPage[path].forEach(function (k) {
+            var el = main.querySelector('.item[data-key="' + CSS.escape(k) + '"]');
+            if (el) found[k] = document.importNode(el, true);
+          });
+        })
+        .catch(function () {})
+        .then(done);
+    });
+
+    function done() {
+      if (--waiting > 0) return;
+      piles.forEach(function (p) { render(p); });
+    }
+
+    function render(p) {
+      var bed = document.createElement('div');
+      bed.className = 'pile-bed';
+      keys.forEach(function (k) {
+        var node = found[k];
+        if (node) {
+          node = node.cloneNode(true);
+          node.removeAttribute('id');
+          // The coordinates on it are Finder's, for a page this is not.
+          node.style.position = 'static';
+          node.style.left = '';
+          node.style.top = '';
+          node.style.zIndex = '';
+          node.classList.add('pile-item');
+          node.classList.remove('tossed-away');
+          bed.appendChild(node);
+        } else {
+          var miss = document.createElement('p');
+          miss.className = 'pile-missing';
+          miss.textContent = pileName(k);
+          bed.appendChild(miss);
+        }
+      });
+      p.innerHTML = '';
+      p.appendChild(bed);
+    }
   }
 
   function escapeText(s) {
@@ -5165,7 +5243,9 @@
     var key = el.dataset.key;
     if (!key) return;
     var t = tossedList();
-    t[key] = { at: Date.now() };
+    // Which page it came off, so the crypt can go and fetch the real thing
+    // rather than showing a list of names.
+    t[key] = { at: Date.now(), from: noteRoom() };
     set('tossed', t);
 
     el.classList.add('falling');
