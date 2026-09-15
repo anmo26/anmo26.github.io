@@ -1812,11 +1812,23 @@
     });
     menu.setAttribute('role', 'menu');
 
+    function place() {
+      /* It hangs off the window, so it has to be told where the button is
+         -- and pulled back inside if it would go off the right-hand edge. */
+      var r = btn.getBoundingClientRect();
+      menu.style.left = '0px';
+      menu.style.bottom = Math.round(window.innerHeight - r.top + 4) + 'px';
+      var w = menu.getBoundingClientRect().width;
+      var left = Math.min(r.left, window.innerWidth - w - 8);
+      menu.style.left = Math.round(Math.max(8, left)) + 'px';
+    }
+
     function open() {
       if (!menu.hidden) return;
       // Only one of these open at a time.
       document.querySelectorAll('.picker-menu').forEach(function (m) { m.hidden = true; });
       menu.hidden = false;
+      place();
       btn.setAttribute('aria-expanded', 'true');
     }
     function close() {
@@ -1831,10 +1843,17 @@
     wrap.addEventListener('pointerleave', function (e) {
       if (e.pointerType === 'mouse') close();
     });
+    /* With a mouse, the button itself does the ordinary thing -- "note"
+       makes a note -- and resting on it offers the alternatives. A finger
+       has no hover, so there the button opens the list instead, or the
+       second choice would be unreachable. */
+    var canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
+      if (spec.action && canHover) { spec.save(0); close(); play('tick'); return; }
       if (menu.hidden) open(); else close();
     });
+    window.addEventListener('resize', function () { if (!menu.hidden) place(); });
     document.addEventListener('click', function (e) {
       if (!wrap.contains(e.target)) close();
     });
@@ -5555,9 +5574,24 @@
     return { rooms: out };
   }
 
+  /**
+   * Tidy a note without flattening it.
+   *
+   * This used to build a brand new object with only the fields it knew
+   * about -- and because every write sends the WHOLE wall back, one
+   * browser running yesterday's copy of the site would quietly strip
+   * every field it had never heard of off everybody's notes. That is
+   * exactly what happened to the first replies: an older tab moved a note
+   * and took the replies off all of them on the way past.
+   *
+   * It copies what is there and overwrites only what it understands, so
+   * anything newer than this code survives contact with it.
+   */
   function cleanNote(n) {
     var hand = String(n.by || '');
-    return {
+    var out = {}, k;
+    for (k in n) if (Object.prototype.hasOwnProperty.call(n, k)) out[k] = n[k];
+    return assign(out, {
       id: String(n.id),
       text: String(n.text || '').slice(0, NOTE_MAX),
       by: hand,
@@ -5577,7 +5611,14 @@
           at: Number(r.at) || 0
         };
       })
-    };
+    });
+  }
+
+  /** Object.assign, in the dialect the rest of this file is written in. */
+  function assign(to, from) {
+    var k;
+    for (k in from) if (Object.prototype.hasOwnProperty.call(from, k)) to[k] = from[k];
+    return to;
   }
 
   /** The whole wall, oldest notes shed if it has grown past the cap. */

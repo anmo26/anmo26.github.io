@@ -462,12 +462,16 @@ body.tex-dots {
 /* `display: flex` below beats the browser's own [hidden] rule, which is
    how all three of these came to be standing open at once. */
 .picker-menu[hidden] { display: none; }
+
+/* FIXED, not absolute. The taskbar scrolls sideways on a narrow window,
+   which makes it a clipping box -- and a menu that opens upward out of a
+   clipping box is cut off at the top edge of the bar, which is to say
+   invisible. Every one of these looked like a dead button. Positioned
+   from the window instead, and placed by hand when it opens. */
 .picker-menu {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
+  position: fixed;
   margin-bottom: .3rem;
-  min-width: 100%;
+  min-width: 6rem;
   display: flex;
   flex-direction: column;
   padding: .2rem;
