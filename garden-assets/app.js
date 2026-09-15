@@ -468,6 +468,17 @@
     pending = null;
     clearTimeout(holdTimer);
 
+    /* A drag that starts on a picture is still, as far as the browser is
+       concerned, a mouse being swept across a document -- so it paints
+       everything it crosses blue and leaves the selection behind when you
+       let go. Nothing is selectable for as long as something is in the
+       air, and whatever was already highlighted is dropped. */
+    document.body.classList.add('dragging');
+    try {
+      var sel = window.getSelection();
+      if (sel && sel.removeAllRanges) sel.removeAllRanges();
+    } catch (err) {}
+
     // On a phone the bed is still in flow, and a coordinate would mean
     // nothing until it is pinned.
     if (!wide()) freezeBed(bedOf(drag.el));
@@ -582,9 +593,10 @@
   function dragEnd() {
     clearTimeout(holdTimer);
     if (pending) { drop(pending); pending = null; }
-    if (!drag) return;
+    if (!drag) { document.body.classList.remove('dragging'); return; }
     var d = drag;
     drag = null;
+    document.body.classList.remove('dragging');
     drop(d);
     swallowNextClick(d.el);
 
@@ -4490,7 +4502,6 @@
 
   var COUNTER = 'https://abacus.jasoncameron.dev';
   var COUNTER_NS = 'anmo-garden';
-  var TALLY_MAX = 160;              // scratches before the wall is just full
 
   // Which rooms keep a count, by the name at the top of the page.
   var VISIT_ROOMS = {
@@ -4499,48 +4510,40 @@
     'LIBRARY!!!!!': 'library'
   };
 
-  function tallyArt(n) {
-    var shown = Math.min(n, TALLY_MAX);
-    var gates = Math.floor(shown / 5);
-    var rest = shown % 5;
-    var out = [], line = '', g;
-
-    for (g = 0; g < gates; g++) {
-      line += '|||/ ';                       // four and one struck through
-      if (line.length >= 60) { out.push(line); line = ''; }
-    }
-    if (rest) line += new Array(rest + 1).join('|') + ' ';
-    if (line) out.push(line);
-    return out.join('\n');
-  }
+  var ROOM_WORD = {
+    garden:  'have walked through the garden',
+    moon:    'have stood on the moon',
+    library: 'have found the library'
+  };
 
   function mountVisitors() {
     var h1 = document.querySelector('.masthead h1');
     var room = h1 && VISIT_ROOMS[h1.textContent.trim()];
     if (!room) return;
 
-    var wall = document.createElement('div');
+    var wall = document.createElement('p');
     wall.id = 'visitors';
-    wall.innerHTML = '<pre class="tally" aria-hidden="true"></pre>' +
-                     '<p class="tally-say"></p>';
+    wall.innerHTML = '<b></b><span></span>';
     var rule = document.querySelector('.masthead .rule');
     if (rule && rule.parentNode) rule.parentNode.insertBefore(wall, rule);
     else document.querySelector('.masthead').appendChild(wall);
 
-    var art = wall.querySelector('.tally');
-    var say = wall.querySelector('.tally-say');
+    var figure = wall.querySelector('b');
+    var say = wall.querySelector('span');
 
-    // One scratch per visit, not per visitor -- honest, and it means the
-    // wall answers you the moment you walk in.
+    // One count per visit, not per visitor -- honest, and it means the
+    // number answers you the moment you walk in.
     fetch(COUNTER + '/hit/' + COUNTER_NS + '/' + room, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || typeof d.value !== 'number') throw new Error('no count');
-        art.textContent = tallyArt(d.value);
-        say.textContent = d.value === 1
-          ? 'you are the first person in this room'
-          : d.value.toLocaleString() + ' people have stood here' +
-            (d.value > TALLY_MAX ? '. the wall only has room for ' + TALLY_MAX + '.' : '');
+        if (d.value === 1) {
+          figure.textContent = '';
+          say.textContent = 'you are the first person in this room';
+        } else {
+          figure.textContent = d.value.toLocaleString();
+          say.textContent = ' ' + (ROOM_WORD[room] || 'have stood here');
+        }
         wall.classList.add('counted');
       })
       .catch(function () { if (wall.parentNode) wall.parentNode.removeChild(wall); });
@@ -4664,7 +4667,9 @@
     if (!shelf) return;
     var have = earned();
     var keys = Object.keys(TROPHY).filter(function (k) { return have[k]; });
+    var tuck = document.getElementById('shelf-tuck');
     shelf.hidden = !keys.length;
+    if (tuck) tuck.hidden = !keys.length;
     if (!keys.length) return;
 
     var html = '', i, t;
@@ -4683,7 +4688,30 @@
     shelf.id = 'shelf';
     shelf.hidden = true;
     document.body.appendChild(shelf);
+
+    /* It sits in the bottom corner, which is also where things get put
+       down. So it pushes into the wall: one press and it slides off the
+       left edge leaving a tab behind, and it stays that way. */
+    var tuck = document.createElement('button');
+    tuck.id = 'shelf-tuck';
+    tuck.type = 'button';
+    document.body.appendChild(tuck);
+
+    function paintTuck() {
+      var IN = get('shelf.tucked', false);
+      document.body.classList.toggle('shelf-tucked', IN);
+      tuck.textContent = IN ? 'shelf' : '\u00AB';
+      tuck.title = IN ? 'pull the shelf back out' : 'push the shelf into the wall';
+      tuck.setAttribute('aria-label', tuck.title);
+    }
+    tuck.addEventListener('click', function () {
+      set('shelf.tucked', !get('shelf.tucked', false));
+      paintTuck();
+      play('tick');
+    });
+
     paintShelf();
+    paintTuck();
   }
 
   /* ============================================================= TOSSING
