@@ -470,7 +470,6 @@ body.tex-dots {
    from the window instead, and placed by hand when it opens. */
 .picker-menu {
   position: fixed;
-  margin-bottom: .3rem;
   min-width: 6rem;
   display: flex;
   flex-direction: column;

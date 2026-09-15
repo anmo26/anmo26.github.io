@@ -1815,9 +1815,13 @@
     function place() {
       /* It hangs off the window, so it has to be told where the button is
          -- and pulled back inside if it would go off the right-hand edge. */
+      /* Flush against the top of the button, with NO gap. There were nine
+         pixels of nothing between the two, and crossing them counted as
+         leaving -- so the menu shut every time you reached for it and not
+         one option could ever be clicked. */
       var r = btn.getBoundingClientRect();
       menu.style.left = '0px';
-      menu.style.bottom = Math.round(window.innerHeight - r.top + 4) + 'px';
+      menu.style.bottom = Math.round(window.innerHeight - r.top) + 'px';
       var w = menu.getBoundingClientRect().width;
       var left = Math.min(r.left, window.innerWidth - w - 8);
       menu.style.left = Math.round(Math.max(8, left)) + 'px';
@@ -1837,11 +1841,18 @@
       btn.setAttribute('aria-expanded', 'false');
     }
 
+    /* And a breath before it shuts, so a hand that wanders off the edge
+       for a moment on the way down the list does not lose it. */
+    var shutting = null;
     wrap.addEventListener('pointerenter', function (e) {
-      if (e.pointerType === 'mouse') open();
+      if (e.pointerType !== 'mouse') return;
+      clearTimeout(shutting);
+      open();
     });
     wrap.addEventListener('pointerleave', function (e) {
-      if (e.pointerType === 'mouse') close();
+      if (e.pointerType !== 'mouse') return;
+      clearTimeout(shutting);
+      shutting = setTimeout(close, 220);
     });
     /* With a mouse, the button itself does the ordinary thing -- "note"
        makes a note -- and resting on it offers the alternatives. A finger
@@ -1896,17 +1907,17 @@
        The physics is the same engine in all of them. */
     mountPicker(bar, {
       label: 'mini fig',
-      names: ['pogo', 'run', 'fly', 'jump', 'away'],
-      pressed: function (i) { return i < 4; },
+      names: ['pogo', 'run', 'fly', 'away'],
+      pressed: function (i) { return i < 3; },
       value: function () {
         var i = get('minifig', 0);
-        return (i >= 0 && i <= 4) ? i : 0;
+        return (i >= 0 && i <= 3) ? i : 0;
       },
       save: function (i) { set('minifig', i); },
       apply: function (i) {
         var m = document.getElementById('pogo');
-        if (m) m.hidden = (i === 4);
-        if (i < 4) pogoGait(GAITS[i]);
+        if (m) m.hidden = (i === 3);
+        if (i < 3) pogoGait(GAITS[i]);
       }
     });
 
@@ -3858,23 +3869,26 @@
   ];
 
   /* He was only ever a man on a pogo stick, which is a strange thing to be
-     stuck as. He is a MINI FIG now and the stick is one of four ways to get
-     about: pogo, run, fly, jump. The physics underneath is the same engine
+     stuck as. He is a MINI FIG now and the stick is one of three ways to get
+     about: the stick, his own legs, or a cloud. The physics underneath is the same engine
      in all four -- what changes is what happens the moment his feet touch
      something, and whether they ever do. */
   var POGO_RUN = [
-    ['     ', '  o  ', ' /|\\ ', ' / \\ ', '     '],
-    ['     ', '  o  ', ' <|> ', ' /|  ', '     ']
+    ['     ', '  o  ', ' >|\\ ', ' / \\ ', '     '],
+    ['     ', '  o  ', ' <|> ', '  |\\ ', '     ']
   ];
+  /* On a cloud, the way Wukong travels -- standing on it, not lying flat
+     with his arms out in front like somebody in a cape. */
   var POGO_FLY = [
-    ['     ', ' __o ', '/  |\\', '   |\\', '  ~~ '],
-    ['     ', ' __o ', '/  |\\', '   |/', '  ~~ ']
+    ['  o  ', ' \\|/ ', ' /_\\ ', '(~~~)', '  ~  '],
+    ['  o  ', ' \\|/ ', ' /_\\ ', '(~~~)', ' ~ ~ ']
   ];
-  var POGO_JUMP = [' \\o/ ', '  |  ', ' /|\\ ', ' / \\ ', '     '];
-  // Head first into somebody's note, legs in the air.
-  var POGO_STUCK = ['     ', '     ', ' _|_ ', ' /|\\ ', '  v  '];
+  // mid-air, running: both feet off the ground, arms up
+  var POGO_LEAP = ['  o  ', ' \\|/ ', '  |  ', ' / \\ ', '     '];
 
-  var GAITS = ['pogo', 'run', 'fly', 'jump'];
+  /* Jumping is not a way of getting about, it is something a runner does.
+     Three ways now: the stick, his own legs, and the cloud. */
+  var GAITS = ['pogo', 'run', 'fly'];
 
   // Set by mountPogo. The garden scene asks him to go and water the tree,
   // and tells him where he is standing -- the moon pulls a sixth as hard.
@@ -3932,7 +3946,6 @@
     var grav = 1;              // 1 on earth, a sixth of that on the moon
     var swimming = false;      // in the sea nothing below applies at all
     var gait = GAITS[get('minifig', 0)] || 'pogo';
-    var stuck = 0;             // head first in a sticky note until this time
     var runClock = 0;
     var ledges = [];
     var last = 0;
@@ -3992,7 +4005,7 @@
       var rows = name === 'swim0' ? POGO_SWIM[0] : name === 'swim1' ? POGO_SWIM[1]
                : name === 'run0' ? POGO_RUN[0] : name === 'run1' ? POGO_RUN[1]
                : name === 'fly0' ? POGO_FLY[0] : name === 'fly1' ? POGO_FLY[1]
-               : name === 'jump' ? POGO_JUMP : name === 'stuck' ? POGO_STUCK
+               : name === 'leap' ? POGO_LEAP
                : name === 'sleep' ? POGO_SLEEP : name === 'water' ? POGO_WATER
                : name === 'down' ? POGO_DOWN : POGO_UP;
       art.textContent = rows.join('\n');
@@ -4088,20 +4101,6 @@
     function step(dt) {
       if (swimming) { swimStep(dt); return; }
 
-      /* Head first in somebody's note. He is going nowhere for a moment,
-         and then he comes out of it with a shove. */
-      if (stuck) {
-        if (performance.now() < stuck) {
-          sprite('stuck');
-          man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
-                                Math.round(y - H) + 'px,0)';
-          return;
-        }
-        stuck = 0;
-        vy = -HOP_MAX * 0.8;
-        energy = 0.7;
-      }
-
       /* Flying is the sea without the sea: he goes to the cursor in both
          directions at once and nothing below him is solid. */
       if (gait === 'fly') {
@@ -4194,37 +4193,34 @@
              timer. Three landings and he is standing still. */
           if (idle && !errand) energy *= ENERGY_LAND;
 
-          /* A sticky note is paper, not a paving slab. Land on one and
-             every so often you go straight through the top of it and
-             spend a moment upside down in somebody's handwriting. */
-          if (l.note && !stuck && Math.random() < 0.28) {
-            stuck = performance.now() + 900 + Math.random() * 700;
+          /* Landing on a note knocks it about -- which is the good half of
+             this, and the half that stays. Going head first INTO one and
+             being held there was never what was asked for, and a
+             companion you have to wait for is not a companion. */
+          if (l.note) {
             l.note.classList.add('caught');
             (function (el) {
-              setTimeout(function () { el.classList.remove('caught'); }, 1700);
+              setTimeout(function () { el.classList.remove('caught'); }, 1600);
             }(l.note));
-            vx = 0; vy = 0;
-            play('tick');
           }
-          else if (errand && Math.abs(x - errand.x) < 26) {
+          if (errand && Math.abs(x - errand.x) < 26) {
             // Arrived at the thing he was asked to go and do. He stands.
             if (!errand.until) errand.until = performance.now() + errand.ms;
             vy = 0;
             vx = 0;
           }
           else if (asleep) { vy = 0; }
-          /* Running: his feet stay on the ground. He only leaves it to get
-             up onto something he is plainly trying to reach. */
+          /* Running, which includes jumping -- a man running and bounding
+             about after the cursor. He puts his feet down when he is
+             nearly there and leaps when he has any distance to cover or
+             anything to get up onto. */
           else if (gait === 'run') {
-            vy = 0;
-            if (!idle && (y - targetY) > POGO_H * 0.8 && Math.abs(reach) < 200) {
-              vy = -HOP_MAX * 0.62;
-            }
-          }
-          /* Jumping is the pogo stick with nothing held back. */
-          else if (gait === 'jump') {
-            vy = idle && Math.abs(reach) < 48 ? 0 : -HOP_MAX;
-            if (vy === 0) asleep = true;
+            var climbing = (y - targetY) > POGO_H * 0.7;
+            var far = Math.abs(reach) > 110;
+            if (idle && Math.abs(reach) < 48) { vy = 0; asleep = true; }
+            else if (climbing) vy = -HOP_MAX * 0.7;
+            else if (far) vy = -HOP_MIN * 2.4;
+            else vy = 0;
           }
           else if (energy < 0.05 && Math.abs(reach) < 48) {
             // Nothing left in him and nowhere to be: this is where he stops,
@@ -4244,11 +4240,14 @@
       if (errand && errand.until) sprite('water');
       else if (asleep) sprite('sleep');
       else if (gait === 'run') {
-        // feet on the ground: a two-frame run, paced by how fast he is going
-        var pace = Math.min(12, 3 + Math.abs(vx) / 26);
-        sprite(Math.floor(runClock * pace) % 2 ? 'run1' : 'run0');
+        // in the air he is mid-leap; on the ground, a two-frame run paced
+        // by how fast he is actually going
+        if (vy < -40 || (vy > 40 && y < floor() - 12)) sprite('leap');
+        else {
+          var pace = Math.min(12, 3 + Math.abs(vx) / 26);
+          sprite(Math.floor(runClock * pace) % 2 ? 'run1' : 'run0');
+        }
       }
-      else if (gait === 'jump') sprite(vy < -40 ? 'jump' : 'down');
       else sprite(vy < -40 ? 'up' : 'down');
 
       man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
@@ -4313,7 +4312,6 @@
       if (GAITS.indexOf(name) < 0 || gait === name) return;
       gait = name;
       drawn = '';
-      stuck = 0;
       asleep = false;
       lastPointed = performance.now();
       energy = 0.4;
