@@ -1,4 +1,4 @@
-# 15 september 2026 — a panel that follows the cursor
+# 15 september 2026, 12:34 — a panel that follows the cursor
 
 ## what changed
 - dragging an opened picture used to send it running away down and to the right, because it was being scaled like something lying on the bed. measured: 165px of drift over one short drag, now none

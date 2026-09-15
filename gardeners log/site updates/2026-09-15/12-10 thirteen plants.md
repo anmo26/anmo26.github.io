@@ -1,4 +1,4 @@
-# 15 september 2026 — thirteen plants that tell you what they smell like
+# 15 september 2026, 12:10 — thirteen plants that tell you what they smell like
 
 ## what changed
 - every plant in the glasshouse is drawn by its own hand instead of one shape repeated

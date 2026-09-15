@@ -1,4 +1,4 @@
-# 15 september 2026 — a bar with something to say
+# 15 september 2026, 13:00 — a bar with something to say
 
 ## what changed
 - the bar no longer talks about itself. it carries quotations from japanese

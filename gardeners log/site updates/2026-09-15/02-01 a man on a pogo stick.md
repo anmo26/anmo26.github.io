@@ -1,4 +1,4 @@
-# 15 september 2026 — a man on a pogo stick, a still, and three more doors
+# 15 september 2026, 02:01 — a man on a pogo stick, a still, and three more doors
 
 ## what changed
 - pick the five tuna off the prickly pear, drop them in a bucket, and THE GARDEN opens

@@ -1,4 +1,4 @@
-# 15 september 2026 — the adam jewel tree, and a storey above the garden
+# 15 september 2026, 02:54 — the adam jewel tree, and a storey above the garden
 
 ## what changed
 - THE GARDEN is a place: green sky, a grass line that grows, and a cow that walks, stops and grazes

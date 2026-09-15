@@ -1,4 +1,4 @@
-# 15 september 2026 — a rocket you can actually press
+# 15 september 2026, 11:10 — a rocket you can actually press
 
 ## what changed
 - the rocket was standing behind the page, where nothing can be clicked. it is in front now

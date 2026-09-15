@@ -1,4 +1,4 @@
-# 15 september 2026 — a cactus by the clock
+# 15 september 2026, 01:29 — a cactus by the clock
 
 ## what changed
 - pictures show a corner mark so it is obvious they can be pulled bigger, and they snap back to their true shape on release instead of leaving the grip stranded

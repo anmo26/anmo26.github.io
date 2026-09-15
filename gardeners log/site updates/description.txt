@@ -1,1 +1,1 @@
-every update to the site, oldest at the top. the to-do card on the front page is only ever the latest one; when a new one is written the old one moves in here.
+one folder per day, and inside it one file per update, named by the time it went out. the to-do card on the front page is only ever the latest one; when a new one is written the old one moves in here.

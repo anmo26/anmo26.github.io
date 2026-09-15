@@ -1,4 +1,4 @@
-# 15 september 2026 — a ticker that knows what changed
+# 15 september 2026, 02:25 — a ticker that knows what changed
 
 ## what changed
 - the ticker under the masthead carries the site's own recent history instead of world news: what you changed, and when

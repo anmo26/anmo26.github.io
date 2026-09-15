@@ -1,4 +1,4 @@
-# 15 september 2026 — a bin in the corner, and full reset
+# 15 september 2026, 12:45 — a bin in the corner, and full reset
 
 ## what changed
 - a bin in the corner of every page. drag anything in and it goes to the bottom crypt. the lid lifts as you come near

@@ -1,4 +1,4 @@
-# 15 september 2026 — nothing stands at its peak forever
+# 15 september 2026, 12:51 — nothing stands at its peak forever
 
 ## what changed
 - every plant in the glasshouse holds at its peak for a twentieth of however long it took to grow, then goes back to seed and starts again

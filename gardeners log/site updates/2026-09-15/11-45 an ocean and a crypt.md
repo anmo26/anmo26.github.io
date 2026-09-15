@@ -1,4 +1,4 @@
-# 15 september 2026 — an ocean, a crypt, a glasshouse and real weather
+# 15 september 2026, 11:45 — an ocean, a crypt, a glasshouse and real weather
 
 ## what changed
 - THE OCEAN, found by clicking the photograph of the sea. the pogo man stops bouncing and swims
