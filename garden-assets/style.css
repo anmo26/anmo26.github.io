@@ -1306,7 +1306,10 @@ details[open] > .read-more-summary::after { font-size: .68rem; }
 #plants {
   display: flex;
   align-items: flex-end;
-  gap: 1.2rem;
+  /* The still and the prickly pear are two separate concerns standing in
+     the same corner, and at 1.2rem the bellows was almost touching the
+     pads. They want room to be two things. */
+  gap: 3.2rem;
 }
 
 .cactus-row {

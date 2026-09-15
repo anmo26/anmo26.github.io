@@ -2362,13 +2362,169 @@
     moon:      { type: 'lowpass',  freq: 110,  q: 0.60, gain: 0.020, swell: 0.010, rate: 0.03 },
     crypt:     { type: 'lowpass',  freq: 180,  q: 1.40, gain: 0.026, swell: 0.014, rate: 0.04,
                  every: [4000, 11000], voice: 'drip' },
-    bar:       { type: 'lowpass',  freq: 420,  q: 0.50, gain: 0.022, swell: 0.020, rate: 0.05,
-                 every: [7000, 17000], voice: 'ice' },
+    bar:       { type: 'lowpass',  freq: 420,  q: 0.50, gain: 0.018, swell: 0.020, rate: 0.05,
+                 every: [7000, 17000], voice: 'ice', music: true },
     ocean:     { type: 'lowpass',  freq: 300,  q: 0.90, gain: 0.046, swell: 0.140, rate: 0.10,
                  every: [2600, 7000],  voice: 'bubble' },
     moonlight: { type: 'bandpass', freq: 3400, q: 1.20, gain: 0.010, swell: 0.040, rate: 0.13,
                  every: [3000, 9000],  voice: 'cricket' }
   };
+
+  /* ---------------------------------------------------------- the trio
+     There is a record on in the bar, and it is not a file. Nothing here is
+     downloaded: a bass, a piano and a pair of brushes are built out of the
+     same oscillators and the same half-second of noise as everything else
+     on this site, and they play a turnaround round and round at ninety-two
+     beats a minute with the eighths swung.
+
+     It is generated rather than looped, so the piano leaves different holes
+     every time and the bass walks a different way up to the same note. It
+     is also very quiet. A bar at one in the morning is not a concert.
+
+     Scheduled the way audio has to be scheduled: a timer wakes up four
+     times a second, looks a fifth of a second ahead, and books whatever
+     falls inside that window against the audio clock rather than against
+     setInterval, which is nowhere near steady enough to swing. */
+
+  var JAZZ_BPM = 92;
+  var JAZZ_SWING = 0.64;          // where the off-beat lands inside the beat
+
+  /* ii-V-I and round again, in C. Each bar is [root, chord tones above it].
+     The piano voicings are rootless -- third, seventh, ninth, thirteenth --
+     which is what a piano actually plays when there is a bass in the room. */
+  var JAZZ_BARS = [
+    { root: 50, walk: [50, 53, 57, 55], voice: [60, 65, 69, 72] },   // Dm7
+    { root: 55, walk: [55, 59, 62, 61], voice: [59, 65, 69, 74] },   // G7
+    { root: 48, walk: [48, 52, 55, 57], voice: [59, 64, 67, 71] },   // Cmaj7
+    { root: 57, walk: [57, 60, 64, 62], voice: [60, 64, 67, 71] },   // Am7
+    { root: 50, walk: [50, 53, 57, 59], voice: [60, 65, 69, 72] },   // Dm7
+    { root: 55, walk: [55, 62, 59, 53], voice: [59, 65, 69, 74] },   // G7
+    { root: 48, walk: [48, 55, 52, 50], voice: [59, 64, 67, 71] },   // Cmaj7
+    { root: 55, walk: [55, 57, 59, 61], voice: [59, 65, 69, 74] }    // G7
+  ];
+
+  function hz(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+  var jazz = null;   // { timer, bar, beat, at, gain }
+
+  function jazzNote(ctx, out, midi, t, dur, kind) {
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    var f = ctx.createBiquadFilter();
+    o.connect(f); f.connect(g); g.connect(out);
+
+    if (kind === 'bass') {
+      // An upright is nearly a sine with a thumb on it: a little edge at the
+      // attack, nothing at all by the end of the note.
+      o.type = 'triangle';
+      f.type = 'lowpass'; f.frequency.value = 520; f.Q.value = 0.8;
+      o.frequency.setValueAtTime(hz(midi) * 1.02, t);
+      o.frequency.exponentialRampToValueAtTime(hz(midi), t + 0.03);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.42, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.10, t + dur * 0.5);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.95);
+    } else {
+      o.type = 'triangle';
+      f.type = 'lowpass'; f.frequency.value = 2400; f.Q.value = 0.5;
+      o.frequency.value = hz(midi);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.13, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    }
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  /** Brushes. The ride is a short bright tick; two and four get a swish. */
+  function jazzBrush(ctx, out, t, kind) {
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuf;
+    var f = ctx.createBiquadFilter();
+    var g = ctx.createGain();
+    src.connect(f); f.connect(g); g.connect(out);
+
+    if (kind === 'ride') {
+      f.type = 'bandpass'; f.frequency.value = 7200; f.Q.value = 1.4;
+      g.gain.setValueAtTime(0.09, t);
+      g.gain.exponentialRampToValueAtTime(0.0002, t + 0.13);
+      src.start(t); src.stop(t + 0.15);
+    } else {
+      f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 0.5;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.055, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0002, t + 0.30);
+      src.start(t); src.stop(t + 0.32);
+    }
+  }
+
+  function jazzStop() {
+    if (!jazz) return;
+    clearInterval(jazz.timer);
+    try {
+      var t = actx.currentTime;
+      jazz.gain.gain.cancelScheduledValues(t);
+      jazz.gain.gain.setValueAtTime(jazz.gain.gain.value || 0.0001, t);
+      jazz.gain.gain.exponentialRampToValueAtTime(0.00001, t + 1.4);
+      var dying = jazz.gain;
+      setTimeout(function () { try { dying.disconnect(); } catch (e) {} }, 1800);
+    } catch (e) {}
+    jazz = null;
+  }
+
+  function jazzStart() {
+    var ctx = audio();
+    if (!ctx || jazz) return;
+    try {
+      var out = ctx.createGain();
+      out.gain.setValueAtTime(0.00001, ctx.currentTime);
+      out.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 5);
+      out.connect(ctx.destination);
+
+      var beat = 60 / JAZZ_BPM;
+      jazz = { timer: 0, bar: 0, beat: 0, at: ctx.currentTime + 0.2, gain: out };
+
+      jazz.timer = setInterval(function () {
+        if (!jazz) return;
+        var now = ctx.currentTime;
+        // Woken late -- a hidden tab, a sleeping laptop. Do not try to catch
+        // up by playing forty beats at once; just pick the music back up.
+        if (jazz.at < now - 1) jazz.at = now + 0.1;
+
+        while (jazz.at < now + 0.25) {
+          var bar = JAZZ_BARS[jazz.bar % JAZZ_BARS.length];
+          var b = jazz.beat;
+          var t = jazz.at;
+
+          // bass: one note a beat, all the way round
+          jazzNote(ctx, out, bar.walk[b], t, beat * 0.92, 'bass');
+
+          // ride: on every beat, and swung on two and four
+          jazzBrush(ctx, out, t, 'ride');
+          if (b === 1 || b === 3) {
+            jazzBrush(ctx, out, t + beat * JAZZ_SWING, 'ride');
+            jazzBrush(ctx, out, t, 'swish');
+          }
+
+          /* piano: late, and only sometimes. A comping piano that hit every
+             bar on the beat would be a drum machine with chords on it. */
+          if (Math.random() < (b === 1 || b === 3 ? 0.55 : 0.18)) {
+            var when = t + beat * (Math.random() < 0.6 ? JAZZ_SWING : 0);
+            var voice = bar.voice;
+            var k;
+            for (k = 0; k < voice.length; k++) {
+              if (Math.random() < 0.22) continue;         // leave a hole
+              jazzNote(ctx, out, voice[k], when + k * 0.006, beat * 1.3, 'piano');
+            }
+          }
+
+          jazz.at += beat;
+          jazz.beat++;
+          if (jazz.beat > 3) { jazz.beat = 0; jazz.bar++; }
+        }
+      }, 60);
+    } catch (e) { jazz = null; }
+  }
 
   var amb = null;          // { src, filter, gain, lfo, timer, kind }
   var ambWanted = null;    // what the room asked for, whether or not it is on
@@ -2389,6 +2545,7 @@
     } catch (e) {}
     clearInterval(amb.timer);
     amb = null;
+    jazzStop();
   }
 
   /** One small event over the bed: a bird, a drip, ice, a bubble. */
@@ -2480,6 +2637,8 @@
       src.start(t); lfo.start(t);
 
       amb = { src: src, filter: f, gain: g, lfo: lfo, kind: kind, timer: 0 };
+
+      if (spec.music) jazzStart();
 
       if (spec.voice) {
         var lo = spec.every[0], hi = spec.every[1];
@@ -6066,10 +6225,41 @@
     ' /^\\ ', ' |=| ', ' /"\\ ', ' |_| ', ' /~\\ ', ' |o| ', ' /-\\ '
   ];
 
-  var CAT = [
-    ' /\\_/\\ ',
-    '( o.o )',
-    ' > ^ < '
+  /* The cat does not do one thing. It sits, it loafs, it lies flat out, it
+     turns its back on the room, it washes, and every so often it is simply
+     not there -- and when it comes back it is somewhere else, doing
+     something else, and nobody saw it move. That is the whole of it. */
+  var CAT_POSES = [
+    // sitting up, tail curled round
+    ['   /\\_/\\    ',
+     '  ( o.o )   ',
+     '   > ^ <    ',
+     '  (")_(")   '],
+    // loafed: paws folded under, eyes shut
+    ['            ',
+     '   /\\_/\\    ',
+     '  ( -.- )   ',
+     ' (________) '],
+    // flat out on its side, tail out behind
+    ['            ',
+     '            ',
+     '   /\\_/\\    ',
+     ' _( o.o )__~'],
+    // back turned, tail up
+    ['     |      ',
+     '    /\\ /\\   ',
+     '   (     )  ',
+     '    ^   ^   '],
+    // washing a back leg
+    ['      |     ',
+     '   /\\_/\\|   ',
+     '  ( o.o )   ',
+     '   >(_)<    '],
+    // asleep, curled, dreaming of something
+    ['        z   ',
+     '     z      ',
+     '   ,-.-.    ',
+     '  ( -.- )   ']
   ];
 
   /* Two things get said in this bar.
@@ -6105,6 +6295,70 @@
     { t: 'No road but this one. I walk alone.', by: 'Santōka' },
     { t: 'Even in Kyoto, hearing the cuckoo, I long for Kyoto.', by: 'Bashō' },
     { t: 'The autumn wind: for me there is no god, there is no Buddha.', by: 'Santōka' }
+  ];
+
+  /* The other half of the shelf: writers from everywhere else, on the three
+     things people actually talk about at a bar after midnight -- whether
+     anyone is really in there, whether any of this makes us happy, and what
+     part we thought we were playing. Kept short, kept attributed, and
+     weighted towards the ones long out of copyright. */
+  var BAR_WORLD = [
+    // consciousness, and whether anyone is home
+    { t: 'The mind is its own place, and in itself can make a heaven of hell.', by: 'Milton' },
+    { t: 'We are such stuff as dreams are made on.', by: 'Shakespeare' },
+    { t: 'The eye sees only what the mind is prepared to comprehend.', by: 'Bergson' },
+    { t: 'If the doors of perception were cleansed, everything would appear as it is: infinite.', by: 'Blake' },
+    { t: 'Consciousness does not appear to itself chopped up in bits.', by: 'William James' },
+    { t: 'Man is the only creature who refuses to be what he is.', by: 'Camus' },
+    { t: 'I think; therefore I am. That was all I was sure of.', by: 'Descartes' },
+    { t: 'Was I the man dreaming I was a butterfly, or the butterfly dreaming I was a man?', by: 'Zhuangzi' },
+    { t: 'The unexamined life is not worth living.', by: 'Socrates' },
+    { t: 'He who has a why to live can bear almost any how.', by: 'Nietzsche' },
+
+    // happiness, and the trouble with going after it
+    { t: 'Very little is needed to make a happy life; it is all within yourself.', by: 'Marcus Aurelius' },
+    { t: 'Wealth consists not in having great possessions, but in having few wants.', by: 'Epictetus' },
+    { t: 'The greater part of our happiness depends on our dispositions, not our circumstances.', by: 'Martha Washington' },
+    { t: 'To be without some of the things you want is an indispensable part of happiness.', by: 'Bertrand Russell' },
+    { t: 'Happiness is not an ideal of reason but of imagination.', by: 'Kant' },
+    { t: 'Most men lead lives of quiet desperation.', by: 'Thoreau' },
+    { t: 'The secret of being a bore is to tell everything.', by: 'Voltaire' },
+    { t: 'To be stupid, selfish, and have good health are three requirements for happiness.', by: 'Flaubert' },
+
+    // the parts we play
+    { t: 'All the world’s a stage, and all the men and women merely players.', by: 'Shakespeare' },
+    { t: 'We are what we pretend to be, so we must be careful what we pretend to be.', by: 'Vonnegut' },
+    { t: 'Be yourself; everyone else is already taken.', by: 'Wilde' },
+    { t: 'Man is condemned to be free.', by: 'Sartre' },
+    { t: 'It is not easy to be a saint, or even a man, but it is easy to be a hypocrite.', by: 'Chekhov' },
+    { t: 'A man is a god in ruins.', by: 'Emerson' },
+    { t: 'Do I contradict myself? Very well then, I contradict myself.', by: 'Whitman' },
+
+    // the ones Anmo asked for by name
+    { t: 'The test of a first-rate intelligence is holding two opposed ideas at once.', by: 'F. Scott Fitzgerald' },
+    { t: 'So we beat on, boats against the current, borne back ceaselessly into the past.', by: 'F. Scott Fitzgerald' },
+    { t: 'The world breaks everyone, and afterward many are strong at the broken places.', by: 'Hemingway' },
+    { t: 'The best way to find out if you can trust somebody is to trust them.', by: 'Hemingway' },
+    { t: 'All animals are equal, but some animals are more equal than others.', by: 'Orwell' },
+    { t: 'To see what is in front of one’s nose needs a constant struggle.', by: 'Orwell' },
+
+    // and a few more worth overhearing
+    { t: 'The heart has its reasons, of which reason knows nothing.', by: 'Pascal' },
+    { t: 'The only true voyage would be to see the universe through another’s eyes.', by: 'Proust' },
+    { t: 'Everything can be taken but one thing: the choice of one’s attitude.', by: 'Viktor Frankl' },
+    { t: 'A book must be the axe for the frozen sea within us.', by: 'Kafka' },
+    { t: 'Time is a river which sweeps me along, but I am the river.', by: 'Borges' },
+    { t: 'Have patience with everything unresolved, and try to love the questions themselves.', by: 'Rilke' },
+    { t: 'The world is full of magic things, patiently waiting for our senses to grow sharper.', by: 'Yeats' },
+    { t: 'One must imagine Sisyphus happy.', by: 'Camus' },
+    { t: 'A person is a fluid process, not a fixed and static entity.', by: 'Carl Rogers' },
+    { t: 'It is not that we have a short time to live, but that we waste a lot of it.', by: 'Seneca' },
+    { t: 'Knowing others is intelligence; knowing yourself is true wisdom.', by: 'Lao Tzu' },
+    { t: 'No man ever steps in the same river twice.', by: 'Heraclitus' },
+    { t: 'I would rather be ashes than dust.', by: 'Jack London' },
+    { t: 'The world is a comedy to those that think, a tragedy to those that feel.', by: 'Horace Walpole' },
+    { t: 'Nothing is at last sacred but the integrity of your own mind.', by: 'Emerson' },
+    { t: 'Not everything that is faced can be changed, but nothing can be changed until it is faced.', by: 'James Baldwin' }
   ];
 
   var BAR_FACTS = [
@@ -6252,7 +6506,13 @@
     var cat = document.getElementById('barcat');
 
     shelfrow.textContent = BOTTLES.join('');
-    cat.textContent = CAT.join('\n');
+
+    function poseCat(move) {
+      cat.textContent = CAT_POSES[Math.floor(Math.random() * CAT_POSES.length)].join('\n');
+      // Somewhere else along the bar, but only while nobody can see it go.
+      if (move) cat.style.left = (7 + Math.floor(Math.random() * 26)) + 'vw';
+    }
+    poseCat(true);
 
     /* --------------------------------------------------- the record
        A disc with one groove mark on it, and the mark goes round. That
@@ -6307,6 +6567,7 @@
        time somebody comes in, so it is never the same evening twice. */
     var deck = [];
     BAR_QUOTES.forEach(function (q) { deck.push({ kind: 'quote', q: q }); });
+    BAR_WORLD.forEach(function (q) { deck.push({ kind: 'quote', q: q }); });
     BAR_FACTS.forEach(function (f) { deck.push({ kind: 'fact', t: f }); });
     (function shuffle() {
       var i, j, t;
@@ -6347,11 +6608,20 @@
 
     sceneTimers.push(setInterval(function () { if (!document.hidden) nextLine(); }, 13000));
 
-    // The cat is there, and then it is not, and nobody sees it move.
+    // The cat is there, and then it is not, and nobody sees it move. When
+    // it comes back it has changed its mind about where and how to sit.
     sceneTimers.push(setInterval(function () {
       if (document.hidden) return;
-      cat.classList.toggle('here', Math.random() < 0.45);
+      var here = Math.random() < 0.5;
+      if (here && !cat.classList.contains('here')) poseCat(true);
+      cat.classList.toggle('here', here);
     }, 9000));
+
+    // And it shifts about even while it is there, the way a cat does.
+    sceneTimers.push(setInterval(function () {
+      if (document.hidden || !cat.classList.contains('here')) return;
+      if (Math.random() < 0.4) poseCat(false);
+    }, 21000));
 
     ambience('bar');
   }
