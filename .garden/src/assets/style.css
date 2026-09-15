@@ -2066,7 +2066,7 @@ body[data-scene="moonlight"] .item .meta {
   cursor: help;
 }
 .trophy:hover pre { color: var(--ochre); }
-@media (max-width: 899px) { #shelf { display: none; } }
+@media (max-width: 559px) { #shelf { display: none; } }
 
 /* =============================================================== TOSSING
    Over the side of the page and down the shaft. Nothing on the disk moves;
@@ -2378,7 +2378,7 @@ body[data-scene="crypt"] {
 #spade:hover { color: var(--ink-soft); }
 #spade.turning { transform: translateY(3px) rotate(-6deg); }
 #spade.through pre { color: var(--ochre); }
-@media (max-width: 899px) { #spade { display: none; } }
+@media (max-width: 559px) { #spade { display: none; } }
 
 #crypt-level {
   position: relative;
