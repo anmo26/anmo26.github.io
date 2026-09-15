@@ -543,8 +543,9 @@
     if (e.cancelable) e.preventDefault();
 
     // The bed can be scaled to fit the window, and these are screen pixels.
-    // Without dividing, the item would lag behind the pointer.
-    var k = bedScale || 1;
+    // Without dividing, the item would lag behind the pointer -- but only
+    // things actually lying on the bed are scaled. See makeDraggable.
+    var k = drag.scale || 1;
     var x = Math.max(0, drag.originX + (e.clientX - drag.startX) / k);
     var y = Math.max(0, drag.originY + (e.clientY - drag.startY) / k);
 
@@ -693,13 +694,23 @@
 
       var rect = el.getBoundingClientRect();
       var parent = offset.getBoundingClientRect();
-      var k = bedScale || 1;
+
+      /* The bed is drawn scaled to fit the window, so a thing lying ON it
+         moves in scaled pixels and its travel has to be divided down. A
+         panel does NOT lie on the bed -- it is on the body at full size --
+         and dividing its travel by the bed's scale sent it running off
+         down and to the right, away from the pointer, which is precisely
+         what dragging an opened picture used to feel like. The scale is
+         per-item now, and it is remembered so the press and every move
+         afterwards agree about it. */
+      var k = bedOf(el) ? (bedScale || 1) : 1;
 
       pending = {
         el: el,
         key: key,
         onDrop: onDrop,
         handle: handle,
+        scale: k,
         pointerId: e.pointerId,
         touch: e.pointerType !== 'mouse',
         held: e.pointerType === 'mouse',   // a mouse means it the moment it moves
@@ -5393,14 +5404,18 @@
     return out.join(' ') || 'a month';
   }
 
-  function nurseryStart() {
+  /* When it was planted, plus how far each plant has been pushed forward by
+     hand. Kept together, and kept out of "put back" -- thirty-five years of
+     a saguaro is not something anybody should lose by tidying a desk. */
+  function nurseryBook() {
     var n = get('nursery', null);
-    if (!n || typeof n.started !== 'number') {
-      n = { started: Date.now() };
-      set('nursery', n);
-    }
-    return n.started;
+    if (!n || typeof n.started !== 'number') n = { started: Date.now() };
+    if (!n.push || typeof n.push !== 'object') n.push = {};
+    set('nursery', n);
+    return n;
   }
+
+  var PUSH_MS = 12 * 3600 * 1000;      // half a day, per press
 
   /**
    * Where a plant is today: how grown it looks, and what to say about it.
@@ -5410,8 +5425,8 @@
    * -- so the pepper really is empty every winter and the garlic really is
    * out of the ground from July until the frost.
    */
-  function plantState(spec, started, now) {
-    var age = now - started;
+  function plantState(spec, started, now, push) {
+    var age = now - started + (push || 0);
 
     if (!spec.cycle) {
       var span = spec.days * DAY_MS;
@@ -5450,7 +5465,10 @@
    */
   function mountNursery(host) {
     if (!host) return;
-    var started = nurseryStart();
+    var book = nurseryBook();
+    var started = book.started;
+
+    function pushOf(key) { return book.push[key] || 0; }
 
     var wrap = document.createElement('div');
     wrap.className = 'nursery';
@@ -5469,13 +5487,16 @@
       beds.forEach(function (b) { b.el.classList.remove('open'); });
     }
 
-    function show(b) {
-      if (open === b.spec.key) { shut(); return; }
+    function show(b, again) {
+      // Pressing the same plant twice closes it -- unless this is a redraw,
+      // which is what `again` means.
+      if (open === b.spec.key && !again) { shut(); return; }
       open = b.spec.key;
       beds.forEach(function (x) { x.el.classList.toggle('open', x === b); });
 
-      var st = plantState(b.spec, started, Date.now());
-      var age = spanWords(Date.now() - started);
+      var st = plantState(b.spec, started, Date.now(), pushOf(b.spec.key));
+      var age = spanWords(Date.now() - started + pushOf(b.spec.key));
+      var pushed = pushOf(b.spec.key);
       card.className = 'plant-card p-' + b.spec.key;
       card.innerHTML =
         '<button class="plant-shut" type="button" aria-label="close">&times;</button>' +
@@ -5486,31 +5507,54 @@
         '<p class="card-age">' +
           (b.spec.cycle ? 'season ' + st.round + ' in this glasshouse'
                         : 'in the ground ' + age) +
-          '  ·  ' + st.say + '</p>';
+          '  ·  ' + st.say +
+          (pushed ? '  ·  hurried along by ' + spanWords(pushed) : '') + '</p>';
       card.hidden = false;
       card.querySelector('.plant-shut').addEventListener('click', shut);
+      if (again) return;
       if (card.scrollIntoView) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       play('tick');
     }
 
+    /* A plant is not a button. It holds two: the plant itself, which tells
+       you about itself, and a small one underneath that hurries it along
+       -- and a button inside a button is not a thing a browser will build. */
     var beds = NURSERY.map(function (spec) {
-      var bed = document.createElement('button');
-      bed.type = 'button';
+      var bed = document.createElement('div');
       bed.className = 'plant p-' + spec.key;
       bed.innerHTML =
-        '<div class="plant-pot">' +
-          '<pre class="plant-art" role="img" aria-label="' + spec.name + '"></pre>' +
-        '</div>' +
-        '<span class="plant-name">' + spec.name + '</span>' +
-        '<span class="plant-latin">' + spec.latin + '</span>' +
+        '<button class="plant-face" type="button">' +
+          '<span class="plant-pot">' +
+            '<pre class="plant-art" role="img" aria-label="' + spec.name + '"></pre>' +
+          '</span>' +
+          '<span class="plant-name">' + spec.name + '</span>' +
+          '<span class="plant-latin">' + spec.latin + '</span>' +
+        '</button>' +
         '<span class="plant-bar"><i></i></span>' +
-        '<span class="plant-when"></span>';
+        '<span class="plant-when"></span>' +
+        '<button class="plant-push" type="button">+12 hours</button>';
       wrap.appendChild(bed);
+
       var b = { spec: spec, el: bed,
                 art: bed.querySelector('.plant-art'),
                 fill: bed.querySelector('.plant-bar i'),
                 when: bed.querySelector('.plant-when') };
-      bed.addEventListener('click', function () { show(b); });
+
+      bed.querySelector('.plant-face').addEventListener('click', function () { show(b); });
+
+      /* Half a day at a time, for this plant only. It is the real clock
+         that is being wound on, so a pepper feels it immediately and a
+         saguaro barely notices -- which is exactly right. */
+      bed.querySelector('.plant-push').addEventListener('click', function () {
+        book.push[spec.key] = pushOf(spec.key) + PUSH_MS;
+        set('nursery', book);
+        bed.classList.add('hurried');
+        setTimeout(function () { bed.classList.remove('hurried'); }, 420);
+        play('rustle');
+        paint();
+        if (open === spec.key) show(b, true);      // redraw the open card
+      });
+
       return b;
     });
 
@@ -5518,7 +5562,7 @@
       var now = Date.now();
       var anyBloom = false;
       beds.forEach(function (b) {
-        var st = plantState(b.spec, started, now);
+        var st = plantState(b.spec, started, now, pushOf(b.spec.key));
         // The bar and the words stay honest; only the drawing is bent, so
         // that a seed is a visible seedling inside a month instead of being
         // a full stop for its first seventy days.

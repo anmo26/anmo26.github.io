@@ -2107,17 +2107,14 @@ body[data-scene="moonlight"] .item .meta {
   max-width: 62rem;
 }
 
-/* Each plant is a button, so it has to be told not to look like one. */
+/* A plant holds two buttons -- itself, and the one that hurries it along
+   -- so the plant is a plain box and the buttons inside it are told not to
+   look like buttons. */
 .plant {
-  display: block;
   width: 8.2rem;
   padding: .3rem .2rem .45rem;
   border: 1px solid transparent;
-  background: none;
   text-align: center;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
   transition: border-color .2s ease, background .2s ease, transform .2s ease;
 }
 .plant:hover { border-color: var(--rule-soft); background: rgba(255, 255, 255, .22); }
@@ -2126,7 +2123,47 @@ body[data-scene="moonlight"] .item .meta {
   background: rgba(255, 255, 255, .42);
   transform: translateY(-2px);
 }
-.plant:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+.plant.hurried .plant-art { animation: hurry .4s ease-out; }
+@keyframes hurry {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+.plant-face {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.plant-face:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+
+/* Half a day, for this plant only. */
+.plant-push {
+  display: block;
+  margin: .4rem auto 0;
+  padding: .16rem .45rem;
+  border: 1px solid var(--rule-soft);
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: .52rem;
+  letter-spacing: .1em;
+  cursor: pointer;
+  opacity: .55;
+  transition: opacity .18s ease, border-color .18s ease, color .18s ease;
+}
+.plant-push:hover {
+  opacity: 1;
+  color: var(--ochre);
+  border-color: var(--ochre);
+}
+.plant-push:active { transform: translateY(1px); }
 
 /* The box the plant stands in. It is the flex container and the <pre> is
    not: a preformatted block told to be a flex container stops being a
