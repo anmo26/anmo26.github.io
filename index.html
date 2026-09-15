@@ -12,7 +12,7 @@
   <meta property="og:image" content="0N7A2311.JPG">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="garden-assets/style.css?v=872f9dd3">
+  <link rel="stylesheet" href="garden-assets/style.css?v=bfa10522">
   <link rel="stylesheet" href="garden-assets/ipod.css?v=d6b7d939">
   <style id="page-style">
     @media (min-width: 560px) {
@@ -60,10 +60,20 @@
 
 <body>
   <div id="corner">
-    <div id="cactus-shell" title="click to water">
-      <pre id="cactus" role="img" aria-label="a prickly pear cactus"></pre>
-      <div id="cactus-bar" aria-hidden="true"><i id="cactus-fill"></i></div>
-      <p id="cactus-say">water me</p>
+    <div id="plants">
+      <div id="still-shell" title="a pot still, running">
+        <pre id="still" role="img" aria-label="a pot still"></pre>
+        <div id="still-bar" aria-hidden="true"><i id="still-fill"></i></div>
+        <p id="still-say">distilling</p>
+      </div>
+      <div id="cactus-shell" title="click to water">
+        <div class="cactus-row">
+          <pre id="cactus" role="img" aria-label="a prickly pear cactus"></pre>
+          <pre id="bucket" hidden></pre>
+        </div>
+        <div id="cactus-bar" aria-hidden="true"><i id="cactus-fill"></i></div>
+        <p id="cactus-say">water me</p>
+      </div>
     </div>
     <div id="clock-shell" title="click to change format">
       <pre id="clock"></pre>
@@ -131,11 +141,8 @@
 
     <div class="plantbed freeform">
       <div class="item kind-text" id="p0" data-key=".garden.log">
-        <h3><a href=".garden.log">.garden.log</a> <span class="meta">(29.9kB)</span></h3>
-        <pre>[01:19:08] pushing...
-[01:19:12] published — live in ~1 min at https://anmo26.github.io
-[01:23:01] regrew 1 of 13 pages
-[01:23:03] pushing...
+        <h3><a href=".garden.log">.garden.log</a> <span class="meta">(30kB)</span></h3>
+        <pre>[01:23:03] pushing...
 [01:23:06] published — live in ~1 min at https://anmo26.github.io
 [01:23:09] regrew 1 of 13 pages
 [01:23:09] pushing...
@@ -151,7 +158,10 @@
 [01:46:25] published — live in ~1 min at https://anmo26.github.io
 [01:47:02] regrew 1 of 16 pages
 [01:47:02] pushing...
-[01:47:05] published — live in ~1 min at https://anmo26.github.io</pre>
+[01:47:05] published — live in ~1 min at https://anmo26.github.io
+[01:48:04] regrew 1 of 16 pages
+[01:48:04] pushing...
+[01:48:07] published — live in ~1 min at https://anmo26.github.io</pre>
       </div>
       <div class="item kind-image" id="p1" data-key="0N7A2311.JPG">
         <h3><a href="0N7A2311.JPG">0N7A2311.JPG</a> <span class="meta">(7.93MB)</span></h3>
@@ -214,11 +224,11 @@
         <h3><a href="thoughts/">thoughts/</a> <span class="meta">(2 items, 212B)</span></h3>
       </div>
       <div class="item kind-markdown kind-todo" id="p16" data-key="todo.md">
-        <h3><a href="todo.md">todo.md</a> <span class="meta">(483B)</span></h3>
+        <h3><a href="todo.md">todo.md</a> <span class="meta">(584B)</span></h3>
         <div class="md"><h2>recently</h2>
-<ul><li>planted a prickly pear by the clock — click it to water, it grows a little every day</li><li>hid the library: twenty fast clicks on the clock to find the door</li><li>pictures now show the corner you pull to resize, and snap back to shape when you let go</li><li>the music player opens on the track list instead of the video</li><li>iphone: pinch to zoom, hold an icon to drag, nothing overlaps</li></ul>
+<ul><li>a man on a pogo stick lives here now. he hops to your cursor and climbs onto folders</li><li>the prickly pear fruits. pick the tunas into the bucket and THE GARDEN opens</li><li>a pot still runs in the corner whether you are watching or not. when it finishes, THE BAR opens</li><li>sound: the cactus rustles when watered, icons tick when you set them down</li><li>three ways in now — twenty clicks on the clock, a word typed on the keyboard, and after dark</li></ul>
 <h2>next</h2>
-<ul><li>edit this file — it's a starter list, drag it wherever</li><li>pick what's actually next</li></ul></div>
+<ul><li>fill THE GARDEN with the real plant log</li><li>fill THE BAR with bars, bottles and recipes</li><li>edit this file — drag it wherever</li></ul></div>
       </div>
       <div class="item kind-directory as-icon" id="p17" data-key="writings/">
         <a class="icon" href="writings/" tabindex="-1" aria-hidden="true"><img src="garden-assets/icons/writings.png" alt="" width="72" height="72"></a>
@@ -236,7 +246,7 @@
   </nav>
 
   <script>window.GARDEN_CONFIG = {"siteName":"anmo.garden","guestbook":{"enabled":false,"mode":"local","url":null}};</script>
-  <script src="garden-assets/app.js?v=2653f4d1"></script>
+  <script src="garden-assets/app.js?v=b360935d"></script>
   <script>window.GARDEN_MUSIC = [{"name":"music","file":"IPOD/01 music.txt","src":"youtube","kind":"playlist","id":"PLXWFWrURanY0","embed":"https://www.youtube.com/embed/videoseries?list=PLXWFWrURanY0","link":"https://www.youtube.com/playlist?list=PLXWFWrURanY0","cover":null,"note":""},{"name":"Music","file":"IPOD/02 Music.txt","src":"spotify","kind":"playlist","id":"3b0KED083axyu4Gvnzq1iv","embed":"https://open.spotify.com/embed/playlist/3b0KED083axyu4Gvnzq1iv?utm_source=generator","link":"https://open.spotify.com/playlist/3b0KED083axyu4Gvnzq1iv","cover":null,"note":""},{"name":"spotify","file":"IPOD/02 spotify.txt","src":"spotify","kind":"playlist","id":"7lVqHImUCZhbtj1modlNff","embed":"https://open.spotify.com/embed/playlist/7lVqHImUCZhbtj1modlNff?utm_source=generator","link":"https://open.spotify.com/playlist/7lVqHImUCZhbtj1modlNff","cover":null,"note":""}];</script>
   <script src="garden-assets/ipod.js?v=57d3dfde"></script>
 </body>

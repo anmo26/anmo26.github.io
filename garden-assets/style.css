@@ -745,7 +745,7 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
    on the right, and the ticker ruling a line under both of them. Below that
    line the page is the folder. Centring the masthead used to leave a column
    of empty paper down each side and push the folder off the first screen. */
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   main { padding-top: 2rem; }
 
   .masthead {
@@ -756,7 +756,7 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
        the window rather than a fixed measure: the corner is mostly the
        clock, the clock is a character field, and on a narrow laptop
        reserving its full width in ems would leave the title nowhere to go. */
-    padding-right: min(40rem, 56vw);
+    padding-right: min(47rem, 62vw);
     /* and its height, so the ticker rules a line beneath it, not through it */
     min-height: 10.5rem;
   }
@@ -767,7 +767,7 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
   .masthead .rule { display: none; }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1099px) {
   /* Stacked, not side by side. The clock's character field is already as
      wide as a narrow window will take, so a row would push the plant clean
      off the edge of the screen -- which is exactly what it did. */
@@ -1115,7 +1115,10 @@ body.theme-pocari {
    be the kind of thing you can tell a friend about in one sentence. */
 
 .item[data-secret] { display: none; }
-body.secret-open .item[data-secret] {
+body.secret-library .item[data-secret="library"],
+body.secret-garden  .item[data-secret="garden"],
+body.secret-bar     .item[data-secret="bar"],
+body.secret-night   .item[data-secret="night"] {
   display: block;
   animation: secret-in .7s ease both;
 }
@@ -1184,8 +1187,9 @@ body.secret-open .item[data-secret] {
   #cactus, #cactus-fill { transition: none; }
   #cactus-shell.drinking #cactus,
   #cactus-shell.nope #cactus,
+  #cactus-shell.ripe .fr.pick,
   #clock-shell.rattling #clock { animation: none; }
-  body.secret-open .item[data-secret] { animation: none; }
+  .item[data-secret] { animation: none !important; }
 }
 
 /* ------------------------------------------------------------- read more
@@ -1249,3 +1253,140 @@ details[open] > .read-more-summary::after { font-size: .68rem; }
 .item.kind-todo .md h2:first-child { margin-top: 0; }
 .item.kind-todo .md ul { margin: 0; padding-left: 1.05rem; }
 .item.kind-todo .md li { font-size: .8rem; line-height: 1.45; margin-bottom: .15rem; }
+
+/* ---------------------------------------------------------- the corner
+   Two working things and a clock. The still and the cactus stand together
+   on the left of it; when the window is too narrow for a row, they keep
+   each other company and the clock drops beneath them. */
+
+#plants {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.2rem;
+}
+
+.cactus-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: .25rem;
+}
+
+#bucket {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0.95;
+  letter-spacing: .06em;
+  font-weight: 700;
+  cursor: default;
+}
+#bucket .po { color: var(--cactus-pot); }
+#bucket .fr { color: var(--cactus-fruit); }
+
+/* A ripe fruit is a thing you can take. It says so by moving. */
+#cactus-shell.ripe .fr.pick {
+  cursor: pointer;
+  animation: tuna-ripe 2.4s ease-in-out infinite;
+}
+#cactus-shell.ripe .fr.pick:hover { color: var(--cactus-flower); }
+@keyframes tuna-ripe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+/* --------------------------------------------------------------- still
+   A pot still that is always on. The jar in the corner of the drawing is
+   the real progress: it fills as the run goes on. */
+
+:root {
+  --still-metal: #6A655C;
+  --still-liquid: #8A5A1F;
+  --still-flame: #C4551E;
+}
+body.theme-ink {
+  --still-metal: #A49C8B;
+  --still-liquid: #C99A55;
+  --still-flame: #E0763C;
+}
+body.theme-pocari {
+  --still-metal: #4F6B86;
+  --still-liquid: #005EB8;
+  --still-flame: #2F8FD0;
+}
+
+#still-shell {
+  user-select: none;
+  text-align: center;
+  width: 6.4rem;
+}
+#still {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0.95;
+  letter-spacing: .06em;
+  font-weight: 700;
+}
+#still .me { color: var(--still-metal); }
+#still .li { color: var(--still-liquid); }
+#still .fi { color: var(--still-flame); }
+#still .dr { color: var(--still-liquid); }
+#still .fr { color: var(--cactus-fruit); }
+
+#still-bar {
+  height: 3px;
+  margin: .4rem auto 0;
+  width: 5.2rem;
+  background: var(--rule-soft);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+#still-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--still-liquid);
+  transition: width .5s linear;
+}
+#still-say {
+  margin: .3rem 0 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .04em;
+  color: var(--ink-faint);
+}
+#still-shell.done #still-say { color: var(--ochre); }
+#still-shell.done #still-fill { background: var(--cactus-fruit); }
+
+/* ---------------------------------------------------------------- pogo
+   The man on the pogo stick. He is scenery: he can never be clicked, he
+   can never be in the way, and he is never part of the layout. */
+
+#pogo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 9400;
+  pointer-events: none;
+  will-change: transform;
+}
+#pogo pre {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0.95;
+  letter-spacing: .06em;
+  font-weight: 700;
+  color: var(--ink);
+  opacity: .85;
+}
+#pogo.asleep pre { color: var(--ink-faint); opacity: .6; }
+
+@media (prefers-reduced-motion: reduce) {
+  #pogo { display: none; }
+  #still-fill { transition: none; }
+}

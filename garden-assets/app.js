@@ -600,6 +600,7 @@
       moved[d.key] = { x: x, y: y };
       set('moved', moved);
     }
+    play('tick');
     growBed(bedOf(d.el));
     fitSoon();
   }
@@ -1364,6 +1365,8 @@
     // the same switch turns it off there too.
     { id: 'fit', label: 'fit', def: true,
       apply: function () { fitSoon(); } },
+    { id: 'sound', label: 'sound', def: true,
+      apply: function (on) { soundOn = on; } },
     { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
                              if (c) c.style.display = on ? '' : 'none'; } },
@@ -1460,6 +1463,10 @@
     reset.addEventListener('click', function () {
       set('moved', {});
       set('sized', {});
+      // Putting everything back puts the library back too. It is the one
+      // door that is only ever a guest -- it closes when the tab closes,
+      // and it closes when the visitor asks for the page as it was found.
+      try { sessionStorage.removeItem(STORE + 'secret.library'); } catch (e) {}
       location.reload();
     });
     bar.appendChild(reset);
@@ -2117,56 +2124,179 @@
   }
 
 
-  /* ============================================================== SECRET
-     One folder is not drawn on the front page. The way in is the clock:
-     twenty clicks in a hurry. It is deliberately a gesture nobody arrives
-     at by accident and anybody can be told in one sentence -- and once it
-     has been found, it stays found, because making a visitor earn it twice
-     would be a chore rather than a secret. */
+  /* =============================================================== SOUND
+     Two small noises, made on the spot rather than downloaded: a rustle
+     when the cactus is watered and a tick when something is set down.
+     Nothing is fetched, nothing is stored, and the taskbar can turn it off.
+     A browser will not let a page make a sound until the visitor has done
+     something, which is exactly when these fire anyway. */
+
+  var soundOn = get('toggle.sound', true);
+  var actx = null, noiseBuf = null;
+
+  function audio() {
+    if (!soundOn) return null;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    if (!actx) { try { actx = new C(); } catch (e) { return null; } }
+    if (actx.state === 'suspended') { try { actx.resume(); } catch (e) {} }
+    if (!noiseBuf) {
+      var n = Math.floor(actx.sampleRate * 0.5);
+      noiseBuf = actx.createBuffer(1, n, actx.sampleRate);
+      var d = noiseBuf.getChannelData(0);
+      for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return actx;
+  }
+
+  function play(kind) {
+    var ctx = audio();
+    if (!ctx) return;
+    try {
+      var t = ctx.currentTime;
+      var src = ctx.createBufferSource();
+      src.buffer = noiseBuf;
+      var f = ctx.createBiquadFilter();
+      var g = ctx.createGain();
+      src.connect(f); f.connect(g); g.connect(ctx.destination);
+
+      if (kind === 'rustle') {
+        // a handful of dry leaves: wide noise, soft in, soft out
+        f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.6;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.085, t + 0.06);
+        g.gain.exponentialRampToValueAtTime(0.0004, t + 0.44);
+        src.start(t); src.stop(t + 0.46);
+      } else if (kind === 'pluck') {
+        f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 3;
+        g.gain.setValueAtTime(0.12, t);
+        g.gain.exponentialRampToValueAtTime(0.0006, t + 0.13);
+        src.start(t); src.stop(t + 0.15);
+      } else {
+        // something set down on a desk
+        f.type = 'bandpass'; f.frequency.value = 1500; f.Q.value = 1.1;
+        g.gain.setValueAtTime(0.11, t);
+        g.gain.exponentialRampToValueAtTime(0.0006, t + 0.05);
+        src.start(t); src.stop(t + 0.06);
+      }
+    } catch (e) { /* no audio on this device; the site is not about sound */ }
+  }
+
+  /* ============================================================== SECRETS
+     Some folders are not drawn on the page that holds them. Each names its
+     own key in a secret.txt (see grow.js), and each key is earned a
+     different way: twenty clicks on the clock, the last tuna picked off the
+     cactus, a still that has finished its run, or simply the hour.
+
+     How long a key lasts is part of the secret. The library is a guest --
+     it is gone when the tab closes or when everything is put back. The two
+     that are earned are kept. Night is not stored at all; it is asked of
+     the clock. */
+
+  var SECRET_KEEP = {
+    library: 'session',
+    garden:  'forever',
+    bar:     'forever',
+    night:   'hour'
+  };
+
+  function sessionGet(key, fallback) {
+    try {
+      var v = sessionStorage.getItem(STORE + key);
+      return v === null ? fallback : JSON.parse(v);
+    } catch (e) { return fallback; }
+  }
+  function sessionSet(key, value) {
+    try { sessionStorage.setItem(STORE + key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  function isNight() {
+    if (sessionGet('secret.night', false)) return true;   // the typed code
+    var h = new Date().getHours();
+    return h >= 21 || h < 5;
+  }
+
+  function secretOpen(key) {
+    if (SECRET_KEEP[key] === 'hour') return isNight();
+    if (SECRET_KEEP[key] === 'session') return sessionGet('secret.' + key, false);
+    return get('secret.' + key, false);
+  }
+
+  function applySecrets() {
+    var key;
+    for (key in SECRET_KEEP) {
+      if (!SECRET_KEEP.hasOwnProperty(key)) continue;
+      document.body.classList.toggle('secret-' + key, secretOpen(key));
+    }
+  }
+
+  function toast(text) {
+    var el = document.createElement('div');
+    el.className = 'secret-toast';
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(function () { el.classList.add('going'); }, 3600);
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 4600);
+  }
+
+  function openSecret(key, announce) {
+    if (SECRET_KEEP[key] === 'session') sessionSet('secret.' + key, true);
+    else if (SECRET_KEEP[key] !== 'hour') set('secret.' + key, true);
+    applySecrets();
+    if (!announce) return;
+
+    var item = document.querySelector('.item[data-secret="' + key + '"]');
+    var name = item ? (item.dataset.key || '').replace(/\/$/, '') : key;
+    toast(name + ' is open');
+    play('pluck');
+    if (item && item.scrollIntoView) item.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
 
   var SECRET_CLICKS = 20;
   var SECRET_WINDOW_MS = 9000;
+  var TYPED = 'anmoli';
 
-  function openSecret(announce) {
-    document.body.classList.add('secret-open');
-    set('secret.open', true);
-    if (!announce) return;
+  function mountSecrets() {
+    applySecrets();
+    // Night comes round on its own while somebody is still reading.
+    setInterval(applySecrets, 60000);
 
-    var toast = document.createElement('div');
-    toast.className = 'secret-toast';
-    toast.textContent = 'the library is open';
-    document.body.appendChild(toast);
-    setTimeout(function () { toast.classList.add('going'); }, 3600);
-    setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 4600);
-
-    var lib = document.querySelector('.item[data-secret]');
-    if (lib && lib.scrollIntoView) lib.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }
-
-  function mountSecret() {
-    if (get('secret.open', false)) openSecret(false);
-
+    /* --- the clock: twenty clicks in a hurry opens the library --- */
     var shell = document.getElementById('clock-shell');
-    if (!shell) return;
     var hits = [];
-
-    shell.addEventListener('click', function () {
-      if (document.body.classList.contains('secret-open')) return;
-
+    if (shell) shell.addEventListener('click', function () {
+      if (secretOpen('library')) return;
       var now = Date.now();
       hits.push(now);
       // Only a spam counts. A click a minute all afternoon is somebody
       // changing the time format, which is what this control is for.
       while (hits.length && now - hits[0] > SECRET_WINDOW_MS) hits.shift();
 
-      if (hits.length >= SECRET_CLICKS) { hits = []; openSecret(true); return; }
-
-      // Past halfway the clock starts to rattle, so that somebody who is
-      // already doing the right thing is told to keep going.
+      if (hits.length >= SECRET_CLICKS) { hits = []; openSecret('library', true); return; }
       if (hits.length >= SECRET_CLICKS / 2) {
         shell.classList.add('rattling');
         setTimeout(function () { shell.classList.remove('rattling'); }, 220);
       }
+    });
+
+    /* --- the keyboard: type the name and the moon comes out --- */
+    var typed = '';
+    document.addEventListener('keydown', function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      var tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+      if (!/^[a-z]$/i.test(e.key)) return;
+
+      typed = (typed + e.key.toLowerCase()).slice(-TYPED.length);
+      if (typed !== TYPED) return;
+      typed = '';
+      // It answers even when it is already dark. A code that types back
+      // nothing is indistinguishable from a code that does not work.
+      var already = isNight();
+      sessionSet('secret.night', true);
+      applySecrets();
+      toast(already ? 'it is already night' : 'the moon is out');
+      play('rustle');
     });
   }
 
@@ -2174,7 +2304,9 @@
      A prickly pear that belongs to the visitor, not to the site: it lives
      in their own browser, and everybody's is at a different height. It
      cannot die. Water is the only input, days are the only clock, and the
-     end of it is fruit.
+     end of it is fruit -- which can then be picked into the bucket beside
+     the pot. The fruit of an opuntia is a tuna; five of them in the bucket
+     opens the garden log.
      ------------------------------------------------------------------- */
 
   // Nine rows, eleven columns, every stage -- so the drawing grows without
@@ -2196,15 +2328,25 @@
     ['   6 6 6   ', '    ooo    ', '  6onaoo6  ', ' ooooooooo ', '   olioo   ']
   ];
 
-  // What each stage is called, and how many waterings it takes to get there.
+  var TUNAS = 5;          // how many 6s stand in the fruiting drawing
+  var RIPE = CROWN.length - 1;
+
+  // The bucket: seven columns, bottom-aligned with the pot. Empty until
+  // something is picked into it. Slots fill along the floor first, then
+  // stack -- which is how fruit sits in a bucket.
+  var BUCKET = ['       ', ' \\   / ', ' |   | ', ' \\___/ '];
+  var BUCKET_SLOTS = [[2, 2], [2, 3], [2, 4], [1, 2], [1, 4]];
+
   var STAGE_NAME = ['a pot', 'a sprout', 'a pad', 'growing', 'arms out', 'in flower', 'fruiting'];
   var STAGE_NEED = [0, 1, 2, 4, 6, 9, 12];
 
   var DROPS_A_DAY = 6;   // past this it is a flood, not a garden
 
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
   function today() {
     var d = new Date();
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
   }
 
   function stageOf(drops) {
@@ -2218,36 +2360,55 @@
   function mountCactus() {
     var host = document.getElementById('cactus');
     var shell = document.getElementById('cactus-shell');
+    var pail = document.getElementById('bucket');
     var fill = document.getElementById('cactus-fill');
     var say = document.getElementById('cactus-say');
     if (!host || !shell) return;
 
     var plant = get('cactus', null);
     if (!plant || typeof plant.drops !== 'number') plant = { drops: 0, day: '', today: 0, last: 0 };
-    if (plant.day !== today()) { plant.day = today(); plant.today = 0; }
+    if (!plant.picked || plant.picked.length !== TUNAS) plant.picked = [0, 0, 0, 0, 0];
+    // Fruit comes back. Whatever was taken yesterday is on the plant again
+    // this morning -- the garden it opened stays open regardless.
+    if (plant.day !== today()) { plant.day = today(); plant.today = 0; plant.picked = [0, 0, 0, 0, 0]; }
 
     var thisVisit = true;      // one drink per page; see cactusVisit, below
     var sayTimer = null;
 
     function canWater() { return thisVisit && plant.today < DROPS_A_DAY; }
+    function inBucket() {
+      var n = 0, i;
+      for (i = 0; i < TUNAS; i++) if (plant.picked[i]) n++;
+      return n;
+    }
 
     /** Colour comes from where a character sits, not from what it is: the
         pot is the pot whatever letter draws it. Fruit and flowers are the
         exception -- those are themselves wherever they appear. */
     function paint() {
       var stage = stageOf(plant.drops);
+      var ripe = stage === RIPE;
       var rows = CROWN[stage].concat(POT);
       var dry = plant.today === 0;
       var html = '';
-      var r, c, ch, cls;
+      var r, c, ch, cls, fruit = 0;
 
       for (r = 0; r < rows.length; r++) {
         var row = rows[r] || '           ';
         for (c = 0; c < row.length; c++) {
           ch = row.charAt(c);
           if (ch === ' ') { html += ' '; continue; }
+
+          if (ch === '6') {
+            // A tuna. Picked ones leave a gap on the plant and turn up in
+            // the bucket instead.
+            var idx = fruit++;
+            if (ripe && plant.picked[idx]) { html += ' '; continue; }
+            html += '<span class="fr' + (ripe ? ' pick' : '') +
+                    '" data-tuna="' + idx + '" title="pick it">6</span>';
+            continue;
+          }
           if (ch === '@' || ch === '!') cls = 'fl';
-          else if (ch === '6' || ch === '$') cls = 'fr';
           else if (r >= CROWN[stage].length) cls = 'po';
           else cls = dry ? 'pa dry' : 'pa';
           html += '<span class="' + cls + '">' + ch + '</span>';
@@ -2258,20 +2419,48 @@
       host.setAttribute('aria-label',
         'a prickly pear cactus, ' + STAGE_NAME[stage] + (dry ? ', thirsty' : ', watered'));
 
+      paintBucket(ripe || inBucket() > 0);
+
       if (fill) {
         var at = STAGE_NEED[stage];
         var next = stage + 1 < STAGE_NEED.length ? STAGE_NEED[stage + 1] : at;
         var pc = next > at ? (plant.drops - at) / (next - at) : 1;
+        var left = next - plant.drops;
         fill.style.width = Math.round(Math.max(0, Math.min(1, pc)) * 100) + '%';
         fill.parentNode.setAttribute('title',
           stage + 1 < STAGE_NEED.length
-            ? STAGE_NAME[stage] + ' — ' + (STAGE_NEED[stage + 1] - plant.drops) +
-              (STAGE_NEED[stage + 1] - plant.drops === 1 ? ' more watering to go' : ' more waterings to go')
+            ? STAGE_NAME[stage] + ' — ' + left + (left === 1 ? ' more watering to go' : ' more waterings to go')
             : 'fruiting. it does not get better than this.');
       }
 
       shell.classList.toggle('thirsty', canWater());
       shell.classList.toggle('dry', dry);
+      shell.classList.toggle('ripe', ripe && inBucket() < TUNAS);
+    }
+
+    function paintBucket(show) {
+      if (!pail) return;
+      pail.hidden = !show;
+      if (!show) return;
+
+      var grid = BUCKET.map(function (s) { return s.split(''); });
+      var i, slot, n = 0;
+      for (i = 0; i < TUNAS; i++) {
+        if (!plant.picked[i]) continue;
+        slot = BUCKET_SLOTS[n++];
+        grid[slot[0]][slot[1]] = '6';
+      }
+      var html = '', r, c, ch;
+      for (r = 0; r < grid.length; r++) {
+        for (c = 0; c < grid[r].length; c++) {
+          ch = grid[r][c];
+          if (ch === ' ') { html += ' '; continue; }
+          html += '<span class="' + (ch === '6' ? 'fr' : 'po') + '">' + ch + '</span>';
+        }
+        html += r === grid.length - 1 ? '' : '\n';
+      }
+      pail.innerHTML = html;
+      pail.setAttribute('title', inBucket() + ' of ' + TUNAS + ' tunas picked');
     }
 
     function speak(text, revert) {
@@ -2282,8 +2471,26 @@
     }
 
     function rest() {
+      if (stageOf(plant.drops) === RIPE && inBucket() < TUNAS) { speak('pick the tuna'); return; }
       if (canWater()) { speak('water me'); return; }
       speak(plant.today >= DROPS_A_DAY ? 'soaked for today' : 'thank you');
+    }
+
+    function pick(idx) {
+      if (plant.picked[idx]) return;
+      plant.picked[idx] = 1;
+      set('cactus', plant);
+      paint();
+      play('pluck');
+
+      if (inBucket() >= TUNAS) {
+        speak('bucket full', null);
+        openSecret('garden', true);
+        setTimeout(rest, 3600);
+      } else {
+        speak('in the bucket', null);
+        setTimeout(rest, 2200);
+      }
     }
 
     function water() {
@@ -2302,17 +2509,24 @@
       thisVisit = false;
       set('cactus', plant);
       paint();
+      play('rustle');
 
       shell.classList.add('drinking');
       setTimeout(function () { shell.classList.remove('drinking'); }, 700);
 
       var after = stageOf(plant.drops);
-      if (after > before) speak(after === STAGE_NEED.length - 1 ? 'it fruited!' : 'it grew!', null);
+      if (after > before) speak(after === RIPE ? 'it fruited!' : 'it grew!', null);
       else speak('thank you', null);
       setTimeout(rest, 3200);
     }
 
-    shell.addEventListener('click', water);
+    shell.addEventListener('click', function (e) {
+      // A ripe fruit is a thing in its own right: clicking one picks it
+      // rather than watering the plant it is hanging on.
+      var t = e.target.closest ? e.target.closest('[data-tuna]') : null;
+      if (t && stageOf(plant.drops) === RIPE) { pick(+t.getAttribute('data-tuna')); return; }
+      water();
+    });
     shell.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); water(); }
     });
@@ -2322,7 +2536,10 @@
     // Every page walked into is a fresh chance to water -- the site swaps
     // <main> rather than reloading, so nothing else would ever reset this.
     cactusVisit = function () {
-      if (plant.day !== today()) { plant.day = today(); plant.today = 0; set('cactus', plant); }
+      if (plant.day !== today()) {
+        plant.day = today(); plant.today = 0; plant.picked = [0, 0, 0, 0, 0];
+        set('cactus', plant);
+      }
       thisVisit = true;
       paint();
       rest();
@@ -2332,10 +2549,302 @@
     rest();
   }
 
+  /* =============================================================== STILL
+     A pot still that is always running, whether anybody is watching or
+     not. It measures its run against the wall clock rather than against
+     time spent on the page, so it carries on while the tab is shut and is
+     waiting, finished, when the visitor comes back. What it fills is the
+     jar in the corner of the drawing; when the jar is full, the bar opens.
+     ------------------------------------------------------------------- */
+
+  var STILL_RUN_MS = 12 * 60 * 1000;
+
+  var STILL = [
+    '   _____     ',
+    '  /     \\___ ',
+    ' | a n m |  \\',
+    ' |  ~~~  |  |',
+    '  \\_____/   |',
+    '   |||    _|_',
+    '  =====   |_|'
+  ];
+
+  var BOIL  = ['~~~', '-~-', '~-~', '-~~'];
+  var FLAME = ['|||', ')|(', '(|)', '|)|'];
+  var JAR   = [' ', '.', ':', '='];
+
+  function mountStill() {
+    var host = document.getElementById('still');
+    var shell = document.getElementById('still-shell');
+    var fill = document.getElementById('still-fill');
+    var say = document.getElementById('still-say');
+    if (!host || !shell) return;
+
+    var run = get('still', null);
+    if (!run || typeof run.start !== 'number') run = { start: Date.now() };
+    set('still', run);
+
+    var frame = 0;
+
+    function progress() {
+      return Math.max(0, Math.min(1, (Date.now() - run.start) / STILL_RUN_MS));
+    }
+
+    function paint() {
+      var p = progress();
+      var done = p >= 1;
+      var rows = STILL.slice();
+
+      if (!done) {
+        rows[3] = rows[3].replace('~~~', BOIL[frame % BOIL.length]);
+        rows[5] = rows[5].replace('|||', FLAME[frame % FLAME.length]);
+        // a drop making its way down the condenser, on the right-hand pipe
+        var at = frame % 3;
+        rows[2 + at] = rows[2 + at].substring(0, 12) + 'o';
+      }
+
+      // the jar fills as the run goes on -- this IS the progress bar, the
+      // one below it is only there to be readable
+      var level = done ? 3 : Math.floor(p * 3);
+      rows[6] = rows[6].substring(0, 10) + '|' + JAR[level] + '|';
+
+      var html = '', r, c, ch, cls;
+      for (r = 0; r < rows.length; r++) {
+        for (c = 0; c < rows[r].length; c++) {
+          ch = rows[r].charAt(c);
+          if (ch === ' ') { html += ' '; continue; }
+          if (ch === '~' || ch === '-') cls = 'li';
+          else if (ch === ')' || ch === '(' || (r === 5 && c < 7 && ch === '|')) cls = 'fi';
+          else if (ch === 'o') cls = 'dr';
+          else if (r === 6 && c > 9) cls = done ? 'fr' : 'li';
+          else cls = 'me';
+          html += '<span class="' + cls + '">' + ch + '</span>';
+        }
+        html += r === rows.length - 1 ? '' : '\n';
+      }
+      host.innerHTML = html;
+
+      if (fill) fill.style.width = Math.round(p * 100) + '%';
+      shell.classList.toggle('done', done);
+      if (say) say.textContent = done ? 'ready' : 'distilling';
+      host.setAttribute('aria-label', done ? 'a pot still, finished' : 'a pot still, running');
+      shell.setAttribute('title', done
+        ? 'the run is finished'
+        : 'running — ' + Math.round(p * 100) + '% through');
+
+      if (done && !secretOpen('bar')) openSecret('bar', true);
+      return done;
+    }
+
+    paint();
+    // Only while it is worth animating: a finished still has nothing left
+    // to show, and a hidden tab should not be burning a timer.
+    var timer = setInterval(function () {
+      if (document.hidden) return;
+      frame++;
+      if (paint()) clearInterval(timer);
+    }, 520);
+  }
+
+  /* ================================================================ POGO
+     A man on a pogo stick who goes where you point. He is drawn in the
+     same characters as everything else, he is never clickable (the page
+     underneath has to keep working), and he lands on things: the top edge
+     of every folder, photograph and note on the page is a ledge he can
+     bounce up onto. Stop moving and he runs down and falls asleep.
+
+     Everything here is in PAGE coordinates -- the arrangement is drawn
+     inside a scaled box, and taking the ledges from what is actually on
+     screen means none of that scaling has to be thought about twice.
+     ------------------------------------------------------------------- */
+
+  var POGO_UP = [' \\o/ ', '  |  ', ' [T] ', '  |  ', '  v  '];
+  var POGO_DOWN = ['     ', '  o  ', ' /|\\ ', ' [T] ', '  v  '];
+  var POGO_SLEEP = ['  z  ', ' z   ', '  o  ', ' /|\\ ', ' [=] '];
+
+  var GRAVITY = 2100;        // px per second per second
+  var HOP = 560;             // the ordinary bounce
+  var HOP_MAX = 1250;        // the one that gets him up onto something
+  var RUN = 300;             // top speed along the ground
+  var SLEEP_AFTER = 7000;    // still pointer, still man
+
+  function mountPogo() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // A phone has no cursor to follow, a screen he would fill a quarter of,
+    // and a battery. He is a desk companion.
+    if (!wide()) return;
+
+    var man = document.createElement('div');
+    man.id = 'pogo';
+    man.setAttribute('aria-hidden', 'true');
+    var art = document.createElement('pre');
+    man.appendChild(art);
+    document.body.appendChild(man);
+
+    var W = 34, H = 56;                       // roughly what the sprite fills
+    var x = 80, y = 0, vx = 0, vy = 0;        // y is his feet
+    var targetX = 200, targetY = 0;
+    var lastPointed = 0;
+    var asleep = false;
+    var ledges = [];
+    var last = 0;
+    var drawn = '';
+
+    function floor() {
+      var bar = document.querySelector('.taskbar');
+      var barTop = bar ? bar.getBoundingClientRect().top + window.pageYOffset : 0;
+      return barTop || (window.pageYOffset + window.innerHeight);
+    }
+
+    /* Every visible item is a one-way ledge: he passes up through it and
+       lands on its top. Read fresh rather than cached, because the whole
+       point of this site is that the visitor moves things around. */
+    function readLedges() {
+      var out = [];
+      var nodes = document.querySelectorAll('.plantbed > .item, .win, .viewer');
+      var i, r, n;
+      for (i = 0; i < nodes.length; i++) {
+        n = nodes[i];
+        if (!n.offsetParent) continue;
+        r = n.getBoundingClientRect();
+        if (r.width < 24 || r.height < 12) continue;
+        out.push({ x1: r.left + window.pageXOffset, x2: r.right + window.pageXOffset,
+                   top: r.top + window.pageYOffset });
+      }
+      ledges = out;
+    }
+
+    function standingOn(px, py, prevY) {
+      // The floor is the taskbar, which is pinned to the window -- so where
+      // the ground is depends on where the page is scrolled to. Only the
+      // ledges between the top of the screen and that line are his: a
+      // folder further down the page than the visitor has scrolled would
+      // otherwise catch him below the taskbar and he would be gone.
+      var f = floor();
+      var ceiling = window.pageYOffset;
+      var best = null, i, l;
+
+      for (i = 0; i < ledges.length; i++) {
+        l = ledges[i];
+        if (l.top >= f - 6 || l.top < ceiling + 6) continue;
+        if (px < l.x1 - 10 || px > l.x2 + 10) continue;
+        if (prevY > l.top + 2) continue;         // came from below: pass through
+        if (py < l.top) continue;                // not down to it yet
+        if (!best || l.top < best.top) best = l; // the first one he meets
+      }
+      // And the ground itself always catches him, however fast he arrives.
+      if (py >= f && (!best || f < best.top)) best = { top: f, ground: true };
+      return best;
+    }
+
+    function sprite(name) {
+      if (drawn === name) return;
+      drawn = name;
+      var rows = name === 'sleep' ? POGO_SLEEP : name === 'down' ? POGO_DOWN : POGO_UP;
+      art.textContent = rows.join('\n');
+      man.classList.toggle('asleep', name === 'sleep');
+    }
+
+    function step(dt) {
+      var wantX = targetX;
+      var reach = wantX - x;
+
+      if (asleep) {
+        vx = 0;
+        sprite('sleep');
+      } else {
+        // He leans towards where you are pointing, and can only lean so
+        // far. Slowing down as he arrives is what lets him actually land on
+        // a folder: a folder is seventy pixels wide, and a man who is still
+        // doing three hundred pixels a second when he gets there sails
+        // straight over the top of it.
+        var near = Math.min(1, Math.abs(reach) / 140 + 0.2);
+        var want = Math.abs(reach) < 5 ? 0 :
+                   Math.max(-RUN * near, Math.min(RUN * near, reach * 3.2));
+        vx += (want - vx) * Math.min(1, dt * 14);
+      }
+
+      var prevY = y;
+      vy += GRAVITY * dt;
+      x += vx * dt;
+      y += vy * dt;
+
+      // Never off the top of the screen either: a companion who has gone
+      // somewhere you cannot see him is not company.
+      var ceil = window.pageYOffset + 46;
+      if (y < ceil) { y = ceil; if (vy < 0) vy = 0; }
+
+      // Never off the side of the paper.
+      var minX = window.pageXOffset + W / 2;
+      var maxX = window.pageXOffset + window.innerWidth - W / 2;
+      if (x < minX) { x = minX; vx = Math.abs(vx) * 0.4; }
+      if (x > maxX) { x = maxX; vx = -Math.abs(vx) * 0.4; }
+
+      if (vy > 0) {
+        var l = standingOn(x, y, prevY);
+        if (l) {
+          y = l.top;
+          if (asleep) { vy = 0; }
+          else {
+            // How hard he pushes off depends on whether what he is chasing
+            // is above him. That is the whole of "hop up onto things".
+            var climb = (y - targetY) / 170;
+            var power = HOP + Math.max(0, Math.min(1, climb)) * (HOP_MAX - HOP);
+            // Already level with what he is chasing: tick over on the spot
+            // rather than launching again off whatever he has just climbed.
+            if (y - targetY < 24) power = HOP * (Math.abs(reach) < 12 ? 0.5 : 0.75);
+            vy = -power;
+          }
+        }
+      }
+
+      // Fallen off the bottom of everything: put him back on the floor.
+      if (y > floor() + 400) { y = floor(); vy = 0; x = targetX; }
+
+      if (asleep) sprite('sleep');
+      else sprite(vy < -40 ? 'up' : 'down');
+
+      man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
+                            Math.round(y - H) + 'px,0)';
+    }
+
+    function frame(now) {
+      var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
+      last = now;
+      if (!document.hidden) {
+        if (!asleep && now - lastPointed > SLEEP_AFTER && Math.abs(x - targetX) < 40) asleep = true;
+        step(dt);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function pointAt(clientX, clientY) {
+      targetX = clientX + window.pageXOffset;
+      targetY = clientY + window.pageYOffset;
+      lastPointed = performance.now();
+      if (asleep) { asleep = false; vy = -HOP; }
+    }
+
+    document.addEventListener('mousemove', function (e) { pointAt(e.clientX, e.clientY); });
+    document.addEventListener('pointerdown', function (e) { pointAt(e.clientX, e.clientY); });
+
+    // The ledges move: items get dragged, the page scrolls, the window
+    // changes shape, a folder is walked into.
+    readLedges();
+    setInterval(readLedges, 400);
+    window.addEventListener('resize', readLedges);
+
+    y = floor();
+    targetY = y;
+    requestAnimationFrame(frame);
+  }
+
   function boot() {
     mountClock();
-    mountSecret();
+    mountSecrets();
     mountCactus();
+    mountStill();
+    mountPogo();
     mountToggles();
     mountHint();
     mountNav();

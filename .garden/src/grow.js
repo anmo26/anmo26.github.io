@@ -1241,10 +1241,20 @@ ${showMusic ? `  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamp
 
 <body>
   <div id="corner">
-    <div id="cactus-shell" title="click to water">
-      <pre id="cactus" role="img" aria-label="a prickly pear cactus"></pre>
-      <div id="cactus-bar" aria-hidden="true"><i id="cactus-fill"></i></div>
-      <p id="cactus-say">water me</p>
+    <div id="plants">
+      <div id="still-shell" title="a pot still, running">
+        <pre id="still" role="img" aria-label="a pot still"></pre>
+        <div id="still-bar" aria-hidden="true"><i id="still-fill"></i></div>
+        <p id="still-say">distilling</p>
+      </div>
+      <div id="cactus-shell" title="click to water">
+        <div class="cactus-row">
+          <pre id="cactus" role="img" aria-label="a prickly pear cactus"></pre>
+          <pre id="bucket" hidden></pre>
+        </div>
+        <div id="cactus-bar" aria-hidden="true"><i id="cactus-fill"></i></div>
+        <p id="cactus-say">water me</p>
+      </div>
     </div>
     <div id="clock-shell" title="click to change format">
       <pre id="clock"></pre>
