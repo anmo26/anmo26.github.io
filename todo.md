@@ -1,12 +1,12 @@
-# 15 september 2026
+# 15 september 2026, 14:27
 
 ## what changed
 
-- there is a jazz trio playing in the bar, generated rather than recorded
-- the bar quotes fitzgerald, hemingway, orwell and forty more on top of the japanese ones
-- the cat sits, loafs, lies flat, washes, turns its back, or is not there
-- the still stands well clear of the prickly pear now
-- a plan for the conversations folder is written up in gardeners log / plans
+- this card carries the time now, not just the day
+- the archive has a folder per day, and a file per update named by its hour
+- every past to-do has the time it went out written into it
+- the jazz trio, the six-pose cat and the wider quote shelf went out at 14:24
+- a plan for the conversations folder sits in gardeners log / plans
 
 ## you planned
 
