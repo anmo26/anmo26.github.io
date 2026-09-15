@@ -2103,7 +2103,17 @@ body[data-scene="moonlight"] .item .meta {
   max-width: 54rem;
 }
 .plant { width: 6.2rem; text-align: center; }
+/* The box the plant stands in. It is the flex container and the <pre> is
+   not: a preformatted block told to be a flex container stops being a
+   block of lines and lays its text out as one long row. */
+.plant-pot {
+  min-height: 102px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
 .plant-art {
+  display: block;
   margin: 0;
   white-space: pre;
   font-family: var(--mono);
@@ -2111,10 +2121,6 @@ body[data-scene="moonlight"] .item .meta {
   line-height: 9px;
   font-weight: 700;
   color: #4A3220;
-  min-height: 99px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
 }
 .plant-art .so { color: #6B5136; }
 .plant-art .bk { color: #3A2616; }
@@ -2499,9 +2505,10 @@ body[data-scene="bar"] .item.kind-directory h3 a { color: #D9A441; }
   margin: 0;
   white-space: pre;
   font-family: var(--mono);
-  font-size: 9px;
-  line-height: 8px;
-  color: #6C5B45;
+  font-size: 10px;
+  line-height: 9px;
+  font-weight: 700;
+  color: #8A745A;
 }
 #bartop {
   position: absolute;

@@ -4953,7 +4953,9 @@
       var bed = document.createElement('div');
       bed.className = 'plant p-' + spec.key;
       bed.innerHTML =
-        '<pre class="plant-art" role="img" aria-label="' + spec.name + '"></pre>' +
+        '<div class="plant-pot">' +
+          '<pre class="plant-art" role="img" aria-label="' + spec.name + '"></pre>' +
+        '</div>' +
         '<p class="plant-name">' + spec.name + '</p>' +
         '<p class="plant-latin">' + spec.latin + '</p>' +
         '<div class="plant-bar"><i></i></div>' +
@@ -5308,7 +5310,7 @@
     var record = document.getElementById('record');
     var cat = document.getElementById('barcat');
 
-    shelfrow.textContent = new Array(5).join(BOTTLES.join('')) ;
+    shelfrow.textContent = BOTTLES.join('');
     cat.textContent = CAT.join('\n');
 
     /* --------------------------------------------------- the record
@@ -5316,7 +5318,7 @@
        is the whole of it, and it is enough: the eye reads any moving
        mark on a circle as thirty-three and a third. */
 
-    var R = 6, spin = 0;
+    var R = 5, spin = 0;
     function paintRecord() {
       var rows = [], r, c, dx, dy, d, ang, ch;
       var mark = spin;
@@ -5326,10 +5328,10 @@
           dx = c / 2; dy = r;
           d = Math.sqrt(dx * dx + dy * dy);
           if (d > R) { line += ' '; continue; }
-          if (d < 1.2) { line += '@'; continue; }        // the spindle
+          if (d < 1.0) { line += '@'; continue; }        // the spindle
           ang = Math.atan2(dy, dx);
           var off = Math.abs(((ang - mark + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-          ch = off < 0.18 ? '/' : (Math.round(d) % 2 ? '.' : ' ');
+          ch = off < 0.26 ? '=' : (Math.round(d) % 2 ? 'o' : '.');
           line += ch;
         }
         rows.push(line);
