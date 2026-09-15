@@ -4,15 +4,13 @@
 
 - the notes are on a shared wall now — everyone sees what anyone sticks up
 - a note written elsewhere turns up on an open page without a reload
-- the to-do can be pulled bigger or smaller by the corner, and stays that way
-- the to-do is grabbed anywhere on it, not only by its name
+- the to-do is grabbed anywhere on it, and pulled bigger or smaller by its corner
 - the patterns start below the ticker at every width, never under the clock
 
 ## you planned
 
 - a secret folder for your claude chats — see the plan, it must stay off github
-- fill THE GARDEN with the real plant log
-- fill THE BAR with bars, bottles and recipes
+- fill THE GARDEN with the real plant log, and THE BAR with bottles
 - a guestbook, so visitors can leave something behind
 - anmo.garden on cloudflare — that one needs your account, not mine
 
@@ -22,7 +20,6 @@
 - a hand you can sign, so a note says who left it
 - the same corner on every card, so anything can be made bigger
 - other people's cursors, moving on the page while they read
-- birds that land on folders and leave when you drag one
 
 ## open questions
 
