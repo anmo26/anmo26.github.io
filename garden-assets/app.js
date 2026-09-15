@@ -2550,8 +2550,8 @@
   // Open, and squeezed. Bottom-aligned with the still, so the base stays
   // put and only the top of it collapses.
   var BELLOWS = [
-    ['  __   ', ' /  \  ', '|    |-', ' \__/  '],
-    ['       ', '  __   ', ' |__|=~', ' \__/  ']
+    ['  __   ', ' /  \\  ', '|    |-', ' \\__/  '],
+    ['       ', '  __   ', ' |__|=~', ' \\__/  ']
   ];
 
   var STILL = [

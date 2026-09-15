@@ -1,9 +1,10 @@
 ## recently
-- a man on a pogo stick lives here now. he hops to your cursor and climbs onto folders
-- the prickly pear fruits. pick the tunas into the bucket and THE GARDEN opens
-- a pot still runs in the corner whether you are watching or not. when it finishes, THE BAR opens
-- sound: the cactus rustles when watered, icons tick when you set them down
-- three ways in now — twenty clicks on the clock, a word typed on the keyboard, and after dark
+- the ticker under the title now lists what i last added or changed, not world news
+- the pogo guy winds down to sleep and winds back up, and has a height cap. toggle him off at the bottom
+- new switches at the bottom: sound, pogo, plant, still
+- the cactus can be watered as much as you like — no waiting for tomorrow
+- the still has a bellows. squeeze it to hurry the run along
+- every folder has a description.txt you can edit. the site follows
 
 ## next
 - fill THE GARDEN with the real plant log
