@@ -1366,7 +1366,7 @@
     { id: 'fit', label: 'fit', def: true,
       apply: function () { fitSoon(); } },
     { id: 'sound', label: 'sound', def: true,
-      apply: function (on) { soundOn = on; } },
+      apply: function (on) { soundOn = on; ambSync(); } },
     { id: 'pogo', label: 'pogo', def: true,
       apply: function (on) { var m = document.getElementById('pogo');
                              if (m) m.hidden = !on; } },
@@ -1475,9 +1475,13 @@
        clock's format and the player are how this visitor likes the place,
        not something they have done to it. */
     var WORLD = ['moved', 'sized', 'cactus', 'still', 'adam', 'sun', 'rocket',
-                 'ipod.scale',
+                 'dig', 'tossed', 'ipod.scale',
                  'secret.garden', 'secret.bar', 'secret.sun', 'secret.moon',
-                 'secret.family', 'secret.night'];
+                 'secret.family', 'secret.night', 'secret.ocean', 'secret.crypt'];
+    /* Not in that list, deliberately: `nursery`, because those plants take
+       years and nobody should lose four of them by tidying their desk, and
+       `trophies`, which is a record of what this visitor has already done.
+       Putting the world back does not mean it never happened. */
 
     reset.addEventListener('click', function () {
       WORLD.forEach(function (k) {
@@ -2181,6 +2185,176 @@
     } catch (e) { /* no audio on this device; the site is not about sound */ }
   }
 
+  /* ----------------------------------------------------------- ambience
+     A room tone for the places that are places. It is the same trick as
+     the noises above -- white noise through a filter -- but held open and
+     shaped instead of struck, so it costs nothing to download and nothing
+     to keep running. Each room gets a filter, a level, a slow swell, and
+     sometimes a small event that happens now and then (a drip in the
+     crypt, ice in a glass in the bar, a bubble in the sea).
+
+     A browser will not let a page make a sound before the visitor has
+     touched it, so the bed waits for the first click or keypress and then
+     comes up over four seconds. Nobody should be startled by a website. */
+
+  var AMBIENCE = {
+    garden:    { type: 'bandpass', freq: 780,  q: 0.45, gain: 0.020, swell: 0.055, rate: 0.07,
+                 every: [5200, 14000], voice: 'bird' },
+    nursery:   { type: 'lowpass',  freq: 520,  q: 0.30, gain: 0.014, swell: 0.030, rate: 0.05 },
+    moon:      { type: 'lowpass',  freq: 110,  q: 0.60, gain: 0.020, swell: 0.010, rate: 0.03 },
+    crypt:     { type: 'lowpass',  freq: 180,  q: 1.40, gain: 0.026, swell: 0.014, rate: 0.04,
+                 every: [4000, 11000], voice: 'drip' },
+    bar:       { type: 'lowpass',  freq: 420,  q: 0.50, gain: 0.022, swell: 0.020, rate: 0.05,
+                 every: [7000, 17000], voice: 'ice' },
+    ocean:     { type: 'lowpass',  freq: 300,  q: 0.90, gain: 0.046, swell: 0.140, rate: 0.10,
+                 every: [2600, 7000],  voice: 'bubble' },
+    moonlight: { type: 'bandpass', freq: 3400, q: 1.20, gain: 0.010, swell: 0.040, rate: 0.13,
+                 every: [3000, 9000],  voice: 'cricket' }
+  };
+
+  var amb = null;          // { src, filter, gain, lfo, timer, kind }
+  var ambWanted = null;    // what the room asked for, whether or not it is on
+  var ambTouched = false;  // has the visitor done anything yet
+
+  function ambStop() {
+    if (!amb) return;
+    try {
+      var t = actx.currentTime;
+      amb.gain.gain.cancelScheduledValues(t);
+      amb.gain.gain.setValueAtTime(amb.gain.gain.value || 0.0001, t);
+      amb.gain.gain.exponentialRampToValueAtTime(0.00001, t + 1.2);
+      var dying = amb;
+      setTimeout(function () {
+        try { dying.src.stop(); } catch (e) {}
+        try { dying.lfo.stop(); } catch (e) {}
+      }, 1500);
+    } catch (e) {}
+    clearInterval(amb.timer);
+    amb = null;
+  }
+
+  /** One small event over the bed: a bird, a drip, ice, a bubble. */
+  function ambVoice(kind) {
+    var ctx = audio();
+    if (!ctx) return;
+    try {
+      var t = ctx.currentTime;
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+
+      if (kind === 'bird') {
+        o.type = 'sine';
+        o.frequency.setValueAtTime(2200 + Math.random() * 900, t);
+        o.frequency.exponentialRampToValueAtTime(3400, t + 0.07);
+        o.frequency.exponentialRampToValueAtTime(1900, t + 0.16);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.020, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.20);
+        o.start(t); o.stop(t + 0.22);
+      } else if (kind === 'drip') {
+        o.type = 'sine';
+        o.frequency.setValueAtTime(950, t);
+        o.frequency.exponentialRampToValueAtTime(240, t + 0.11);
+        g.gain.setValueAtTime(0.035, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+        o.start(t); o.stop(t + 0.24);
+      } else if (kind === 'bubble') {
+        o.type = 'sine';
+        o.frequency.setValueAtTime(320 + Math.random() * 260, t);
+        o.frequency.exponentialRampToValueAtTime(880, t + 0.09);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.024, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+        o.start(t); o.stop(t + 0.15);
+      } else if (kind === 'cricket') {
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(4300, t);
+        g.gain.setValueAtTime(0.0001, t);
+        var k;
+        for (k = 0; k < 3; k++) {
+          g.gain.exponentialRampToValueAtTime(0.012, t + 0.02 + k * 0.07);
+          g.gain.exponentialRampToValueAtTime(0.0002, t + 0.05 + k * 0.07);
+        }
+        o.start(t); o.stop(t + 0.26);
+      } else {
+        // ice: two short bright taps against a glass
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(1800, t);
+        g.gain.setValueAtTime(0.030, t);
+        g.gain.exponentialRampToValueAtTime(0.0002, t + 0.09);
+        g.gain.exponentialRampToValueAtTime(0.022, t + 0.135);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+        o.start(t); o.stop(t + 0.28);
+      }
+    } catch (e) {}
+  }
+
+  function ambStart(kind) {
+    var spec = AMBIENCE[kind];
+    if (!spec) return;
+    var ctx = audio();
+    if (!ctx) return;
+    try {
+      var t = ctx.currentTime;
+      var src = ctx.createBufferSource();
+      src.buffer = noiseBuf;
+      src.loop = true;
+
+      var f = ctx.createBiquadFilter();
+      f.type = spec.type;
+      f.frequency.value = spec.freq;
+      f.Q.value = spec.q;
+
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.00001, t);
+      g.gain.exponentialRampToValueAtTime(spec.gain, t + 4);
+
+      // the swell: a very slow wave laid over the level, so it breathes
+      var lfo = ctx.createOscillator();
+      var lg = ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.value = spec.rate;
+      lg.gain.value = spec.swell * spec.gain * 18;
+      lfo.connect(lg); lg.connect(g.gain);
+
+      src.connect(f); f.connect(g); g.connect(ctx.destination);
+      src.start(t); lfo.start(t);
+
+      amb = { src: src, filter: f, gain: g, lfo: lfo, kind: kind, timer: 0 };
+
+      if (spec.voice) {
+        var lo = spec.every[0], hi = spec.every[1];
+        amb.timer = setInterval(function () {
+          if (document.hidden || !soundOn || !amb) return;
+          if (Math.random() < 0.55) ambVoice(spec.voice);
+        }, lo + Math.random() * (hi - lo));
+      }
+    } catch (e) {}
+  }
+
+  /** The room asks for its tone. Nothing happens until sound is on and
+      somebody has touched the page. */
+  function ambience(kind) {
+    ambWanted = kind || null;
+    ambSync();
+  }
+
+  function ambSync() {
+    if (!soundOn || !ambTouched || !ambWanted) { ambStop(); return; }
+    if (amb && amb.kind === ambWanted) return;
+    ambStop();
+    ambStart(ambWanted);
+  }
+
+  function ambWake() {
+    if (ambTouched) return;
+    ambTouched = true;
+    ambSync();
+  }
+  document.addEventListener('pointerdown', ambWake, true);
+  document.addEventListener('keydown', ambWake, true);
+
   /* ============================================================== SECRETS
      Some folders are not drawn on the page that holds them. Each names its
      own key in a secret.txt (see grow.js), and each key is earned a
@@ -2199,6 +2373,8 @@
     sun:     'forever',
     moon:    'forever',
     family:  'forever',
+    ocean:   'forever',
+    crypt:   'forever',
     night:   'hour'
   };
 
@@ -2924,11 +3100,19 @@
   var POGO_SLEEP = ['  z  ', ' z   ', '  o  ', ' /|\\ ', ' [=] '];
   // Stood still, pouring something out of a can.
   var POGO_WATER = ['     ', '  o  ', ' /|\\_', ' [T]:', '  v  '];
+  /* In water there is nothing to push off, so the stick stops being a
+     spring and becomes something to paddle with. Two frames, alternated
+     slowly, which is all a breaststroke needs to read as one. */
+  var POGO_SWIM = [
+    ['     ', ' \\o/ ', '  |  ', ' /T\\ ', '  ~  '],
+    ['     ', ' -o- ', '  |  ', ' <T> ', ' ~~  ']
+  ];
 
   // Set by mountPogo. The garden scene asks him to go and water the tree,
   // and tells him where he is standing -- the moon pulls a sixth as hard.
   var pogoErrand = function () {};
   var pogoGravity = function () {};
+  var pogoSwim = function () {};
 
   var GRAVITY = 2100;        // px per second per second
   var POGO_H = 56;           // how tall he is, near enough
@@ -3501,18 +3685,36 @@
      here is somewhere else. */
   var floorWatch = null;
 
+  /** The room tone of the storey the scene itself is on. */
+  var sceneTone = null;
+
   function watchFloor() {
     if (floorWatch) return;
     floorWatch = sceneScroll = function () {
       var up = document.getElementById('moon-level') || document.getElementById('sun-level');
-      if (!up) return;
-      var h = up.getBoundingClientRect().height || window.innerHeight;
-      var upstairs = window.pageYOffset < h * 0.5;
+      var down = document.getElementById('crypt-level');
+      var upstairs = false, downstairs = false, r;
+
+      if (up) {
+        var h = up.getBoundingClientRect().height || window.innerHeight;
+        upstairs = window.pageYOffset < h * 0.5;
+      }
+      if (down && !upstairs) {
+        r = down.getBoundingClientRect();
+        downstairs = r.top < window.innerHeight * 0.5;
+      }
+      if (!up && !down) return;
+
       document.body.classList.toggle('upstairs', upstairs);
+      document.body.classList.toggle('downstairs', downstairs);
       document.body.classList.toggle('on-sun', upstairs && up.id === 'sun-level');
       document.body.classList.toggle('on-moon', upstairs && up.id === 'moon-level');
+      document.body.classList.toggle('on-crypt', downstairs);
       // A sixth of a gee. He goes about six times as high and hangs there.
       pogoGravity(upstairs && up.id === 'moon-level' ? 0.17 : 1);
+
+      ambience(upstairs ? (up.id === 'moon-level' ? 'moon' : 'nursery')
+             : downstairs ? 'crypt' : sceneTone);
     };
     window.addEventListener('scroll', floorWatch, { passive: true });
     window.addEventListener('resize', floorWatch);
@@ -3539,12 +3741,20 @@
     }
     document.body.classList.remove('on-sun');
     document.body.classList.remove('on-moon');
+    document.body.classList.remove('on-crypt');
     document.body.classList.remove('upstairs');
+    document.body.classList.remove('downstairs');
     document.documentElement.classList.remove('moon-open');
     document.body.classList.remove('moon-open');
+    document.documentElement.classList.remove('crypt-open');
+    document.body.classList.remove('crypt-open', 'floor-broken');
     floorWatch = null;
+    sceneTone = null;
+    ambience(null);
+    pogoSwim(false);
     pogoGravity(1);
-    ['scene', 'adam', 'adam-hit', 'pad', 'sun-level', 'moon-level'].forEach(function (id) {
+    ['scene', 'adam', 'adam-hit', 'pad', 'spade', 'sun-level', 'moon-level',
+     'crypt-level'].forEach(function (id) {
       var n = document.getElementById(id);
       if (n && n.parentNode) n.parentNode.removeChild(n);
     });
@@ -3558,6 +3768,10 @@
     if (sceneOn) unmountScene();
     if (want === 'garden') mountGarden();
     else if (want === 'moonlight') mountMoonlight();
+    else if (want === 'ocean') mountOcean();
+    else if (want === 'crypt') mountCrypt();
+    else if (want === 'nursery') mountNurseryScene();
+    else if (want === 'bar') mountBar();
   }
 
   function mountGarden() {
