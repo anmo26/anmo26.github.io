@@ -393,12 +393,6 @@ body.tex-grain {
   --tex-size-1: 200px 200px;
 }
 
-/* scan — a photocopy of a photocopy. One dark line every third. */
-body.tex-scan {
-  --tex-image-1: repeating-linear-gradient(
-    to bottom, rgba(var(--tex-shade), .13) 0 1px, transparent 1px 6px);
-}
-
 /* weave — the tooth of laid paper: two hatchings crossing at right angles. */
 body.tex-weave {
   --tex-image-1: repeating-linear-gradient(45deg,  rgba(var(--tex-shade), .075) 0 1px, transparent 1px 10px);
@@ -459,6 +453,45 @@ body.tex-dots {
   border: 1px solid var(--ink-faint);
 }
 .toggle[aria-pressed="true"] .led { background: var(--ochre); border-color: var(--ochre); }
+
+/* ------------------------------------------------------------- a picker
+   A button in the taskbar that opens its whole list upward, instead of
+   being pressed over and over to walk through it. */
+
+.picker { position: relative; display: inline-flex; }
+.picker-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: .3rem;
+  min-width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: .2rem;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: 0 -2px 14px -8px rgba(0, 0, 0, .5);
+  z-index: 1;
+}
+.picker-option {
+  padding: .22rem .6rem .22rem .5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--ink-faint);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+.picker-option::before {
+  content: "· ";
+  color: transparent;
+}
+.picker-option.on::before { content: "· "; color: var(--ochre); }
+.picker-option:hover { color: var(--ink); background: var(--surface-2); }
+.picker-option.on { color: var(--ink); }
 
 .clock { color: var(--ink-faint); white-space: nowrap; }
 
@@ -2999,10 +3032,15 @@ body[data-scene] #tex { display: none; }
   transform-origin: 50% 0;
   transition: box-shadow .18s ease, transform .2s ease, opacity .24s ease;
 }
+/* Six papers, and which one you get is worked out from your own hand, not
+   picked at random -- so every note one person leaves is the same colour
+   and a wall of them reads as who said what. */
 .sticky.c0 { --sticky-bg: #F6E9A8; }
 .sticky.c1 { --sticky-bg: #DCEAC0; }
 .sticky.c2 { --sticky-bg: #F3D9C6; }
 .sticky.c3 { --sticky-bg: #D6E6EE; }
+.sticky.c4 { --sticky-bg: #E6DCEF; }
+.sticky.c5 { --sticky-bg: #F2CFCF; }
 
 /* Each one hangs at a slightly different angle, so a wall of them reads as
    paper somebody stuck up rather than as a grid of boxes. */
@@ -3010,6 +3048,8 @@ body[data-scene] #tex { display: none; }
 .sticky.c1 { rotate:  0.8deg; }
 .sticky.c2 { rotate: -0.5deg; }
 .sticky.c3 { rotate:  1.3deg; }
+.sticky.c4 { rotate: -1.4deg; }
+.sticky.c5 { rotate:  0.4deg; }
 .sticky:hover { box-shadow: 0 1px 2px rgba(38, 36, 31, .2), 0 16px 30px -14px rgba(38, 36, 31, .55); }
 /* Deliberately NOT straightened while it is being dragged: taking the
    rotation off mid-drag moves the box two pixels out from under the
@@ -3057,6 +3097,111 @@ body[data-scene] #tex { display: none; }
   font-style: italic;
 }
 .sticky.empty .sticky-body:focus::before { content: ''; }
+
+/* An idea is a note about the site. Chat is everything else, and it is
+   quieter about it: no pinned corner, a lighter hand. */
+.sticky-kind {
+  border: 0;
+  background: none;
+  padding: .1rem .3rem;
+  font-family: var(--mono);
+  font-size: .56rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(51, 48, 42, .42);
+  cursor: pointer;
+}
+.sticky-kind:disabled { cursor: default; }
+.sticky.kind-idea .sticky-kind { color: #8A5A14; }
+.sticky.kind-idea { border-top: 2px solid rgba(138, 90, 20, .45); }
+
+/* who wrote it, and what has been said back */
+.sticky-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .4rem;
+  margin-top: .35rem;
+  padding-top: .3rem;
+  border-top: 1px solid rgba(51, 48, 42, .14);
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .06em;
+}
+.sticky-sign {
+  color: rgba(51, 48, 42, .6);
+  outline: none;
+  min-width: 3rem;
+}
+.sticky-sign.unsigned::before {
+  content: 'sign this';
+  color: rgba(51, 48, 42, .3);
+  font-style: italic;
+}
+.sticky-sign.unsigned:focus::before { content: ''; }
+.sticky-more {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: rgba(51, 48, 42, .55);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sticky-more:hover { color: #33302A; }
+
+.sticky-thread {
+  margin-top: .4rem;
+  padding-top: .35rem;
+  border-top: 1px solid rgba(51, 48, 42, .14);
+}
+.sticky-thread .reply {
+  margin: 0 0 .35rem;
+  font-family: var(--serif);
+  font-size: .78rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.sticky-thread .reply b {
+  font-family: var(--mono);
+  font-size: .6rem;
+  font-weight: 400;
+  letter-spacing: .06em;
+  color: rgba(51, 48, 42, .55);
+}
+.reply-new {
+  min-height: 1.8rem;
+  padding: .2rem .3rem;
+  background: rgba(255, 255, 255, .45);
+  font-family: var(--serif);
+  font-size: .78rem;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+.reply-new:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(51, 48, 42, .32);
+  font-style: italic;
+}
+.reply-send {
+  margin-top: .25rem;
+  border: 1px solid rgba(51, 48, 42, .25);
+  background: none;
+  padding: .1rem .5rem;
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(51, 48, 42, .7);
+  cursor: pointer;
+}
+.reply-send:hover { color: #33302A; border-color: rgba(51, 48, 42, .5); }
+
+/* Somebody who would rather read the site than the wall. */
+body.notes-off .sticky { display: none; }
 
 /* A note is paper. It does not change colour with the room -- but on the
    dark theme a bright square would be a floodlight, so it is dimmed. */

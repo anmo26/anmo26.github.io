@@ -287,8 +287,8 @@
     var flipTimer = null;
     var lastPainted = '';
 
-    function timeText() {
-      var d = new Date();
+    function timeText(when) {
+      var d = new Date(when || Date.now());
       var h = d.getHours();
       if (!state.hour24) { h = h % 12; if (h === 0) h = 12; }
       return pad(h) + ':' + pad(d.getMinutes()) + (state.seconds ? ':' + pad(d.getSeconds()) : '');
@@ -386,9 +386,10 @@
       }, STEP_MS);
     }
 
-    function draw() {
-      var text = timeText();
-      var d = new Date();
+    function draw(when) {
+      var at = when || Date.now();
+      var text = timeText(at);
+      var d = new Date(at);
 
       if (dateHost) {
         var line = DAYS[d.getDay()].slice(0, 3) + DOT +
@@ -448,8 +449,41 @@
       draw();
     });
 
+    /* A second late, and for two reasons, both of them real.
+
+       The clock used to be redrawn once a second from whenever the page
+       happened to finish loading. Land at .8 of a second and every single
+       turn afterwards happens at .8 -- the face is right when it is drawn
+       and then sits there being wrong for the rest of the second. And the
+       flip itself takes four faces to arrive, so even a perfectly timed
+       turn showed the answer a fifth of a second after the fact.
+
+       So each turn is aimed at the second it is going to land on, and it
+       is started early -- by exactly as long as the flip takes to run --
+       so the right face comes up ON the second rather than after it. Every
+       turn is scheduled from the clock afresh, so nothing accumulates and
+       a tab that has been asleep comes back in step. */
+    var LEAD_MS = FLIP_FACES * FLIP_MS;
+
+    function schedule() {
+      var now = Date.now();
+      var land = Math.ceil((now + LEAD_MS + 1) / 1000) * 1000;   // the second to land on
+      setTimeout(function () {
+        draw(land);
+        schedule();
+      }, Math.max(0, land - LEAD_MS - now));
+    }
+
+    /* A tab in the background has its timers held back to save a laptop's
+       battery, which is fair, but it means the clock can be a minute stale
+       the instant you look at it again. Come back and it is put right
+       before the next turn is due. */
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) draw();
+    });
+
     draw();
-    setInterval(draw, 1000);
+    schedule();
   }
 
   /* ============================================================= DRAGGING */
@@ -1684,6 +1718,12 @@
       apply: function (on) { var c = document.getElementById('clock-shell');
                              if (c) c.style.display = on ? '' : 'none'; } },
 
+    /* Somebody else's wall of paper should not be the first thing between
+       a visitor and the site. This puts every note away -- their own
+       included -- and leaves them where they are for everybody else. */
+    { id: 'notes', label: 'notes', def: true,
+      apply: function (on) { document.body.classList.toggle('notes-off', !on); } },
+
     // The music player. This parks the whole thing off the side of the
     // screen and brings it back; `‹‹` on the player itself only docks it.
     // Both are transforms in ipod.css, so neither one stops the music --
@@ -1708,8 +1748,109 @@
   // There are four textures now, so it cycles like the theme button beside
   // it. Each is drawn in plain black and multiplied into whatever paper is
   // underneath, so none of them can introduce a colour of its own.
-  var TEXTURES = ['', 'tex-grain', 'tex-scan', 'tex-weave', 'tex-dots'];
-  var TEXTURE_NAMES = ['plain', 'grain', 'scan', 'weave', 'dots'];
+  /* Scan is gone. It was a photocopy line every sixth pixel, and on a page
+     of small type it did nothing but sit on the words. */
+  var TEXTURES = ['', 'tex-grain', 'tex-weave', 'tex-dots'];
+  var TEXTURE_NAMES = ['plain', 'grain', 'weave', 'dots'];
+
+  /* ------------------------------------------------------------ a picker
+     A taskbar button that had to be pressed four times to get back to
+     where it started is a button that has to be watched rather than used.
+     These open instead: rest on one and the whole list is there, pick the
+     one you want. A finger has no hover, so a tap opens it too, and the
+     menu closes on the next tap anywhere else.
+     --------------------------------------------------------------------- */
+
+  function mountPicker(bar, spec) {
+    var wrap = document.createElement('span');
+    wrap.className = 'picker';
+
+    var btn = document.createElement('button');
+    btn.className = 'toggle';
+    btn.type = 'button';
+    btn.setAttribute('aria-haspopup', 'true');
+    btn.setAttribute('aria-expanded', 'false');
+
+    var menu = document.createElement('div');
+    menu.className = 'picker-menu';
+    menu.hidden = true;
+
+    var at = spec.value();
+    var buttons = [];
+
+    /* Two kinds of menu wear the same coat. One is a CHOICE -- the paper,
+       the pattern -- and its button shows what is currently chosen. The
+       other is a short list of THINGS TO DO, and its button keeps its own
+       name however many times you use it. */
+    function paint() {
+      btn.innerHTML = '<span class="led"></span>' +
+        (spec.action ? spec.label
+                     : (spec.label ? spec.label + ': ' : '') + spec.names[at]);
+      btn.setAttribute('aria-pressed',
+        spec.action ? 'false' : (spec.pressed ? String(spec.pressed(at)) : 'true'));
+      if (!spec.action) {
+        buttons.forEach(function (b, i) {
+          b.setAttribute('aria-checked', String(i === at));
+          b.classList.toggle('on', i === at);
+        });
+      }
+      spec.apply(at);
+    }
+
+    spec.names.forEach(function (name, i) {
+      var opt = document.createElement('button');
+      opt.className = 'picker-option';
+      opt.type = 'button';
+      opt.setAttribute('role', 'menuitemradio');
+      opt.textContent = name;
+      opt.addEventListener('click', function () {
+        if (!spec.action) at = i;
+        spec.save(i);
+        paint();
+        close();
+        play('tick');
+      });
+      buttons.push(opt);
+      menu.appendChild(opt);
+    });
+    menu.setAttribute('role', 'menu');
+
+    function open() {
+      if (!menu.hidden) return;
+      // Only one of these open at a time.
+      document.querySelectorAll('.picker-menu').forEach(function (m) { m.hidden = true; });
+      menu.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      if (menu.hidden) return;
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+
+    wrap.addEventListener('pointerenter', function (e) {
+      if (e.pointerType === 'mouse') open();
+    });
+    wrap.addEventListener('pointerleave', function (e) {
+      if (e.pointerType === 'mouse') close();
+    });
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    document.addEventListener('click', function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+    });
+
+    wrap.appendChild(menu);
+    wrap.appendChild(btn);
+    bar.appendChild(wrap);
+    paint();
+    return { paint: paint, el: wrap };
+  }
 
   function mountToggles() {
     var bar = document.getElementById('taskbar-toggles');
@@ -1733,47 +1874,37 @@
       t.apply(on);
     });
 
-    // theme cycler
-    // Clamped, because somebody who was sitting on the fifth theme before
-    // there were only four would otherwise land on an index that is not
-    // there and get no theme and no label at all.
-    var themeIdx = get('theme', 0);
-    if (!(themeIdx >= 0 && themeIdx < THEMES.length)) themeIdx = 0;
-    var themeBtn = document.createElement('button');
-    themeBtn.className = 'toggle';
-    themeBtn.type = 'button';
-    function paintTheme() {
-      THEMES.forEach(function (c) { if (c) document.body.classList.remove(c); });
-      if (THEMES[themeIdx]) document.body.classList.add(THEMES[themeIdx]);
-      themeBtn.innerHTML = '<span class="led"></span>' + THEME_NAMES[themeIdx];
-      themeBtn.setAttribute('aria-pressed', 'true');
-    }
-    themeBtn.addEventListener('click', function () {
-      themeIdx = (themeIdx + 1) % THEMES.length;
-      set('theme', themeIdx);
-      paintTheme();
+    /* the paper. Clamped, because somebody sitting on the fifth theme from
+       when there were five would otherwise land on an index that is not
+       there and get no theme and no label at all. */
+    mountPicker(bar, {
+      names: THEME_NAMES,
+      value: function () {
+        var i = get('theme', 0);
+        return (i >= 0 && i < THEMES.length) ? i : 0;
+      },
+      save: function (i) { set('theme', i); },
+      apply: function (i) {
+        THEMES.forEach(function (c) { if (c) document.body.classList.remove(c); });
+        if (THEMES[i]) document.body.classList.add(THEMES[i]);
+      }
     });
-    bar.appendChild(themeBtn);
-    paintTheme();
 
-    // texture cycler -- same shape as the theme one above
-    var texIdx = get('texture', 0);
-    var texBtn = document.createElement('button');
-    texBtn.className = 'toggle';
-    texBtn.type = 'button';
-    function paintTexture() {
-      TEXTURES.forEach(function (c) { if (c) document.body.classList.remove(c); });
-      if (TEXTURES[texIdx]) document.body.classList.add(TEXTURES[texIdx]);
-      texBtn.innerHTML = '<span class="led"></span>' + TEXTURE_NAMES[texIdx];
-      texBtn.setAttribute('aria-pressed', texIdx ? 'true' : 'false');
-    }
-    texBtn.addEventListener('click', function () {
-      texIdx = (texIdx + 1) % TEXTURES.length;
-      set('texture', texIdx);
-      paintTexture();
+    // the pattern printed on it -- same shape as the paper above
+    mountPicker(bar, {
+      names: TEXTURE_NAMES,
+      pressed: function (i) { return !!i; },
+      value: function () {
+        var i = get('texture', 0);
+        return (i >= 0 && i < TEXTURES.length) ? i : 0;
+      },
+      save: function (i) { set('texture', i); },
+      apply: function (i) {
+        TEXTURES.forEach(function (c) { if (c) document.body.classList.remove(c); });
+        if (TEXTURES[i]) document.body.classList.add(TEXTURES[i]);
+        placeTexture();
+      }
     });
-    bar.appendChild(texBtn);
-    paintTexture();
 
     /* Tidy up is the gentle one, and the one people will actually reach
        for, so it comes first. It slides the things on THIS page back to
@@ -1782,14 +1913,20 @@
        watching it happen. Nothing else is touched: every door stays open,
        every plant keeps growing, and anything thrown away stays thrown
        away. */
-    /* A pad of stickies. Anybody can leave one, anywhere, on any page. */
-    var pad = document.createElement('button');
-    pad.className = 'toggle';
-    pad.type = 'button';
-    pad.innerHTML = '<span class="led"></span>note';
-    pad.title = 'stick a note to this page';
-    pad.addEventListener('click', newSticky);
-    bar.appendChild(pad);
+    /* A pad of stickies. Anybody can leave one, anywhere, on any page --
+       and there are two pads. An IDEA is a note about the site itself,
+       something that ought to be different, and those are the ones that
+       get read as suggestions. CHAT is everything else: a hello, an
+       answer, a thing you noticed. They look different and they are
+       counted differently, and either can be replied to. */
+    mountPicker(bar, {
+      label: 'note',
+      names: ['idea', 'chat'],
+      action: true,
+      value: function () { return 0; },
+      save: function (i) { newSticky(KINDS[i]); },
+      apply: function () {}
+    });
 
     var tidy = document.createElement('button');
     tidy.className = 'toggle';
@@ -5125,9 +5262,18 @@
      note into whatever is on the wall by then, so two people writing at
      once do not rub each other out.
 
+     A note knows four things about itself beyond what it says: whose hand
+     wrote it (which decides its colour, so one person's notes are one
+     colour), what that hand is called, whether it is an IDEA or CHAT, and
+     what it was stuck NEXT TO. That last one matters: a note about the
+     clock is stuck on the clock, and it would be no use to anybody reading
+     the wall later if all it carried was a pair of coordinates.
+
      It is a public document on a public site: anybody who can open the
-     page can read every note on it and write one of their own, and the
-     cross in the corner takes any note down, not only your own.
+     page can read every note on it and write one of their own. Words can
+     only be edited by the hand that wrote them -- quietly rewriting
+     somebody's note is worse than binning it, because nobody can see it
+     happen -- and every note can be replied to by anyone.
 
      There is a copy in this browser as well. It is not the record any
      more -- the wall is -- but it means the notes are on the page before
@@ -5140,15 +5286,18 @@
      the body at page coordinates, like the bin and the spade.
      ------------------------------------------------------------------- */
 
-  var NOTE_COLOURS = 4;
+  var NOTE_COLOURS = 6;
   var NOTE_MAX = 900;
+  var REPLY_MAX = 500;
   var NOTE_WALL = 'https://textdb.dev/api/data/anmo-garden-notes-8f3c1d';
   var WALL_POLL_MS = 12000;
   var WALL_MAX = 200;          // notes on the whole wall, oldest dropped first
+  var KINDS = ['idea', 'chat'];
 
   var wall = null;             // { rooms: { "/path": [note, ...] } }
   var wallLast = '';           // what we last painted, so a poll is cheap
   var wallChain = Promise.resolve();
+  var openThreads = {};        // which notes had their replies showing
 
   /** Which page we are on, as the key the notes are filed under. */
   function noteRoom() {
@@ -5167,6 +5316,88 @@
     return h;
   }
 
+  /** What this hand signs itself. Empty until somebody signs a note. */
+  function mySignature() { return String(get('signature', '') || ''); }
+
+  /**
+   * One hand, one colour. Worked out from the hand's own name rather than
+   * picked at random, so every note somebody writes -- today, tomorrow, on
+   * any page -- comes out the same colour without anything having to be
+   * stored anywhere.
+   */
+  function handColour(hand) {
+    var n = 0, i;
+    for (i = 0; i < hand.length; i++) n = (n * 31 + hand.charCodeAt(i)) % 100000;
+    return n % NOTE_COLOURS;
+  }
+
+  /* ---------------------------------------------------------- where it is
+     A note is stuck next to the thing it is about. This works out what
+     that thing is, in words, at the moment it is put down -- which is the
+     only moment anybody knows. Coordinates on their own age badly: the
+     page reflows, the window is a different size tomorrow, and a note that
+     said "1310, 163" tells you nothing at all. "on the clock" still does.
+     --------------------------------------------------------------------- */
+
+  var LANDMARKS = [
+    ['#clock-shell', 'the clock'],
+    ['#still', 'the still'],
+    ['#bucket', 'the still'],
+    ['.cactus-row', 'the prickly pear'],
+    ['#plants', 'the corner'],
+    ['#ipod-shell', 'the music player'],
+    ['.taskbar', 'the taskbar'],
+    ['.masthead', 'the masthead'],
+    ['.marquee', 'the ticker'],
+    ['#bin', 'the bin'],
+    ['#spade', 'the spade'],
+    ['#pogo', 'the mini fig'],
+    ['.pile-bed', 'the crypt floor'],
+    ['#plantbed', 'the folder']
+  ];
+
+  function centreOf(el) {
+    var r = el.getBoundingClientRect();
+    return {
+      x: r.left + window.pageXOffset + r.width / 2,
+      y: r.top + window.pageYOffset + r.height / 2,
+      w: r.width, h: r.height
+    };
+  }
+
+  function noteNear(x, y) {
+    /* The note's own top-left corner, which is the bit somebody lines up
+       against whatever they are talking about. */
+    var best = null, bestD = Infinity;
+
+    LANDMARKS.forEach(function (pair) {
+      var el = document.querySelector(pair[0]);
+      if (!el || !el.getClientRects().length) return;
+      var c = centreOf(el);
+      /* Distance to the edge of the thing, not to the middle of it -- the
+         folder is the size of the page and its middle is nowhere. */
+      var dx = Math.max(0, Math.abs(x - c.x) - c.w / 2);
+      var dy = Math.max(0, Math.abs(y - c.y) - c.h / 2);
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestD) { bestD = d; best = pair[1]; }
+    });
+
+    /* A file lying under the note beats any of the furniture: it is the
+       more particular answer, and it has a name. */
+    var item = null, itemD = Infinity;
+    document.querySelectorAll('.plantbed > .item').forEach(function (el) {
+      var c = centreOf(el);
+      var dx = Math.max(0, Math.abs(x - c.x) - c.w / 2);
+      var dy = Math.max(0, Math.abs(y - c.y) - c.h / 2);
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < itemD) { itemD = d; item = el.dataset.key || ''; }
+    });
+
+    if (item && itemD < 90) return item;
+    if (best && bestD < 260) return best;
+    return 'the page';
+  }
+
   /** Anything that arrives from the wall, or out of the old local store. */
   function normaliseWall(w) {
     if (!w || typeof w !== 'object') return { rooms: {} };
@@ -5175,20 +5406,35 @@
     for (k in rooms) {
       if (Object.prototype.hasOwnProperty.call(rooms, k) &&
           rooms[k] && rooms[k].length) {
-        out[k] = rooms[k].filter(function (n) { return n && n.id; }).map(function (n) {
-          return {
-            id: String(n.id),
-            text: String(n.text || '').slice(0, NOTE_MAX),
-            colour: (Number(n.colour) || 0) % NOTE_COLOURS,
-            x: Math.round(Number(n.x) || 0),
-            y: Math.round(Number(n.y) || 0),
-            by: String(n.by || ''),
-            at: Number(n.at) || 0
-          };
-        });
+        out[k] = rooms[k].filter(function (n) { return n && n.id; }).map(cleanNote);
       }
     }
     return { rooms: out };
+  }
+
+  function cleanNote(n) {
+    var hand = String(n.by || '');
+    return {
+      id: String(n.id),
+      text: String(n.text || '').slice(0, NOTE_MAX),
+      by: hand,
+      name: String(n.name || '').slice(0, 24),
+      kind: KINDS.indexOf(n.kind) >= 0 ? n.kind : 'idea',
+      near: String(n.near || '').slice(0, 80),
+      colour: hand ? handColour(hand) : ((Number(n.colour) || 0) % NOTE_COLOURS),
+      x: Math.round(Number(n.x) || 0),
+      y: Math.round(Number(n.y) || 0),
+      at: Number(n.at) || 0,
+      replies: (n.replies || []).slice(0, 40).map(function (r) {
+        return {
+          id: String(r.id || ''),
+          text: String(r.text || '').slice(0, REPLY_MAX),
+          by: String(r.by || ''),
+          name: String(r.name || '').slice(0, 24),
+          at: Number(r.at) || 0
+        };
+      })
+    };
   }
 
   /** The whole wall, oldest notes shed if it has grown past the cap. */
@@ -5318,43 +5564,158 @@
     return wallChain;
   }
 
+  /* ------------------------------------------------------------- drawing */
+
+  function when(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3).toLowerCase();
+  }
+
   function stickyEl(note, focus) {
+    var mine = note.by === myHand();
+
     var el = document.createElement('div');
-    el.className = 'sticky c' + (note.colour % NOTE_COLOURS);
+    el.className = 'sticky c' + (note.colour % NOTE_COLOURS) +
+                   ' kind-' + note.kind + (mine ? ' mine' : ' theirs');
     el.setAttribute('data-note', note.id);
-    if (note.by && note.by !== myHand()) el.classList.add('theirs');
     el.style.left = note.x + 'px';
     el.style.top = note.y + 'px';
     el.style.zIndex = bumpPanel();
     el.innerHTML =
       '<div class="sticky-head">' +
-        '<span class="sticky-grip" title="drag me">' +
-          '<i></i><i></i><i></i>' +
-        '</span>' +
+        '<button class="sticky-kind" type="button" title="a suggestion, or just talk">' +
+          note.kind +
+        '</button>' +
+        '<span class="sticky-grip" title="drag me"><i></i><i></i><i></i></span>' +
         '<button class="sticky-bin" type="button" title="throw this note away" ' +
           'aria-label="throw this note away">&times;</button>' +
       '</div>' +
-      '<div class="sticky-body" contenteditable="plaintext-only" ' +
-        'role="textbox" aria-multiline="true" spellcheck="true"></div>';
+      '<div class="sticky-body"' + (mine ? ' contenteditable="plaintext-only"' : '') +
+        ' role="textbox" aria-multiline="true" spellcheck="true"></div>' +
+      '<div class="sticky-foot">' +
+        '<span class="sticky-sign" title="sign your notes"' +
+          (mine ? ' contenteditable="plaintext-only"' : '') + '></span>' +
+        '<button class="sticky-more" type="button"></button>' +
+      '</div>' +
+      '<div class="sticky-thread" hidden></div>';
     document.body.appendChild(el);
 
     var body = el.querySelector('.sticky-body');
     body.textContent = note.text || '';
     if (!note.text) el.classList.add('empty');
 
+    var sign = el.querySelector('.sticky-sign');
+    sign.textContent = note.name || (mine ? '' : 'someone');
+    if (mine && !note.name) sign.classList.add('unsigned');
+
+    var kindBtn = el.querySelector('.sticky-kind');
+    var more = el.querySelector('.sticky-more');
+    var thread = el.querySelector('.sticky-thread');
+
+    /* -------------------------------------------------- what it says */
+
     var typing = null;
-    body.addEventListener('input', function () {
-      el.classList.toggle('empty', !body.textContent.trim());
-      clearTimeout(typing);
-      typing = setTimeout(function () {
+    if (mine) {
+      body.addEventListener('input', function () {
+        el.classList.toggle('empty', !body.textContent.trim());
+        clearTimeout(typing);
+        typing = setTimeout(function () {
+          note.text = body.textContent.slice(0, NOTE_MAX);
+          noteSave(note);
+        }, 600);
+      });
+      body.addEventListener('blur', function () {
         note.text = body.textContent.slice(0, NOTE_MAX);
         noteSave(note);
-      }, 600);
+      });
+
+      /* A signature is a thing about the hand, not about the one note, so
+         signing any note signs the rest of them too, and every note this
+         hand writes afterwards arrives signed. */
+      sign.addEventListener('blur', function () {
+        var name = sign.textContent.replace(/\s+/g, ' ').trim().slice(0, 24);
+        sign.textContent = name;
+        sign.classList.toggle('unsigned', !name);
+        if (name === note.name) return;
+        set('signature', name);
+        note.name = name;
+        noteSave(note);
+        signEverything(name);
+      });
+
+      kindBtn.addEventListener('click', function () {
+        note.kind = note.kind === 'idea' ? 'chat' : 'idea';
+        kindBtn.textContent = note.kind;
+        el.classList.remove('kind-idea', 'kind-chat');
+        el.classList.add('kind-' + note.kind);
+        noteSave(note);
+        play('tick');
+      });
+    } else {
+      kindBtn.disabled = true;
+    }
+
+    /* ----------------------------------------------------- the replies
+       Folded away by default. A wall where every answer is another square
+       of paper is a wall you cannot see the page through -- which is the
+       whole reason this is a thread and not five more stickies. */
+
+    function paintThread() {
+      var open = !!openThreads[note.id];
+      thread.hidden = !open;
+      more.textContent = note.replies.length
+        ? (open ? 'hide' : note.replies.length + (note.replies.length === 1 ? ' reply' : ' replies'))
+        : (open ? 'hide' : 'reply');
+      if (!open) return;
+
+      thread.innerHTML = '';
+      note.replies.forEach(function (r) {
+        var p = document.createElement('p');
+        p.className = 'reply';
+        var who = document.createElement('b');
+        who.textContent = (r.name || 'someone') + (r.by === myHand() ? ' (you)' : '');
+        p.appendChild(who);
+        p.appendChild(document.createTextNode(' ' + r.text));
+        thread.appendChild(p);
+      });
+
+      var box = document.createElement('div');
+      box.className = 'reply-new';
+      box.setAttribute('contenteditable', 'plaintext-only');
+      box.setAttribute('data-placeholder', 'say something');
+      thread.appendChild(box);
+
+      var send = document.createElement('button');
+      send.type = 'button';
+      send.className = 'reply-send';
+      send.textContent = 'send';
+      send.addEventListener('click', function () {
+        var text = box.textContent.replace(/\s+/g, ' ').trim().slice(0, REPLY_MAX);
+        if (!text) return;
+        note.replies.push({
+          id: String(Date.now()) + Math.random().toString(36).slice(2, 5),
+          text: text,
+          by: myHand(),
+          name: mySignature(),
+          at: Date.now()
+        });
+        noteSave(note);
+        box.textContent = '';
+        paintThread();
+        play('tick');
+      });
+      thread.appendChild(send);
+      box.focus();
+    }
+
+    more.addEventListener('click', function () {
+      openThreads[note.id] = !openThreads[note.id];
+      paintThread();
     });
-    body.addEventListener('blur', function () {
-      note.text = body.textContent.slice(0, NOTE_MAX);
-      noteSave(note);
-    });
+    paintThread();
+
+    /* ------------------------------------------------------ the rest */
 
     el.addEventListener('pointerdown', function () { el.style.zIndex = bumpPanel(); });
 
@@ -5369,6 +5730,7 @@
        things that can be thrown down the shaft, and a note is not a file. */
     makeDraggable(el, el.querySelector('.sticky-head'), null, function (x, y) {
       note.x = x; note.y = y;
+      note.near = noteNear(x, y);       // it is about whatever it now sits by
       noteSave(note);
     });
 
@@ -5377,6 +5739,20 @@
       if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
     return el;
+  }
+
+  /** One signature, every note this hand has left on this page. */
+  function signEverything(name) {
+    var hand = myHand();
+    roomNotes().forEach(function (n) {
+      if (n.by !== hand || n.name === name) return;
+      n.name = name;
+      noteSave(n);
+    });
+    document.querySelectorAll('.sticky.mine .sticky-sign').forEach(function (s) {
+      s.textContent = name;
+      s.classList.toggle('unsigned', !name);
+    });
   }
 
   function clearStickies() {
@@ -5422,18 +5798,24 @@
     });
   }
 
-  function newSticky() {
+  function newSticky(kind) {
     /* Somewhere in the middle of what is actually on the screen, nudged a
        little each time so a second note does not land exactly on the first. */
     var many = roomNotes().length;
+    var x = Math.round(window.pageXOffset + window.innerWidth * 0.5 - 100 + (many % 5) * 22);
+    var y = Math.round(window.pageYOffset + window.innerHeight * 0.34 + (many % 5) * 20);
     var note = {
       id: String(Date.now()) + Math.random().toString(36).slice(2, 6),
       text: '',
-      colour: Math.floor(Math.random() * NOTE_COLOURS),
       by: myHand(),
+      name: mySignature(),
+      kind: KINDS.indexOf(kind) >= 0 ? kind : 'idea',
+      near: noteNear(x, y),
+      colour: handColour(myHand()),
       at: Date.now(),
-      x: Math.round(window.pageXOffset + window.innerWidth * 0.5 - 100 + (many % 5) * 22),
-      y: Math.round(window.pageYOffset + window.innerHeight * 0.34 + (many % 5) * 20)
+      replies: [],
+      x: x,
+      y: y
     };
     noteSave(note);
     stickyEl(note, true);
