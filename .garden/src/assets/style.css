@@ -2783,3 +2783,60 @@ body.shelf-tucked #shelf {
 #shelf-tuck:hover { opacity: 1; }
 body.shelf-tucked #shelf-tuck { transform: translateX(0); }
 @media (max-width: 559px) { #shelf-tuck { display: none; } }
+
+
+/* The shelf switch in the taskbar takes the whole thing away, tab included.
+   The tab itself only pushes it into the wall; this is the off. */
+body.shelf-off #shelf,
+body.shelf-off #shelf-tuck { display: none !important; }
+
+/* ================================================================== BIN
+   A bin in the corner of every page. Drag something onto it and it goes to
+   the bottom of the garden, whether or not the shaft has been dug.
+   ------------------------------------------------------------------------ */
+
+#bin {
+  position: fixed;
+  right: 16px;
+  bottom: 54px;
+  z-index: 4;
+  padding: .2rem .3rem;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  cursor: pointer;
+  text-align: center;
+  opacity: .45;
+  transition: opacity .2s ease, border-color .2s ease, transform .12s ease;
+}
+#bin pre {
+  margin: 0;
+  white-space: pre;
+  font-size: 11px;
+  line-height: 10px;
+  font-weight: 700;
+}
+#bin .bin-count {
+  display: block;
+  margin-top: .2rem;
+  font-size: .55rem;
+  letter-spacing: .12em;
+}
+#bin:hover { opacity: .9; }
+#bin.open {
+  opacity: 1;
+  color: var(--ochre);
+  border-color: var(--ochre);
+  transform: scale(1.14);
+}
+body.music-docked #bin { right: 16px; }
+@media (max-width: 559px) { #bin { display: none; } }
+
+/* Arming the full reset. It asks once before it does it. */
+.toggle.arming {
+  color: #B3402C;
+  border-color: #B3402C;
+  animation: arming 1s ease-in-out infinite;
+}
+@keyframes arming { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }

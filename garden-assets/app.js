@@ -559,6 +559,19 @@
 
     drag.el.style.left = x + 'px';
     drag.el.style.top = y + 'px';
+
+    // Where the pointer was last seen, for the bin to answer on release.
+    drag.lastX = e.clientX;
+    drag.lastY = e.clientY;
+
+    var bin = binEl();
+    if (bin && !bin.hidden) {
+      var over = !!drag.key && overBin(e.clientX, e.clientY);
+      if (over !== bin.classList.contains('open')) {
+        bin.classList.toggle('open', over);
+        paintBin();
+      }
+    }
   }
 
   /**
@@ -626,8 +639,11 @@
     drop(d);
     swallowNextClick(d.el);
 
-    // Left hanging over the side of the page, with the shaft dug: it falls.
-    if (d.key && overTheEdge(d.el)) {
+    // Dropped in the bin, or left hanging over the side of the garden.
+    var bin = binEl();
+    if (bin) { bin.classList.remove('open'); paintBin(); }
+
+    if (d.key && (overBin(d.lastX, d.lastY) || overTheEdge(d.el))) {
       tossItem(d.el);
       growBed(bedOf(d.el));
       fitSoon();
@@ -1158,7 +1174,10 @@
 
     mobilizeBed(bed);
 
-    var on = get('toggle.fit', true) && bed.classList.contains('freeform') &&
+    // Fitting the arrangement to the window used to be a switch nobody ever
+    // wanted off: with it off, half of any wide folder is simply not on the
+    // screen. It is just how the page works now.
+    var on = bed.classList.contains('freeform') &&
              (wide() || bed.hasAttribute('data-frozen'));
 
     if (!on) {
@@ -1417,21 +1436,18 @@
   /* ============================================================== TOGGLES */
 
   var TOGGLES = [
-    // A phone gets the same scaled-down arrangement a laptop does now, so
-    // the same switch turns it off there too.
-    { id: 'fit', label: 'fit', def: true,
-      apply: function () { fitSoon(); } },
     { id: 'sound', label: 'sound', def: true,
       apply: function (on) { soundOn = on; ambSync(); } },
     { id: 'pogo', label: 'pogo', def: true,
       apply: function (on) { var m = document.getElementById('pogo');
                              if (m) m.hidden = !on; } },
-    { id: 'plant', label: 'plant', def: true,
-      apply: function (on) { var c = document.getElementById('cactus-shell');
+    // The cactus and the still are one thing to anybody looking at them:
+    // the living corner of the page. One switch, not two.
+    { id: 'plants', label: 'plants', def: true,
+      apply: function (on) { var c = document.getElementById('plants');
                              if (c) c.style.display = on ? '' : 'none'; } },
-    { id: 'still', label: 'still', def: true,
-      apply: function (on) { var d = document.getElementById('still-shell');
-                             if (d) d.style.display = on ? '' : 'none'; } },
+    { id: 'shelf', label: 'shelf', def: true,
+      apply: function (on) { document.body.classList.toggle('shelf-off', !on); } },
     { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
                              if (c) c.style.display = on ? '' : 'none'; } },
@@ -1519,42 +1535,13 @@
     bar.appendChild(texBtn);
     paintTexture();
 
-    // reset everything this visitor has rearranged
-    var reset = document.createElement('button');
-    reset.className = 'toggle';
-    reset.type = 'button';
-    reset.innerHTML = '<span class="led"></span>put back';
-    reset.title = 'put every item back where Finder has it';
-    /* Put back means put back: the arrangement, the sizes, every door that
-       has been found, and every living thing's progress. What it does not
-       touch is preference -- the theme, the texture, the switches, the
-       clock's format and the player are how this visitor likes the place,
-       not something they have done to it. */
-    var WORLD = ['moved', 'sized', 'cactus', 'still', 'adam', 'sun', 'rocket',
-                 'dig', 'tossed', 'ipod.scale',
-                 'secret.garden', 'secret.bar', 'secret.sun', 'secret.moon',
-                 'secret.family', 'secret.night', 'secret.ocean', 'secret.crypt'];
-    /* Not in that list, deliberately: `nursery`, because those plants take
-       years and nobody should lose four of them by tidying their desk, and
-       `trophies`, which is a record of what this visitor has already done.
-       Putting the world back does not mean it never happened. */
-
-    reset.addEventListener('click', function () {
-      WORLD.forEach(function (k) {
-        try { localStorage.removeItem(STORE + k); } catch (e) {}
-        try { sessionStorage.removeItem(STORE + k); } catch (e) {}
-      });
-      try { sessionStorage.removeItem(STORE + 'secret.library'); } catch (e) {}
-      location.reload();
-    });
-    bar.appendChild(reset);
-
-    /* Tidy up is the smaller, gentler half of put back. It moves the things
-       on THIS page back to where Finder has them and lets go of any sizes,
-       and it does it in front of you rather than reloading -- half the
-       pleasure of tidying a desk is watching it happen. Nothing else is
-       touched: every door stays open, every plant keeps growing, and
-       anything thrown down the shaft stays down there. */
+    /* Tidy up is the gentle one, and the one people will actually reach
+       for, so it comes first. It slides the things on THIS page back to
+       where Finder has them and lets go of any sizes, in front of you
+       rather than by reloading -- half the pleasure of tidying a desk is
+       watching it happen. Nothing else is touched: every door stays open,
+       every plant keeps growing, the shelf keeps what is on it, and
+       anything thrown away stays thrown away. */
     var tidy = document.createElement('button');
     tidy.className = 'toggle';
     tidy.type = 'button';
@@ -1608,6 +1595,53 @@
       }, 600);
     });
     bar.appendChild(tidy);
+    /* ------------------------------------------------------------ reset
+       Everything. Not "put things back where Finder has them" -- that is
+       what tidy up is for -- but every single thing this browser has ever
+       remembered about this site: the arrangement, the sizes, every door
+       that has been found, every living thing's progress, the shelf, the
+       glasshouse, the theme, the switches, the player.
+
+       It asks twice, because there is no undo and because thirty-five
+       years of a saguaro should not go on one slip of a finger. */
+    var reset = document.createElement('button');
+    reset.className = 'toggle';
+    reset.type = 'button';
+    reset.innerHTML = '<span class="led"></span>full reset';
+    reset.title = 'forget everything this browser knows about the site';
+
+    var armed = 0;
+
+    function wipe(store) {
+      var doomed = [], i, k;
+      try {
+        for (i = 0; i < store.length; i++) {
+          k = store.key(i);
+          if (k && k.indexOf(STORE) === 0) doomed.push(k);
+        }
+        doomed.forEach(function (key) { store.removeItem(key); });
+      } catch (e) {}
+    }
+
+    reset.addEventListener('click', function () {
+      if (!armed || Date.now() > armed) {
+        armed = Date.now() + 6000;
+        reset.classList.add('arming');
+        reset.innerHTML = '<span class="led"></span>sure?';
+        setTimeout(function () {
+          if (!armed || Date.now() < armed) return;
+          armed = 0;
+          reset.classList.remove('arming');
+          reset.innerHTML = '<span class="led"></span>full reset';
+        }, 6200);
+        return;
+      }
+      armed = 0;
+      wipe(localStorage);
+      wipe(sessionStorage);
+      location.reload();
+    });
+    bar.appendChild(reset);
   }
 
   /* ============================================================ GUESTBOOK
@@ -2186,6 +2220,11 @@
     mobilizeBed(document.querySelector('.plantbed'));
     restorePositions();
     applyTossed();          // anything thrown down the shaft is not drawn
+    var theBin = binEl();
+    if (theBin) {
+      theBin.hidden = document.body.getAttribute('data-scene') === 'crypt';
+      paintBin();
+    }
     mountSeaDoor();         // three clicks on the photograph of the sea
     mountVisitors();        // the scratches on the wall of this room
     fitBed();
@@ -4800,12 +4839,83 @@
     return d.innerHTML;
   }
 
-  /** True if the item was left hanging over the side of the page. */
+  /**
+   * True if the item was left hanging over the side of the page.
+   *
+   * Only in the garden. That is where the shaft is, and it is the one page
+   * where the edge of the screen means something -- everywhere else people
+   * shove things to the margins all day long and would lose them. The bin
+   * below works everywhere instead. Neither one waits for the crypt to be
+   * found: you can throw something away long before you know where it goes.
+   */
   function overTheEdge(el) {
-    if (!secretOpen('crypt')) return false;
+    if (document.body.getAttribute('data-scene') !== 'garden') return false;
     var r = el.getBoundingClientRect();
     var mid = r.left + r.width / 2;
     return mid < 6 || mid > window.innerWidth - 6;
+  }
+
+  /* ------------------------------------------------------------- the bin
+     A bin in the corner of every page. Drag something onto it and it goes
+     down the shaft with everything else, whether or not the shaft has been
+     dug yet -- throwing a thing away does not require knowing where it
+     lands. Press it and, if you have found the bottom, it takes you there.
+     ------------------------------------------------------------------- */
+
+  var BIN_SHUT = [' ,---, ', ' |___| ', ' |:::| ', ' |:::| ', " '---' "];
+  var BIN_OPEN = ['  /--, ', ' |___| ', ' |:::| ', ' |:::| ', " '---' "];
+
+  function binEl() { return document.getElementById('bin'); }
+
+  /**
+   * Is the POINTER over the bin's mouth?
+   *
+   * The pointer, not the middle of what is being carried: things get
+   * picked up by their name, which is at the bottom of them, so asking
+   * where the item's centre is would mean aiming a folder's waist at the
+   * bin while looking at its feet.
+   */
+  function overBin(x, y) {
+    var bin = binEl();
+    if (!bin || bin.hidden) return false;
+    var b = bin.getBoundingClientRect();
+    return x > b.left - 22 && x < b.right + 22 &&
+           y > b.top - 22 && y < b.bottom + 22;
+  }
+
+  function paintBin() {
+    var bin = binEl();
+    if (!bin) return;
+    var n = Object.keys(tossedList()).length;
+    bin.querySelector('pre').textContent =
+      (bin.classList.contains('open') ? BIN_OPEN : BIN_SHUT).join('\n');
+    bin.querySelector('.bin-count').textContent = n ? String(n) : '';
+    bin.setAttribute('title', n
+      ? n + (n === 1 ? ' thing' : ' things') + ' at the bottom of the garden'
+      : 'drag anything in here and it goes to the bottom of the garden');
+  }
+
+  function mountBin() {
+    if (!wide()) return;
+    var bin = document.createElement('button');
+    bin.id = 'bin';
+    bin.type = 'button';
+    bin.innerHTML = '<pre aria-hidden="true"></pre><span class="bin-count"></span>';
+    bin.setAttribute('aria-label', 'the bin');
+    document.body.appendChild(bin);
+
+    bin.addEventListener('click', function () {
+      if (secretOpen('crypt')) {
+        go(new URL('BOTTOM CRYPT/', siteRoot()).href, true, 0);
+        return;
+      }
+      var n = Object.keys(tossedList()).length;
+      toast(n ? 'it all goes somewhere. you have not found where yet.'
+              : 'drag something in here');
+      play('tick');
+    });
+
+    paintBin();
   }
 
   function tossItem(el) {
@@ -4821,6 +4931,7 @@
       el.classList.remove('falling');
       el.classList.add('tossed-away');
       paintPile();
+      paintBin();
       fitSoon();
     }, 640);
     toast(pileName(key) + ' went down the shaft');
@@ -5997,6 +6108,7 @@
     mountStill();
     mountPogo();
     mountShelf();
+    mountBin();
     mountToggles();
     mountHint();
     mountNav();

@@ -1,14 +1,10 @@
 ## recently
-- the glasshouse has thirteen plants now. press one and it tells you about itself, including what it smells like
-- peppers, garlic and a shiitake log go round every year instead of only getting older
-- hinoki, saguaro and shiitake joined the sun level
-- the visitor count is a plain figure, not a wall of scratches
-- dragging a photo no longer highlights half the page
-- an opened picture sits over the clock and the plants instead of under them
-- the photograph of the sea is the one picture that never opens. five clicks and it is a door
-- every plant in the glasshouse has a +12 hours button of its own
-- dragging an opened picture follows the cursor now, and stays over the clock
-- the shelf pushes into the wall. press the tab to pull it back out
+- there is a bin in the corner of every page. drag anything in and it goes to the bottom crypt
+- in the garden you can still shove things off the side of the screen. neither needs the crypt found first
+- put back is now FULL RESET — it forgets everything, shelf and glasshouse included. it asks twice
+- tidy up stays the gentle one: this page, back where finder has it
+- the plant and the still are one switch now. the fit switch is gone
+- a shelf switch in the taskbar hides the shelf altogether
 
 ## next
 - fill THE GARDEN with the real plant log
