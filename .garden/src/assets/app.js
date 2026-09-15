@@ -6072,19 +6072,163 @@
     ' > ^ < '
   ];
 
-  /* Written for this bar, not borrowed from anybody. The register is the
-     point: flat, patient, slightly off. */
-  var BAR_LINES = [
-    'the rain has been going on for four hours. nobody has mentioned it.',
-    'the record is side two. nobody got up to turn it over, so somebody must have.',
-    'the ice in this glass is a different shape from the ice in the last one.',
-    'a cat came in at some point. it is not clear when, or whether it left.',
-    'the bartender dries the same glass he has been drying since you arrived.',
-    'there is a telephone on the wall that has never rung.',
-    'whisky, no water, and a small dish of something salty nobody ordered.',
-    'somebody is playing a bass line very slowly, as if it were a kind of weather.',
-    'the clock behind the bar is eleven minutes slow, and has been for years.',
-    'you could leave. the rain will still be doing this.'
+  /* Two things get said in this bar.
+
+     The first is a line from somebody who wrote in Japanese. Everything
+     here is old enough to be out of copyright -- Bashō, Buson, Issa,
+     Ryōkan, Sei Shōnagon, Kenkō, Kamo no Chōmei, Sōseki, Akutagawa,
+     Santōka, Dazai -- and kept to the length of something a person would
+     actually say out loud at a bar. The living ones are in the second
+     list instead, as facts about them, which is the honest way to have
+     Murakami in a bar without borrowing his sentences.
+
+     The second is a fact about something you might be drinking. Not
+     "wine is made from grapes" -- the kind of thing the person behind
+     the counter tells you at one in the morning because you asked. */
+
+  var BAR_QUOTES = [
+    { t: 'An old pond. A frog jumps in. The sound of water.', by: 'Bashō' },
+    { t: 'The moon and the sun are travellers of a hundred generations.', by: 'Bashō' },
+    { t: 'In this world we walk on the roof of hell, gazing at flowers.', by: 'Issa' },
+    { t: 'Snail, climb Mount Fuji — but slowly, slowly.', by: 'Issa' },
+    { t: 'Lighting one candle with another candle. Spring evening.', by: 'Buson' },
+    { t: 'The thief left it behind: the moon at the window.', by: 'Ryōkan' },
+    { t: 'Are we to look at cherry blossoms only in full bloom?', by: 'Kenkō' },
+    { t: 'The most precious thing in life is its uncertainty.', by: 'Kenkō' },
+    { t: 'In spring, the dawn.', by: 'Sei Shōnagon' },
+    { t: 'Things that make one’s heart beat faster: sparrows feeding their young.', by: 'Sei Shōnagon' },
+    { t: 'The flow of the river is ceaseless, and its water is never the same.', by: 'Kamo no Chōmei' },
+    { t: 'I am a cat. As yet I have no name.', by: 'Sōseki' },
+    { t: 'Approach everything rationally and you become harsh.', by: 'Sōseki' },
+    { t: 'Human life is more hell than hell itself.', by: 'Akutagawa' },
+    { t: 'Mine has been a life of much shame.', by: 'Dazai' },
+    { t: 'No road but this one. I walk alone.', by: 'Santōka' },
+    { t: 'Even in Kyoto, hearing the cuckoo, I long for Kyoto.', by: 'Bashō' },
+    { t: 'The autumn wind: for me there is no god, there is no Buddha.', by: 'Santōka' }
+  ];
+
+  var BAR_FACTS = [
+    // whisky
+    'Two percent of every cask in Scotland evaporates each year and nobody gets it. ' +
+      'They call it the angel’s share. In the heat of Kentucky the first year can take ten.',
+    'A black fungus called Baudoinia lives on evaporating alcohol and grows on everything ' +
+      'downwind of a warehouse. Whole towns near distilleries are stained with it.',
+    'Japanese whisky exists because Masataka Taketsuru went to Glasgow in 1918 to study ' +
+      'chemistry, apprenticed at three distilleries, and came home with two notebooks.',
+    'Scotch must sit in oak for three years. Bourbon has no minimum at all unless the ' +
+      'label says straight, and then it is two.',
+    'Bourbon does not have to come from Kentucky. It does have to be at least fifty-one ' +
+      'percent corn, and the barrel has to be new and charred.',
+    'Whisky stops ageing the moment it leaves the barrel. A bottle opened in 1970 is the ' +
+      'same age today as it was that night.',
+
+    // wine and champagne
+    'A cork oak is never felled for its cork. The bark is stripped every nine years and the ' +
+      'tree lives two hundred, which makes cork one of the few things harvested by not killing it.',
+    'There are about six atmospheres of pressure in a bottle of champagne, roughly three ' +
+      'times a car tyre.',
+    'Almost every vine in Europe is grafted onto American roots. Phylloxera killed the ' +
+      'originals in the 1800s and American roots are immune.',
+    'The legs running down the inside of a wine glass are the Marangoni effect — alcohol ' +
+      'evaporating faster than water — and tell you nothing whatever about quality.',
+    'The bubbles in champagne form on imperfections in the glass. A perfectly clean, ' +
+      'perfectly smooth flute produces almost none, so glassmakers etch the bottom on purpose.',
+    'Before machines, a remueur turned the bottles by hand. A good one could do tens of ' +
+      'thousands in a day, an eighth of a turn each.',
+
+    // sake and beer
+    'Sake is the only drink in the world where the starch is being turned into sugar at the ' +
+      'same time as the sugar is being turned into alcohol. That is why it reaches twenty percent.',
+    'Kimoto sake is made by letting wild lactic bacteria into the starter and beating the ' +
+      'rice to a paste with poles. It takes a month longer and tastes of it.',
+    'Namazake is sake that was never pasteurised. It has to be kept cold its whole life and ' +
+      'it changes in the bottle, which most sake does not.',
+    'The Japanese highball is not an accident of taste. Suntory ran a campaign in the 2000s ' +
+      'to get whisky back into the hands of people who had stopped drinking it, and it worked.',
+
+    // cocktails
+    'The first printed definition of a cocktail, in a New York paper in 1806, was spirits, ' +
+      'sugar, water and bitters. That is an Old Fashioned. Everything else came later.',
+    'The label on a bottle of Angostura is famously too big for the bottle. It was a printing ' +
+      'mistake in the 1800s and the family decided to keep it.',
+    'A Negroni is said to be what happened when Count Camillo Negroni asked a Florence ' +
+      'bartender to put gin in his Americano instead of soda, in 1919.',
+    'The Daiquiri is named after an iron mining village on the coast of Cuba.',
+    'Shaking a drink does not just chill it. It adds about a quarter of its volume in water ' +
+      'and beats air through it, which is why a shaken drink is paler and softer.',
+    'The gimlet exists because of scurvy. British ships carried lime cordial by law, and ' +
+      'lime cordial plus gin is a gimlet.',
+    'The almond taste in maraschino is not almond. It is the stones of the marasca cherries, ' +
+      'crushed and distilled along with the fruit.',
+    'Vermouth is wine. It goes off like wine. An open bottle left on the back bar for six ' +
+      'months has been quietly ruining every martini poured from it.',
+    'Chartreuse is made by two Carthusian monks who are the only people alive who know what ' +
+      'the hundred and thirty botanicals are.',
+    'Campari was coloured with cochineal — crushed insects — until 2006.',
+    'Absinthe never made anybody mad. The thujone in it is present in trace amounts; what ' +
+      'ruined people was drinking sixty-eight percent alcohol all afternoon, and the adulterants.',
+    'When water hits absinthe or ouzo and it goes cloudy, that is anethole coming out of ' +
+      'solution because it dissolves in alcohol and not in water. Physicists call it the ouzo effect.',
+    'Gin is legally almost nothing: neutral spirit in which juniper is the dominant flavour. ' +
+      'Everything else is up to whoever is making it.',
+    'A blue agave takes six to eight years before it is worth cutting, and the plant is ' +
+      'killed to get at the heart. Tequila is a slower crop than most whisky.',
+
+    // coffee
+    'A coffee bean is the seed of a fruit. The dried flesh around it is called cascara and ' +
+      'it makes a tea that tastes of hibiscus and raisins.',
+    'Arabica is a natural hybrid: robusta crossed with a wild Sudanese species, some time in ' +
+      'the last ten thousand years or so. That accident is most of the coffee on earth.',
+    'Robusta has about twice the caffeine of arabica. The caffeine is the plant’s ' +
+      'insecticide, which is why the hardier species has more of it.',
+    'Espresso is not a bean or a roast. It is a way of pushing water through coffee, and you ' +
+      'can do it with anything.',
+    'Crema is carbon dioxide left over from roasting, forced into suspension by the pressure. ' +
+      'It fades as the beans get older, which is why it is a freshness test and not a quality one.',
+    'The first instant coffee to be sold was patented in 1909 by a Belgian living in ' +
+      'Guatemala whose name happened to be George Washington.',
+    'Pouring water on fresh grounds makes them swell and push back. That is the carbon ' +
+      'dioxide leaving. Baristas call it the bloom and wait thirty seconds for it to finish.',
+
+    // milk
+    'Milk is white because the fat globules and the casein in it scatter every wavelength ' +
+      'equally. Skimmed milk looks faintly blue because the fat is gone and the scattering shifts.',
+    'Homogenised milk is milk that has been forced through a valve at enormous pressure so ' +
+      'the fat droplets are too small to float back up. Unhomogenised milk separates overnight.',
+    'Steamed milk tastes sweeter without any sugar being added. The sweetness peaks somewhere ' +
+      'around sixty-five degrees; past seventy the proteins denature and it starts tasting cooked.',
+    'Most adults on earth cannot digest lactose. Being able to is the mutation, and it spread ' +
+      'through herding populations in the last few thousand years.',
+
+    // water
+    'In Europe, a water may only be called mineral water if it comes from one protected ' +
+      'source, is bottled where it comes out of the ground, and has never had anything removed.',
+    'The prickle of sparkling water is not the bubbles. It is carbonic acid on the tongue, ' +
+      'detected by the same receptor that reacts to mustard and wasabi.',
+    'Perrier’s spring in Vergèze is naturally carbonated. The gas is collected separately ' +
+      'from the water and put back in at the bottling line.',
+    'Seltzer is named after Selters, a village in Germany that has been sending its water ' +
+      'abroad in stone jars since the 1500s.',
+    'Vichy Catalán carries about ten times the dissolved minerals of Evian. It tastes salty ' +
+      'because it is, and people either love it or will not finish the glass.',
+    'Gerolsteiner carries so much calcium and bicarbonate that a litre of it is a meaningful ' +
+      'part of a day’s calcium.',
+
+    // the writers, for the ones still in copyright
+    'Murakami ran a jazz bar in Tokyo called Peter Cat for seven years before he wrote a ' +
+      'word. He decided to write a novel at a baseball game, in the middle of the innings.',
+    'Kawabata was the first Japanese writer to win the Nobel. His acceptance lecture was ' +
+      'largely about the poetry of medieval Zen monks.',
+    'Mishima spent the morning of his death finishing a novel, sealed the manuscript, and ' +
+      'posted it to his publisher before he left the house.',
+    'Sōseki spent two miserable years in London on a government scholarship, hated it, and ' +
+      'came back to write the funniest novel in modern Japanese.',
+    'Dazai’s No Longer Human has never been out of print in Japan and is still, most ' +
+      'years, one of the best-selling novels in the country.',
+    'Akutagawa died at thirty-five. The most important literary prize in Japan is named after ' +
+      'him, and the writer who set it up was his closest friend.',
+    'Santōka walked. He spent the last fifteen years of his life on foot, begging, writing ' +
+      'haiku that refused to have the right number of syllables in them.'
   ];
 
   function mountBar() {
@@ -6158,16 +6302,40 @@
     if (main) main.insertBefore(say, main.firstChild);
     sceneNodes.push(say);
 
-    var lineIdx = Math.floor(Math.random() * BAR_LINES.length);
+    /* One shuffled deck of both kinds, walked through in order, so nothing
+       repeats until everything has been said once. Shuffled fresh every
+       time somebody comes in, so it is never the same evening twice. */
+    var deck = [];
+    BAR_QUOTES.forEach(function (q) { deck.push({ kind: 'quote', q: q }); });
+    BAR_FACTS.forEach(function (f) { deck.push({ kind: 'fact', t: f }); });
+    (function shuffle() {
+      var i, j, t;
+      for (i = deck.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+      }
+    })();
+
+    var lineIdx = 0;
+
+    function draw() {
+      var card = deck[lineIdx % deck.length];
+      lineIdx++;
+      if (card.kind === 'quote') {
+        return '<em>' + escapeText(card.q.t) + '</em>' +
+               '<b class="bar-by">' + escapeText(card.q.by) + '</b>';
+      }
+      return '<span class="bar-fact">' + escapeText(card.t) + '</span>';
+    }
+
     function nextLine() {
       say.classList.add('fading');
       setTimeout(function () {
-        say.textContent = BAR_LINES[lineIdx % BAR_LINES.length];
-        lineIdx++;
+        say.innerHTML = draw();
         say.classList.remove('fading');
       }, 700);
     }
-    say.textContent = BAR_LINES[lineIdx++ % BAR_LINES.length];
+    say.innerHTML = draw();
 
     sceneTimers.push(setInterval(function () {
       if (document.hidden) return;

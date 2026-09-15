@@ -2681,16 +2681,29 @@ body[data-scene="bar"] .item.kind-directory h3 a { color: #D9A441; }
 }
 #barcat.here { opacity: .8; }
 .bar-line {
-  max-width: 34rem;
-  margin: 0 0 1.4rem !important;
+  max-width: 36rem;
+  margin: 0 0 1.6rem !important;
   font-family: var(--serif) !important;
   font-size: 1rem !important;
-  font-style: italic;
+  font-style: normal;
+  line-height: 1.55;
   color: var(--ink-soft) !important;
   opacity: 1;
   transition: opacity .7s ease;
 }
 .bar-line.fading { opacity: 0; }
+.bar-line em { font-style: italic; font-size: 1.12rem; color: var(--ink); }
+.bar-line .bar-by {
+  display: block;
+  margin-top: .35rem;
+  font-family: var(--mono);
+  font-size: .6rem;
+  font-weight: 400;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ochre);
+}
+.bar-line .bar-fact { font-size: .95rem; }
 
 /* ============================================================== WEATHER
    The garden gets the sky the visitor is actually standing under.
