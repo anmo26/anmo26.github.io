@@ -5006,10 +5006,26 @@
   }
 
   /* =============================================================== NOTES
-     A pad of stickies. Press "note" in the taskbar and one lands on the
-     page: type in it, drag it anywhere, throw it away with the cross in
-     its corner. They belong to the page they were stuck to, they survive
-     a reload, and a full reset takes the lot.
+     A pad of stickies, and the wall they are stuck to is a SHARED one.
+     Press "note" in the taskbar and one lands on the page: type in it,
+     drag it anywhere, throw it away with the cross in its corner -- and
+     everybody who opens the same page sees it, the way everybody sees the
+     same number on the visitor counter.
+
+     The wall lives in one small public document, keyed by page, fetched on
+     arrival and re-read every few seconds so a note somebody else writes
+     turns up without a reload. Every write re-reads first and puts the
+     note into whatever is on the wall by then, so two people writing at
+     once do not rub each other out.
+
+     It is a public document on a public site: anybody who can open the
+     page can read every note on it and write one of their own, and the
+     cross in the corner takes any note down, not only your own.
+
+     There is a copy in this browser as well. It is not the record any
+     more -- the wall is -- but it means the notes are on the page before
+     the network answers, and that a night when the wall cannot be reached
+     is a night the notes are still there.
 
      They are not in the plantbed. The bed is drawn scaled to fit the
      window and its coordinates are Finder's, neither of which has anything
@@ -5019,43 +5035,182 @@
 
   var NOTE_COLOURS = 4;
   var NOTE_MAX = 900;
+  var NOTE_WALL = 'https://textdb.dev/api/data/anmo-garden-notes-8f3c1d';
+  var WALL_POLL_MS = 12000;
+  var WALL_MAX = 200;          // notes on the whole wall, oldest dropped first
+
+  var wall = null;             // { rooms: { "/path": [note, ...] } }
+  var wallLast = '';           // what we last painted, so a poll is cheap
+  var wallChain = Promise.resolve();
 
   /** Which page we are on, as the key the notes are filed under. */
   function noteRoom() {
     try { return decodeURIComponent(location.pathname); } catch (e) { return location.pathname; }
   }
 
-  function allNotes() {
-    var n = get('stickies', null);
-    return (n && typeof n === 'object') ? n : {};
+  /** A name for this browser, so a full reset knows which notes are its own. */
+  function myHand() {
+    var h = get('hand', null);
+    if (!h) { h = Math.random().toString(36).slice(2, 10); set('hand', h); }
+    return h;
   }
 
-  function roomNotes() { return allNotes()[noteRoom()] || []; }
+  /** Anything that arrives from the wall, or out of the old local store. */
+  function normaliseWall(w) {
+    if (!w || typeof w !== 'object') return { rooms: {} };
+    var rooms = w.rooms && typeof w.rooms === 'object' ? w.rooms : w;   // old shape
+    var out = {}, k;
+    for (k in rooms) {
+      if (Object.prototype.hasOwnProperty.call(rooms, k) &&
+          rooms[k] && rooms[k].length) {
+        out[k] = rooms[k].filter(function (n) { return n && n.id; }).map(function (n) {
+          return {
+            id: String(n.id),
+            text: String(n.text || '').slice(0, NOTE_MAX),
+            colour: (Number(n.colour) || 0) % NOTE_COLOURS,
+            x: Math.round(Number(n.x) || 0),
+            y: Math.round(Number(n.y) || 0),
+            by: String(n.by || ''),
+            at: Number(n.at) || 0
+          };
+        });
+      }
+    }
+    return { rooms: out };
+  }
 
-  function saveRoomNotes(list) {
-    var all = allNotes();
-    if (list.length) all[noteRoom()] = list;
-    else delete all[noteRoom()];
-    set('stickies', all);
+  /** The whole wall, oldest notes shed if it has grown past the cap. */
+  function trimWall(w) {
+    var all = [], k;
+    for (k in w.rooms) {
+      if (Object.prototype.hasOwnProperty.call(w.rooms, k)) {
+        (function (room) {
+          w.rooms[room].forEach(function (n) { all.push({ room: room, n: n }); });
+        }(k));
+      }
+    }
+    if (all.length <= WALL_MAX) return w;
+    all.sort(function (a, b) { return a.n.at - b.n.at; });
+    all.slice(0, all.length - WALL_MAX).forEach(function (o) {
+      w.rooms[o.room] = w.rooms[o.room].filter(function (n) { return n.id !== o.n.id; });
+      if (!w.rooms[o.room].length) delete w.rooms[o.room];
+    });
+    return w;
+  }
+
+  function cacheWall(w) { set('stickies', w); }
+
+  function localWall() { return normaliseWall(get('stickies', null)); }
+
+  /** Read the wall. Falls back to this browser's copy if it cannot be reached. */
+  function fetchWall() {
+    return fetch(NOTE_WALL, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (t) {
+        var j = null;
+        try { j = t ? JSON.parse(t) : null; } catch (e) { j = null; }
+        return normaliseWall(j);
+      })
+      .catch(function () { return null; });
+  }
+
+  function putWall(w) {
+    return fetch(NOTE_WALL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(w)
+    }).catch(function () { /* the copy in this browser is still right */ });
+  }
+
+  /**
+   * Change the wall. Re-reads it first, so what goes back up is everybody
+   * else's notes with this one change folded in -- never a stale copy of
+   * the whole wall written over the top of theirs. Edits queue behind each
+   * other, because two of these overlapping is the same problem again.
+   */
+  function wallEdit(change) {
+    wallChain = wallChain.then(function () {
+      return fetchWall().then(function (fresh) {
+        var w = fresh || wall || localWall();
+        var room = noteRoom();
+        if (!w.rooms[room]) w.rooms[room] = [];
+        change(w.rooms[room], w);
+        if (!w.rooms[room].length) delete w.rooms[room];
+        trimWall(w);
+        wall = w;
+        cacheWall(w);
+        return putWall(w);
+      });
+    }).catch(function () {});
+    return wallChain;
+  }
+
+  function roomNotes() {
+    var w = wall || localWall();
+    return w.rooms[noteRoom()] || [];
   }
 
   function noteSave(note) {
-    var list = roomNotes();
-    var i, found = false;
-    for (i = 0; i < list.length; i++) {
-      if (list[i].id === note.id) { list[i] = note; found = true; break; }
-    }
-    if (!found) list.push(note);
-    saveRoomNotes(list);
+    /* On the page at once; on the wall when the wall answers. */
+    var w = wall || localWall();
+    var room = noteRoom();
+    var list = (w.rooms[room] || []).filter(function (n) { return n.id !== note.id; });
+    list.push(note);
+    w.rooms[room] = list;
+    wall = w;
+    cacheWall(w);
+
+    wallEdit(function (live) {
+      var i, found = false;
+      for (i = 0; i < live.length; i++) {
+        if (live[i].id === note.id) { live[i] = note; found = true; break; }
+      }
+      if (!found) live.push(note);
+    });
   }
 
   function noteForget(id) {
-    saveRoomNotes(roomNotes().filter(function (n) { return n.id !== id; }));
+    var w = wall || localWall();
+    var room = noteRoom();
+    if (w.rooms[room]) {
+      w.rooms[room] = w.rooms[room].filter(function (n) { return n.id !== id; });
+      if (!w.rooms[room].length) delete w.rooms[room];
+    }
+    wall = w;
+    cacheWall(w);
+
+    wallEdit(function (live) {
+      var i;
+      for (i = live.length - 1; i >= 0; i--) if (live[i].id === id) live.splice(i, 1);
+    });
+  }
+
+  /** Full reset takes down the notes this browser wrote, and nobody else's. */
+  function noteWipeMine() {
+    var hand = myHand();
+    wallChain = wallChain.then(function () {
+      return fetchWall().then(function (fresh) {
+        if (!fresh) return;
+        var kept = { rooms: {} }, k;
+        for (k in fresh.rooms) {
+          if (Object.prototype.hasOwnProperty.call(fresh.rooms, k)) {
+            (function (room) {
+              var mine = fresh.rooms[room].filter(function (n) { return n.by !== hand; });
+              if (mine.length) kept.rooms[room] = mine;
+            }(k));
+          }
+        }
+        return putWall(kept);
+      });
+    }).catch(function () {});
+    return wallChain;
   }
 
   function stickyEl(note, focus) {
     var el = document.createElement('div');
     el.className = 'sticky c' + (note.colour % NOTE_COLOURS);
+    el.setAttribute('data-note', note.id);
+    if (note.by && note.by !== myHand()) el.classList.add('theirs');
     el.style.left = note.x + 'px';
     el.style.top = note.y + 'px';
     el.style.zIndex = bumpPanel();
@@ -5082,7 +5237,7 @@
       typing = setTimeout(function () {
         note.text = body.textContent.slice(0, NOTE_MAX);
         noteSave(note);
-      }, 400);
+      }, 600);
     });
     body.addEventListener('blur', function () {
       note.text = body.textContent.slice(0, NOTE_MAX);
@@ -5121,6 +5276,38 @@
   function paintStickies() {
     clearStickies();
     roomNotes().forEach(function (n) { stickyEl(n, false); });
+    wallLast = JSON.stringify(roomNotes());
+    watchWall();
+    pollWall();
+  }
+
+  /** Somebody typing or moving a note is not to be interrupted by a repaint. */
+  function stickyBusy() {
+    var live = document.activeElement;
+    if (live && live.closest && live.closest('.sticky')) return true;
+    return document.body.classList.contains('dragging');
+  }
+
+  function pollWall() {
+    fetchWall().then(function (fresh) {
+      if (!fresh) return;
+      wall = fresh;
+      cacheWall(fresh);
+      if (stickyBusy()) return;
+      if (JSON.stringify(roomNotes()) === wallLast) return;
+      clearStickies();
+      roomNotes().forEach(function (n) { stickyEl(n, false); });
+      wallLast = JSON.stringify(roomNotes());
+    });
+  }
+
+  function watchWall() {
+    if (watchWall.on) return;
+    watchWall.on = true;
+    setInterval(function () { if (!document.hidden) pollWall(); }, WALL_POLL_MS);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) pollWall();
+    });
   }
 
   function newSticky() {
@@ -5131,11 +5318,14 @@
       id: String(Date.now()) + Math.random().toString(36).slice(2, 6),
       text: '',
       colour: Math.floor(Math.random() * NOTE_COLOURS),
+      by: myHand(),
+      at: Date.now(),
       x: Math.round(window.pageXOffset + window.innerWidth * 0.5 - 100 + (many % 5) * 22),
       y: Math.round(window.pageYOffset + window.innerHeight * 0.34 + (many % 5) * 20)
     };
     noteSave(note);
     stickyEl(note, true);
+    wallLast = JSON.stringify(roomNotes());
     play('tick');
   }
 
