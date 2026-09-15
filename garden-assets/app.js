@@ -506,7 +506,11 @@
 
     drag.el.style.left = drag.originX + 'px';
     drag.el.style.top = drag.originY + 'px';
-    drag.el.style.zIndex = bumpZ();
+    /* Picking something up brings it to the front OF ITS OWN BAND. An open
+       picture belongs over the clock and the plants, and writing a bed
+       number onto it the moment it was dragged put it straight back under
+       them -- which is why opening one looked right and moving it did not. */
+    drag.el.style.zIndex = drag.el.classList.contains('viewer') ? bumpPanel() : bumpZ();
     drag.el.classList.add('focused');
     if (drag.handle && drag.handle.setPointerCapture) {
       try { drag.handle.setPointerCapture(drag.pointerId); } catch (err) {}
@@ -5713,7 +5717,7 @@
      already what it does. */
 
   var SEA_PHOTO = 'IMG_3427.JPG';
-  var SEA_CLICKS = 3;
+  var SEA_CLICKS = 5;
 
   function mountSeaDoor() {
     var item = document.querySelector('.item[data-key="' + CSS.escape(SEA_PHOTO) + '"]');
