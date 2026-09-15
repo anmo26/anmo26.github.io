@@ -1,0 +1,1 @@
+one text file per playlist. paste a youtube or spotify link inside and it shows up in the player.

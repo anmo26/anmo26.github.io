@@ -1367,6 +1367,15 @@
       apply: function () { fitSoon(); } },
     { id: 'sound', label: 'sound', def: true,
       apply: function (on) { soundOn = on; } },
+    { id: 'pogo', label: 'pogo', def: true,
+      apply: function (on) { var m = document.getElementById('pogo');
+                             if (m) m.hidden = !on; } },
+    { id: 'plant', label: 'plant', def: true,
+      apply: function (on) { var c = document.getElementById('cactus-shell');
+                             if (c) c.style.display = on ? '' : 'none'; } },
+    { id: 'still', label: 'still', def: true,
+      apply: function (on) { var d = document.getElementById('still-shell');
+                             if (d) d.style.display = on ? '' : 'none'; } },
     { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
                              if (c) c.style.display = on ? '' : 'none'; } },
@@ -2050,79 +2059,54 @@
     });
   }
 
-  /* ============================================================== BROADCAST
-     The ticker carries actual news: Wikipedia's "In the news", which is the
-     same short, sourced sentences that sit on its front page. One public
-     endpoint, no key, no tracking, and it answers cross-origin.
+  /* ================================================================ TICKER
+     The line under the masthead. It used to read the same four phrases all
+     day and then an hour of world news, neither of which had anything to do
+     with this folder. It is the site's own recent history now: the things
+     most lately added or changed, newest first, straight off the file
+     dates -- so a photograph dragged into a folder in Finder announces
+     itself on the next build without anybody writing a word about it.
 
-     The owner's own words are already in the HTML. This replaces only the
-     part after them, so with no JS, no network, or a feed that moved, the
-     ticker still reads exactly as it was written.
+     Only the timestamps are built in. The wording is worked out here, when
+     the page is read, so "an hour ago" means an hour before it is seen
+     rather than an hour before it was published.
      ========================================================================= */
 
-  var NEWS_URL = 'https://en.wikipedia.org/w/api.php?action=parse' +
-                 '&page=Template:In_the_news&prop=text&format=json&origin=*';
-  var NEWS_EVERY_MS = 60 * 60 * 1000;      // an hour
-  var newsBase = '';
-
-  /** Strip tags and entities without ever handing the string to innerHTML. */
-  function plainText(html) {
-    var doc;
-    try {
-      doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
-    } catch (e) { return ''; }
-    return (doc.body.textContent || '').replace(/\[[^\]]*\]/g, '');
+  function ago(ms) {
+    var s = Math.max(0, (Date.now() - ms) / 1000);
+    if (s < 90) return 'just now';
+    var m = s / 60;
+    if (m < 60) return Math.round(m) + ' minutes ago';
+    var h = m / 60;
+    if (h < 24) return Math.round(h) === 1 ? 'an hour ago' : Math.round(h) + ' hours ago';
+    var d = h / 24;
+    if (d < 2) return 'yesterday';
+    if (d < 14) return Math.round(d) + ' days ago';
+    var w = d / 7;
+    if (w < 9) return Math.round(w) === 1 ? 'a week ago' : Math.round(w) + ' weeks ago';
+    var mo = d / 30.4;
+    if (mo < 18) return Math.round(mo) <= 1 ? 'a month ago' : Math.round(mo) + ' months ago';
+    return Math.round(d / 365) + ' years ago';
   }
 
-  function headlines(html) {
-    var items = html.match(/<li\b[^>]*>[\s\S]*?<\/li>/gi) || [];
-    var out = [];
-
-    for (var i = 0; i < items.length && out.length < 6; i++) {
-      var t = plainText(items[i]).replace(/\s+/g, ' ').trim();
-
-      // The list ends with bare "ongoing" and "recent deaths" links, which
-      // are navigation rather than news. A real item is a whole sentence.
-      if (t.length < 40 || t.charAt(t.length - 1) !== '.') continue;
-      if (/^(Ongoing|Recent deaths)\b/i.test(t)) continue;
-
-      out.push(t.replace(/\.$/, ''));
-    }
-    return out;
-  }
-
-  function paintNews(span, lines) {
-    if (!lines.length) return;
-    // textContent, never innerHTML: every word of this came off the network.
-    span.textContent = newsBase + '  in the news  *  ' + lines.join('  *  ') + '  *';
-  }
-
-  function fetchNews(span) {
-    // Cache-bust, or an hourly refresh would be served the same response by
-    // the browser all day.
-    fetch(NEWS_URL + '&_=' + Math.floor(Date.now() / NEWS_EVERY_MS))
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        var html = j && j.parse && j.parse.text && j.parse.text['*'];
-        if (html) paintNews(span, headlines(html));
-      })
-      .catch(function () { /* offline, or the feed moved. The ticker stands. */ });
-  }
-
-  function mountBroadcast() {
+  function mountTicker() {
     var span = document.querySelector('.marquee span');
-    if (!span || !window.fetch || !window.DOMParser) return;
+    if (!span) return;
+    var recent = CFG.recent;
+    if (!recent || !recent.length) return;
 
-    newsBase = span.textContent;
-    fetchNews(span);
-    setInterval(function () { fetchNews(span); }, NEWS_EVERY_MS);
+    function paint() {
+      var out = ['lately'], i;
+      for (i = 0; i < recent.length; i++) {
+        out.push(recent[i].name + ' \u2014 ' + ago(recent[i].at));
+      }
+      // textContent, never innerHTML: a filename can hold anything.
+      span.textContent = '  ' + out.join('  *  ') + '  *';
+    }
 
-    // An hour is a long time to leave a laptop shut; catch up on waking.
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) fetchNews(span);
-    });
+    paint();
+    setInterval(paint, 60000);
   }
-
 
   /* =============================================================== SOUND
      Two small noises, made on the spot rather than downloaded: a rustle
@@ -2340,7 +2324,12 @@
   var STAGE_NAME = ['a pot', 'a sprout', 'a pad', 'growing', 'arms out', 'in flower', 'fruiting'];
   var STAGE_NEED = [0, 1, 2, 4, 6, 9, 12];
 
-  var DROPS_A_DAY = 6;   // past this it is a flood, not a garden
+  /* It used to take a fortnight of coming back: one watering per page
+     visited, six a day at the outside. That was the right shape for a plant
+     and the wrong shape for a site somebody is still building -- you could
+     not see the thing you had just made until tomorrow. Water it as much as
+     you like. The days are still counted, so the daily version is a
+     constant away if it is ever wanted back. */
 
   function pad2(n) { return n < 10 ? '0' + n : String(n); }
 
@@ -2372,10 +2361,10 @@
     // this morning -- the garden it opened stays open regardless.
     if (plant.day !== today()) { plant.day = today(); plant.today = 0; plant.picked = [0, 0, 0, 0, 0]; }
 
-    var thisVisit = true;      // one drink per page; see cactusVisit, below
     var sayTimer = null;
 
-    function canWater() { return thisVisit && plant.today < DROPS_A_DAY; }
+    function grown() { return stageOf(plant.drops) === RIPE; }
+    function canWater() { return !grown(); }
     function inBucket() {
       var n = 0, i;
       for (i = 0; i < TUNAS; i++) if (plant.picked[i]) n++;
@@ -2471,9 +2460,9 @@
     }
 
     function rest() {
-      if (stageOf(plant.drops) === RIPE && inBucket() < TUNAS) { speak('pick the tuna'); return; }
-      if (canWater()) { speak('water me'); return; }
-      speak(plant.today >= DROPS_A_DAY ? 'soaked for today' : 'thank you');
+      if (grown() && inBucket() < TUNAS) { speak('pick the tuna'); return; }
+      if (grown()) { speak('all grown'); return; }
+      speak('water me');
     }
 
     function pick(idx) {
@@ -2495,7 +2484,7 @@
 
     function water() {
       if (!canWater()) {
-        speak(plant.today >= DROPS_A_DAY ? 'come back tomorrow' : 'already watered', null);
+        speak('it is as big as it gets', null);
         setTimeout(rest, 2400);
         shell.classList.add('nope');
         setTimeout(function () { shell.classList.remove('nope'); }, 320);
@@ -2506,7 +2495,6 @@
       plant.drops++;
       plant.today++;
       plant.last = Date.now();
-      thisVisit = false;
       set('cactus', plant);
       paint();
       play('rustle');
@@ -2540,7 +2528,6 @@
         plant.day = today(); plant.today = 0; plant.picked = [0, 0, 0, 0, 0];
         set('cactus', plant);
       }
-      thisVisit = true;
       paint();
       rest();
     };
@@ -2557,7 +2544,15 @@
      jar in the corner of the drawing; when the jar is full, the bar opens.
      ------------------------------------------------------------------- */
 
-  var STILL_RUN_MS = 12 * 60 * 1000;
+  var STILL_RUN_MS = 10 * 60 * 1000;
+  var PUMP_MS = 45 * 1000;    // what one squeeze of the bellows is worth
+
+  // Open, and squeezed. Bottom-aligned with the still, so the base stays
+  // put and only the top of it collapses.
+  var BELLOWS = [
+    ['  __   ', ' /  \  ', '|    |-', ' \__/  '],
+    ['       ', '  __   ', ' |__|=~', ' \__/  ']
+  ];
 
   var STILL = [
     '   _____     ',
@@ -2584,7 +2579,9 @@
     if (!run || typeof run.start !== 'number') run = { start: Date.now() };
     set('still', run);
 
+    var bellows = document.getElementById('bellows');
     var frame = 0;
+    var squeezed = 0;
 
     function progress() {
       return Math.max(0, Math.min(1, (Date.now() - run.start) / STILL_RUN_MS));
@@ -2624,6 +2621,7 @@
       }
       host.innerHTML = html;
 
+      paintBellows(done);
       if (fill) fill.style.width = Math.round(p * 100) + '%';
       shell.classList.toggle('done', done);
       if (say) say.textContent = done ? 'ready' : 'distilling';
@@ -2634,6 +2632,55 @@
 
       if (done && !secretOpen('bar')) openSecret('bar', true);
       return done;
+    }
+
+    function paintBellows(done) {
+      if (!bellows) return;
+      bellows.hidden = done;
+      if (done) return;
+      var rows = BELLOWS[squeezed ? 1 : 0];
+      var html = '', r, c, ch;
+      for (r = 0; r < rows.length; r++) {
+        for (c = 0; c < rows[r].length; c++) {
+          ch = rows[r].charAt(c);
+          if (ch === ' ') { html += ' '; continue; }
+          html += '<span class="' + (ch === '~' || ch === '=' ? 'fi' : 'me') + '">' + ch + '</span>';
+        }
+        html += r === rows.length - 1 ? '' : '\n';
+      }
+      bellows.innerHTML = html;
+    }
+
+    /* The bellows. A run takes ten minutes on its own; squeezing this takes
+       three quarters of a minute off it each time, which turns the waiting
+       into something you can do something about. It cannot push a run past
+       finished, and it cannot start one that has not begun. */
+    function pump() {
+      if (progress() >= 1) return;
+      run.start -= PUMP_MS;
+      if (Date.now() - run.start > STILL_RUN_MS) run.start = Date.now() - STILL_RUN_MS;
+      set('still', run);
+
+      squeezed = 1;
+      frame += 2;                       // the flame jumps
+      paint();
+      play('rustle');
+      if (say) say.textContent = 'whoosh';
+      setTimeout(function () {
+        squeezed = 0;
+        paintBellows(progress() >= 1);
+        if (say && progress() < 1) say.textContent = 'distilling';
+      }, 220);
+    }
+
+    if (bellows) {
+      bellows.setAttribute('title', 'squeeze the bellows — it speeds the run up');
+      bellows.setAttribute('role', 'button');
+      bellows.setAttribute('tabindex', '0');
+      bellows.addEventListener('click', function (e) { e.stopPropagation(); pump(); });
+      bellows.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pump(); }
+      });
     }
 
     paint();
@@ -2663,10 +2710,24 @@
   var POGO_SLEEP = ['  z  ', ' z   ', '  o  ', ' /|\\ ', ' [=] '];
 
   var GRAVITY = 2100;        // px per second per second
-  var HOP = 560;             // the ordinary bounce
-  var HOP_MAX = 1250;        // the one that gets him up onto something
+  var POGO_H = 56;           // how tall he is, near enough
+
+  /* He is five characters tall, and the ceiling on his hop is six of those.
+     Before this he could stack one bounce on the next off a ledge and leave
+     the top of the page altogether, which reads less as a companion and
+     more as something going wrong.
+
+     Between a tick-over and that ceiling he is governed by ENERGY, which is
+     the whole character of him: it winds up while there is somewhere to be
+     and winds down when nothing has moved. So he builds to full height over
+     a few seconds rather than springing to it, and settles lower and lower
+     into sleep rather than stopping mid-air. */
+  var HOP_MIN = Math.sqrt(2 * GRAVITY * 14);           // a tick over on the spot
+  var HOP_MAX = Math.sqrt(2 * GRAVITY * POGO_H * 6);   // the ceiling: six of him
+  var ENERGY_UP = 0.28;      // per second, winding up
+  var ENERGY_DOWN = 0.24;    // per second, winding down
   var RUN = 300;             // top speed along the ground
-  var SLEEP_AFTER = 7000;    // still pointer, still man
+  var IDLE_AFTER = 1600;     // pointer still this long and he starts to settle
 
   function mountPogo() {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -2686,6 +2747,7 @@
     var targetX = 200, targetY = 0;
     var lastPointed = 0;
     var asleep = false;
+    var energy = 0.25;
     var ledges = [];
     var last = 0;
     var drawn = '';
@@ -2764,6 +2826,14 @@
         vx += (want - vx) * Math.min(1, dt * 14);
       }
 
+      /* Somewhere to be means wind up; nothing moving means wind down. */
+      var idle = performance.now() - lastPointed > IDLE_AFTER;
+      var wantsHeight = (y - targetY) > POGO_H || Math.abs(reach) > 160;
+      var goal = idle ? 0 : (wantsHeight ? 1 : 0.2);
+      var rate = goal > energy ? ENERGY_UP : ENERGY_DOWN;
+      energy += Math.max(-rate * dt, Math.min(rate * dt, goal - energy));
+      energy = Math.max(0, Math.min(1, energy));
+
       var prevY = y;
       vy += GRAVITY * dt;
       x += vx * dt;
@@ -2785,15 +2855,13 @@
         if (l) {
           y = l.top;
           if (asleep) { vy = 0; }
-          else {
-            // How hard he pushes off depends on whether what he is chasing
-            // is above him. That is the whole of "hop up onto things".
-            var climb = (y - targetY) / 170;
-            var power = HOP + Math.max(0, Math.min(1, climb)) * (HOP_MAX - HOP);
-            // Already level with what he is chasing: tick over on the spot
-            // rather than launching again off whatever he has just climbed.
-            if (y - targetY < 24) power = HOP * (Math.abs(reach) < 12 ? 0.5 : 0.75);
-            vy = -power;
+          else if (energy < 0.05 && Math.abs(reach) < 48) {
+            // Nothing left in him and nowhere to be: this is where he stops,
+            // on the ground, mid-stride -- not frozen in the air.
+            vy = 0;
+            asleep = true;
+          } else {
+            vy = -(HOP_MIN + energy * (HOP_MAX - HOP_MIN));
           }
         }
       }
@@ -2811,10 +2879,7 @@
     function frame(now) {
       var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
-      if (!document.hidden) {
-        if (!asleep && now - lastPointed > SLEEP_AFTER && Math.abs(x - targetX) < 40) asleep = true;
-        step(dt);
-      }
+      if (!document.hidden && !man.hidden) step(dt);
       requestAnimationFrame(frame);
     }
 
@@ -2822,7 +2887,9 @@
       targetX = clientX + window.pageXOffset;
       targetY = clientY + window.pageYOffset;
       lastPointed = performance.now();
-      if (asleep) { asleep = false; vy = -HOP; }
+      // Waking is a small hop. Getting back up to full height is the same
+      // wind-up as any other and takes a few seconds.
+      if (asleep) { asleep = false; energy = 0; vy = -HOP_MIN * 1.5; }
     }
 
     document.addEventListener('mousemove', function (e) { pointAt(e.clientX, e.clientY); });
@@ -2849,7 +2916,7 @@
     mountHint();
     mountNav();
     mountViewers();
-    mountBroadcast();
+    mountTicker();
     bootPage();
   }
 

@@ -1390,3 +1390,37 @@ body.theme-pocari {
   #pogo { display: none; }
   #still-fill { transition: none; }
 }
+
+/* ------------------------------------------------------------- bellows
+   The waiting is the only bad part of a still, so there is something to do
+   about it: squeeze, and the run comes forward three quarters of a minute. */
+
+.still-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: .15rem;
+}
+
+#bellows {
+  margin: 0 0 .1rem;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0.95;
+  letter-spacing: .06em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s ease;
+}
+#bellows .me { color: var(--still-metal); }
+#bellows .fi { color: var(--still-flame); }
+#bellows:hover { transform: translateY(-1px); }
+#bellows:hover .me { color: var(--ochre); }
+#bellows:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+
+#still-shell { width: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  #bellows { transition: none; }
+}

@@ -800,6 +800,48 @@ function renderBody(f, assetPrefix = '') {
  * weighs, and then the thing itself. No frame around it -- the page is the
  * folder, and the items are lying on it.
  */
+/**
+ * What has changed here lately -- the ticker's copy.
+ *
+ * One cheap stat-only pass over the tree, respecting the same ignore rules
+ * the pages do, so a file dragged into a folder in Finder shows up in the
+ * ticker on the next rebuild without anybody writing an announcement. Only
+ * the timestamps are emitted; the wording is worked out in the browser, so
+ * "an hour ago" is an hour ago when it is read rather than when it was
+ * built.
+ */
+function recentChanges(root, rules, limit = 10) {
+  const found = [];
+
+  function walkDir(dir, rel, depth) {
+    if (depth > 4) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const isDir = e.isDirectory();
+      if (isIgnored(e.name, isDir, rules)) continue;
+      // The build log rewrites itself on every build, so it would be the
+      // top of this list forever and say nothing.
+      if (e.name.startsWith('.')) continue;
+      const full = path.join(dir, e.name);
+      // A door announced in the ticker is not a door. Neither the secret
+      // folder nor anything inside it is news.
+      if (isDir && folderSecret(full)) continue;
+      const here = rel ? rel + '/' + e.name : e.name;
+      let stat;
+      try { stat = fs.statSync(full); } catch { continue; }
+      found.push({ name: here + (isDir ? '/' : ''), at: Math.round(stat.mtimeMs) });
+      if (isDir && !BUNDLE_EXT.includes(path.extname(e.name).toLowerCase())) {
+        walkDir(full, here, depth + 1);
+      }
+    }
+  }
+
+  walkDir(root, '', 0);
+  found.sort((a, b) => b.at - a.at);
+  return found.slice(0, limit);
+}
+
 function renderItem(f, i, assetPrefix = '', isRoot = false) {
   const meta = f.type === 'directory' ? f.contents
     : f.type === 'clipping' && f.contents ? `${f.size} — “${f.contents}”`
@@ -1102,7 +1144,7 @@ function guestbookWindow() {
 
 function renderPage({ siteName, title, files, positioned, description, folderDescription,
                       socialImage, assetPrefix, isRoot, tagline, marquee, guestbook, music,
-                      assetStamps }) {
+                      assetStamps, recent }) {
   const items = files.map((f, i) => renderItem(f, i, assetPrefix, isRoot)).join('\n');
   const unrendered = unrenderedNote(files);
 
@@ -1243,7 +1285,10 @@ ${showMusic ? `  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamp
   <div id="corner">
     <div id="plants">
       <div id="still-shell" title="a pot still, running">
-        <pre id="still" role="img" aria-label="a pot still"></pre>
+        <div class="still-row">
+          <pre id="bellows"></pre>
+          <pre id="still" role="img" aria-label="a pot still"></pre>
+        </div>
         <div id="still-bar" aria-hidden="true"><i id="still-fill"></i></div>
         <p id="still-say">distilling</p>
       </div>
@@ -1285,7 +1330,7 @@ ${guestbookWindow()}
     <span class="clock" id="taskbar-clock">drag things around &rarr;</span>
   </nav>
 
-  <script>window.GARDEN_CONFIG = ${JSON.stringify({ siteName, guestbook })};</script>
+  <script>window.GARDEN_CONFIG = ${JSON.stringify({ siteName, guestbook, recent })};</script>
   <script src="${assetUrl(assetPrefix, assetStamps, 'app.js')}"></script>
 ${showMusic ? `  <script>window.GARDEN_MUSIC = ${JSON.stringify(musicData).replace(/</g, '\\u003c')};</script>
   <script src="${assetUrl(assetPrefix, assetStamps, 'ipod.js')}"></script>\n` : ''}\
@@ -1382,6 +1427,7 @@ function grow(dir, ctx) {
     isRoot: depthFromRoot === 0,
     tagline: ctx.tagline,
     marquee: ctx.marquee,
+    recent: ctx.recent,
     guestbook: ctx.guestbook,
     music: ctx.music,
   });
@@ -1473,9 +1519,14 @@ export function growSite(opts = {}) {
   bundleClaimed = new Set();
   clippingClaimed = new Set();
 
+  const rules = loadRules(root, config);
+
   const ctx = {
     root,
-    rules: loadRules(root, config),
+    rules,
+    // The ticker's copy: what has been added or changed here lately. One
+    // pass, shared by every page.
+    recent: recentChanges(root, rules),
     tagline: config.tagline,
     marquee: config.marquee ??
       'welcome to my garden  *  drag things around  *  everything here is a real file  *  best viewed with curiosity  *',
