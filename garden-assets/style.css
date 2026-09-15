@@ -1253,17 +1253,50 @@ details[open] > .read-more-summary::after { font-size: .68rem; }
   border: 1px solid var(--rule);
   box-shadow: 2px 3px 0 var(--rule-soft);
 }
-.item.kind-todo .md h2 {
+/* The to-do card is one typeface the whole way down. It used to be mono
+   headings over serif bullets over a serif date, which is three fonts in a
+   box four inches wide. The headings are still obviously headings -- ochre,
+   letterspaced, small caps -- without needing a different face to say so. */
+.item.kind-todo .md,
+.item.kind-todo .md h1,
+.item.kind-todo .md h2,
+.item.kind-todo .md h3,
+.item.kind-todo .md li,
+.item.kind-todo .md p,
+.item.kind-todo .md strong {
   font-family: var(--mono);
-  font-size: .66rem;
-  letter-spacing: .12em;
+  font-weight: 400;
+}
+.item.kind-todo .md h1 {
+  font-size: .78rem;
+  letter-spacing: .14em;
+  text-transform: lowercase;
+  color: var(--ink);
+  margin: 0 0 .7rem;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.item.kind-todo .md h2 {
+  font-size: .62rem;
+  letter-spacing: .16em;
   text-transform: uppercase;
   color: var(--ochre);
-  margin: .5rem 0 .25rem;
+  margin: .85rem 0 .3rem;
 }
 .item.kind-todo .md h2:first-child { margin-top: 0; }
-.item.kind-todo .md ul { margin: 0; padding-left: 1.05rem; }
-.item.kind-todo .md li { font-size: .8rem; line-height: 1.45; margin-bottom: .15rem; }
+.item.kind-todo .md ul { margin: 0; padding-left: .95rem; }
+.item.kind-todo .md li {
+  font-size: .72rem;
+  line-height: 1.5;
+  margin-bottom: .28rem;
+  color: var(--ink-soft);
+}
+.item.kind-todo .md li::marker { color: var(--ochre); }
+/* Only the closed state, or this fights the rule that shrinks the word
+   away and swaps in "less" when the fold is open -- and you end up reading
+   READ MORE LESS. */
+.item.kind-todo details:not([open]) > .read-more-summary { font-size: .6rem; }
+.item.kind-todo details[open] > .read-more-summary::after { font-size: .6rem; }
 
 /* ---------------------------------------------------------- the corner
    Two working things and a clock. The still and the cactus stand together

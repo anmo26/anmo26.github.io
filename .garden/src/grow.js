@@ -782,10 +782,14 @@ function renderBody(f, assetPrefix = '') {
       // .garden.log is already tailed to its last 20 lines (see the /\.log$/
       // branch in describe) and must stay exactly as-is -- it is a feed, not
       // an essay, and folding half of a 20-line log behind a click would just
-      // be annoying. todo.md is a widget another script drags around and
-      // reads as a list, not a piece of writing, so it is exempt for the same
-      // reason: a bulleted list cut in half mid-list is just confusing.
-      const NO_READMORE = ['.garden.log', 'todo.md'];
+      // be annoying.
+      //
+      // todo.md used to be exempt too, on the grounds that a list cut in half
+      // is confusing. It is not exempt any more: the card grew three sections
+      // long and took over the front page. The cut lands on a blank line, and
+      // the sections are separated by blank lines, so what folds away is
+      // whole sections rather than half a list.
+      const NO_READMORE = ['.garden.log'];
       const split = NO_READMORE.includes(f.name) ? null : splitForReadMore(f.contents, READMORE_CHARS);
       if (!split) return `<div class="md">${markdown(f.contents)}</div>`;
       return `<div class="read-more"><div class="md">${markdown(split.head)}</div>` +
