@@ -1424,6 +1424,32 @@
 
   /* The last word in the taskbar is an instruction, and the gesture it names
      is not the same one on both. A phone was being told to drag. */
+  /* --------------------------------------------------------- the texture
+     Its own layer, starting at the rule under the masthead, so the pattern
+     is under the FILES and not under the clock, the still, the prickly
+     pear or the name of the site. The top is measured rather than guessed:
+     the masthead is a different height on every page and every window. */
+
+  function placeTexture() {
+    var tex = document.getElementById('tex');
+    if (!tex) return;
+    var rule = document.querySelector('.masthead .rule');
+    if (!rule) { tex.style.top = '0px'; return; }
+    var top = rule.getBoundingClientRect().bottom + window.pageYOffset;
+    tex.style.top = Math.round(top) + 'px';
+  }
+
+  function mountTexture() {
+    if (document.getElementById('tex')) return;
+    var tex = document.createElement('div');
+    tex.id = 'tex';
+    tex.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(tex);
+    placeTexture();
+    window.addEventListener('resize', placeTexture);
+    window.addEventListener('load', placeTexture);
+  }
+
   function mountHint() {
     var hint = document.getElementById('taskbar-clock');
     if (!hint) return;
@@ -1446,8 +1472,6 @@
     { id: 'plants', label: 'plants', def: true,
       apply: function (on) { var c = document.getElementById('plants');
                              if (c) c.style.display = on ? '' : 'none'; } },
-    { id: 'shelf', label: 'shelf', def: true,
-      apply: function (on) { document.body.classList.toggle('shelf-off', !on); } },
     { id: 'clock', label: 'clock', def: true,
       apply: function (on) { var c = document.getElementById('clock-shell');
                              if (c) c.style.display = on ? '' : 'none'; } },
@@ -1464,8 +1488,12 @@
       apply: function (on) { document.body.classList.toggle('music-off', !on); } }
   ];
 
-  var THEMES = ['', 'theme-clean', 'theme-pocari', 'theme-olive', 'theme-ink'];
-  var THEME_NAMES = ['bone', 'paper', 'pocari', 'olive', 'ink'];
+  /* Four rooms, and each one is somewhere else. There used to be five, but
+     bone, "paper" and olive were three off-whites within a few points of
+     each other, which is not a choice, it is a rounding error. Paper is
+     gone and olive is an actual olive now. */
+  var THEMES = ['', 'theme-pocari', 'theme-olive', 'theme-ink'];
+  var THEME_NAMES = ['bone', 'pocari', 'olive', 'ink'];
 
   // Grain used to be a single on/off, and for a long time it was wired to a
   // class the stylesheet did not define -- the button did nothing at all.
@@ -1498,7 +1526,11 @@
     });
 
     // theme cycler
+    // Clamped, because somebody who was sitting on the fifth theme before
+    // there were only four would otherwise land on an index that is not
+    // there and get no theme and no label at all.
     var themeIdx = get('theme', 0);
+    if (!(themeIdx >= 0 && themeIdx < THEMES.length)) themeIdx = 0;
     var themeBtn = document.createElement('button');
     themeBtn.className = 'toggle';
     themeBtn.type = 'button';
@@ -1540,8 +1572,17 @@
        where Finder has them and lets go of any sizes, in front of you
        rather than by reloading -- half the pleasure of tidying a desk is
        watching it happen. Nothing else is touched: every door stays open,
-       every plant keeps growing, the shelf keeps what is on it, and
-       anything thrown away stays thrown away. */
+       every plant keeps growing, and anything thrown away stays thrown
+       away. */
+    /* A pad of stickies. Anybody can leave one, anywhere, on any page. */
+    var pad = document.createElement('button');
+    pad.className = 'toggle';
+    pad.type = 'button';
+    pad.innerHTML = '<span class="led"></span>note';
+    pad.title = 'stick a note to this page';
+    pad.addEventListener('click', newSticky);
+    bar.appendChild(pad);
+
     var tidy = document.createElement('button');
     tidy.className = 'toggle';
     tidy.type = 'button';
@@ -1599,8 +1640,8 @@
        Everything. Not "put things back where Finder has them" -- that is
        what tidy up is for -- but every single thing this browser has ever
        remembered about this site: the arrangement, the sizes, every door
-       that has been found, every living thing's progress, the shelf, the
-       glasshouse, the theme, the switches, the player.
+       that has been found, every living thing's progress, the notes stuck
+       to the page, the glasshouse, the theme, the switches, the player.
 
        It asks twice, because there is no undo and because thirty-five
        years of a saguaro should not go on one slip of a finger. */
@@ -2220,6 +2261,8 @@
     mobilizeBed(document.querySelector('.plantbed'));
     restorePositions();
     applyTossed();          // anything thrown down the shaft is not drawn
+    placeTexture();         // the masthead is a different height on every page
+    paintStickies();        // whatever anybody stuck to this page
     var theBin = binEl();
     if (theBin) {
       theBin.hidden = document.body.getAttribute('data-scene') === 'crypt';
@@ -3003,7 +3046,6 @@
 
       if (inBucket() >= TUNAS) {
         speak('bucket full', null);
-        earn('pear');
         openSecret('garden', true);
         setTimeout(rest, 3600);
       } else {
@@ -3197,7 +3239,6 @@
 
     function takeDrink() {
       if (progress() < 1 || secretOpen('bar')) return;
-      earn('still');
       openSecret('bar', true);
       drink.innerHTML = '';
       paintDrink(true);
@@ -4057,8 +4098,6 @@
           pad.style.transform = '';
           paint();
           toast('the moon');
-          earn('rocket');
-          earn('moon');
           openMoon(true);
         }, 40);
       }
@@ -4493,7 +4532,6 @@
       pogoErrand(box.left + box.width / 2 + window.pageXOffset, 1100);
 
       if (tree.clicks >= TREE_CLICKS) {
-        earn('adam');
         setTimeout(function () { breakRoof(); }, 500);
       }
     }
@@ -4591,7 +4629,6 @@
     function breakFloor() {
       document.body.classList.add('floor-broken');
       play('rustle');
-      earn('crypt');
       toast('the floor gave way');
       setTimeout(function () { openCrypt(true); }, 1200);
     }
@@ -4861,91 +4898,138 @@
       .catch(function () { /* the garden keeps its own weather */ });
   }
 
-  /* ============================================================ TROPHIES
-     A shelf by the door of everything this visitor has ever finished. It
-     is the one thing "put back" does not touch: putting the world back
-     where you found it does not mean none of it happened.
+  /* =============================================================== NOTES
+     A pad of stickies. Press "note" in the taskbar and one lands on the
+     page: type in it, drag it anywhere, throw it away with the cross in
+     its corner. They belong to the page they were stuck to, they survive
+     a reload, and a full reset takes the lot.
+
+     They are not in the plantbed. The bed is drawn scaled to fit the
+     window and its coordinates are Finder's, neither of which has anything
+     to do with where somebody wanted to stick a note -- so a note lives on
+     the body at page coordinates, like the bin and the spade.
      ------------------------------------------------------------------- */
 
-  var TROPHY = {
-    pear:   { art: [' _@_ ', '(6 6)', ' \\_/ '], name: 'the prickly pear',   note: 'grown and picked' },
-    still:  { art: [' _^_ ', '|~~~|', ' \\_/ '], name: 'the pot still',      note: 'ran its course' },
-    adam:   { art: [' @@@ ', '@@#@@', '  #  '], name: 'the adam jewel tree', note: 'two hundred and fifty' },
-    rocket: { art: ['  /\\ ', ' |an|', ' /||\\'], name: 'the model rocket',   note: 'flew' },
-    moon:   { art: [' .oO ', 'o  O ', ' `o\' '], name: 'the moon',            note: 'landed on' },
-    ocean:  { art: ['~~~~~', ' ><> ', '.....'], name: 'the sea',             note: 'swum in' },
-    crypt:  { art: ['[===]', ' | | ', ' \\_/ '], name: 'the shaft',          note: 'dug' },
-    bloom:  { art: ['  *  ', ' *o* ', '  |  '], name: 'first flower',        note: 'in the nursery' }
-  };
+  var NOTE_COLOURS = 4;
+  var NOTE_MAX = 900;
 
-  function earned() { return get('trophies', {}); }
-
-  function earn(key) {
-    if (!TROPHY[key]) return;
-    var have = earned();
-    if (have[key]) return;
-    have[key] = Date.now();
-    set('trophies', have);
-    paintShelf();
-    toast('for the shelf: ' + TROPHY[key].name);
-    play('pluck');
+  /** Which page we are on, as the key the notes are filed under. */
+  function noteRoom() {
+    try { return decodeURIComponent(location.pathname); } catch (e) { return location.pathname; }
   }
 
-  /** The front page only. Everywhere else the shelf would be in the way. */
-  function isRoot() {
-    return !document.querySelector('.masthead a[href]');
+  function allNotes() {
+    var n = get('stickies', null);
+    return (n && typeof n === 'object') ? n : {};
   }
 
-  function paintShelf() {
-    var shelf = document.getElementById('shelf');
-    if (!shelf) return;
-    var have = earned();
-    var keys = Object.keys(TROPHY).filter(function (k) { return have[k]; });
-    var tuck = document.getElementById('shelf-tuck');
-    shelf.hidden = !keys.length;
-    if (tuck) tuck.hidden = !keys.length;
-    if (!keys.length) return;
+  function roomNotes() { return allNotes()[noteRoom()] || []; }
 
-    var html = '', i, t;
-    for (i = 0; i < keys.length; i++) {
-      t = TROPHY[keys[i]];
-      html += '<div class="trophy" title="' + t.name + ' — ' + t.note + '">' +
-              '<pre>' + t.art.join('\n') + '</pre></div>';
+  function saveRoomNotes(list) {
+    var all = allNotes();
+    if (list.length) all[noteRoom()] = list;
+    else delete all[noteRoom()];
+    set('stickies', all);
+  }
+
+  function noteSave(note) {
+    var list = roomNotes();
+    var i, found = false;
+    for (i = 0; i < list.length; i++) {
+      if (list[i].id === note.id) { list[i] = note; found = true; break; }
     }
-    shelf.innerHTML = '<p class="shelf-say">the shelf</p>' +
-                      '<div class="shelf-row">' + html + '</div>';
+    if (!found) list.push(note);
+    saveRoomNotes(list);
   }
 
-  function mountShelf() {
-    if (!isRoot() || !wide()) return;
-    var shelf = document.createElement('aside');
-    shelf.id = 'shelf';
-    shelf.hidden = true;
-    document.body.appendChild(shelf);
+  function noteForget(id) {
+    saveRoomNotes(roomNotes().filter(function (n) { return n.id !== id; }));
+  }
 
-    /* It sits in the bottom corner, which is also where things get put
-       down. So it pushes into the wall: one press and it slides off the
-       left edge leaving a tab behind, and it stays that way. */
-    var tuck = document.createElement('button');
-    tuck.id = 'shelf-tuck';
-    tuck.type = 'button';
-    document.body.appendChild(tuck);
+  function stickyEl(note, focus) {
+    var el = document.createElement('div');
+    el.className = 'sticky c' + (note.colour % NOTE_COLOURS);
+    el.style.left = note.x + 'px';
+    el.style.top = note.y + 'px';
+    el.style.zIndex = bumpPanel();
+    el.innerHTML =
+      '<div class="sticky-head">' +
+        '<span class="sticky-grip" title="drag me">' +
+          '<i></i><i></i><i></i>' +
+        '</span>' +
+        '<button class="sticky-bin" type="button" title="throw this note away" ' +
+          'aria-label="throw this note away">&times;</button>' +
+      '</div>' +
+      '<div class="sticky-body" contenteditable="plaintext-only" ' +
+        'role="textbox" aria-multiline="true" spellcheck="true"></div>';
+    document.body.appendChild(el);
 
-    function paintTuck() {
-      var IN = get('shelf.tucked', false);
-      document.body.classList.toggle('shelf-tucked', IN);
-      tuck.textContent = IN ? 'shelf' : '\u00AB';
-      tuck.title = IN ? 'pull the shelf back out' : 'push the shelf into the wall';
-      tuck.setAttribute('aria-label', tuck.title);
-    }
-    tuck.addEventListener('click', function () {
-      set('shelf.tucked', !get('shelf.tucked', false));
-      paintTuck();
-      play('tick');
+    var body = el.querySelector('.sticky-body');
+    body.textContent = note.text || '';
+    if (!note.text) el.classList.add('empty');
+
+    var typing = null;
+    body.addEventListener('input', function () {
+      el.classList.toggle('empty', !body.textContent.trim());
+      clearTimeout(typing);
+      typing = setTimeout(function () {
+        note.text = body.textContent.slice(0, NOTE_MAX);
+        noteSave(note);
+      }, 400);
+    });
+    body.addEventListener('blur', function () {
+      note.text = body.textContent.slice(0, NOTE_MAX);
+      noteSave(note);
     });
 
-    paintShelf();
-    paintTuck();
+    el.addEventListener('pointerdown', function () { el.style.zIndex = bumpPanel(); });
+
+    el.querySelector('.sticky-bin').addEventListener('click', function () {
+      el.classList.add('binned');
+      noteForget(note.id);
+      play('tick');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 260);
+    });
+
+    /* Dragged by its head, with no key -- a key would put it in the list of
+       things that can be thrown down the shaft, and a note is not a file. */
+    makeDraggable(el, el.querySelector('.sticky-head'), null, function (x, y) {
+      note.x = x; note.y = y;
+      noteSave(note);
+    });
+
+    if (focus) {
+      body.focus();
+      if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    return el;
+  }
+
+  function clearStickies() {
+    document.querySelectorAll('.sticky').forEach(function (el) {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+  }
+
+  function paintStickies() {
+    clearStickies();
+    roomNotes().forEach(function (n) { stickyEl(n, false); });
+  }
+
+  function newSticky() {
+    /* Somewhere in the middle of what is actually on the screen, nudged a
+       little each time so a second note does not land exactly on the first. */
+    var many = roomNotes().length;
+    var note = {
+      id: String(Date.now()) + Math.random().toString(36).slice(2, 6),
+      text: '',
+      colour: Math.floor(Math.random() * NOTE_COLOURS),
+      x: Math.round(window.pageXOffset + window.innerWidth * 0.5 - 100 + (many % 5) * 22),
+      y: Math.round(window.pageYOffset + window.innerHeight * 0.34 + (many % 5) * 20)
+    };
+    noteSave(note);
+    stickyEl(note, true);
+    play('tick');
   }
 
   /* ============================================================= TOSSING
@@ -5915,7 +5999,6 @@
 
     function paint() {
       var now = Date.now();
-      var anyBloom = false;
       beds.forEach(function (b) {
         var st = plantState(b.spec, started, now, pushOf(b.spec.key));
         // The bar and the words stay honest; only the drawing is bent, so
@@ -5926,9 +6009,7 @@
         b.el.classList.toggle('grown', st.ripe);
         b.el.classList.toggle('glory', !!st.glory);
         b.when.textContent = st.say;
-        if (st.ripe) anyBloom = true;
       });
-      if (anyBloom) earn('bloom');
     }
 
     paint();
@@ -6108,7 +6189,6 @@
 
     pogoSwim(true);
     ambience('ocean');
-    earn('ocean');
   }
 
   /* ------------------------------------------------ the sea, three clicks
@@ -6632,8 +6712,8 @@
     mountCactus();
     mountStill();
     mountPogo();
-    mountShelf();
     mountBin();
+    mountTexture();
     mountToggles();
     mountHint();
     mountNav();

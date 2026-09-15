@@ -70,11 +70,8 @@ body {
      it blends against the paper itself rather than against the folder
      lying on top of it. See the "surface" section below. */
   background-image:
-    var(--tex-image-1), var(--tex-image-2),
     radial-gradient(circle at 15% 12%, rgba(169,117,47,.045) 0, transparent 38%),
     radial-gradient(circle at 85% 78%, rgba(94,101,82,.05) 0, transparent 42%);
-  background-size: var(--tex-size-1), var(--tex-size-2), auto, auto;
-  background-blend-mode: var(--tex-blend), var(--tex-blend), normal, normal;
   background-attachment: fixed;
   /* A Finder window scrolls when the icons are spread wider than it is.
      Clipping here would hide items at coordinates the owner chose. */
@@ -88,7 +85,25 @@ body {
 }
 
 /* alternate papers, cycled from the taskbar */
-body.theme-olive  { --paper: #E2E4DC; --paper-deep: #D7DACE; }
+/* Olive was #E2E4DC, which next to bone (#EDEAE2) and the old "paper"
+   (#F4F2EC) made three off-whites nobody could tell apart. It is a green
+   room now: sage paper, a green-black ink, and the ochre pulled towards
+   the leaf so the two colours in the building still agree with each other. */
+body.theme-olive {
+  --paper:      #CFD6C0;
+  --paper-deep: #C0C9AF;
+  --surface:    #E0E5D4;
+  --surface-2:  #ECEFE3;
+  --ink:        #1E2618;
+  --ink-soft:   #414C37;
+  --ink-faint:  #5A6650;
+  --ochre:      #6E5412;
+  --ochre-pale: #BFB47E;
+  --olive:      #38562E;
+  --olive-pale: #93A886;
+  --rule:       rgba(30, 38, 24, .18);
+  --rule-soft:  rgba(30, 38, 24, .09);
+}
 body.theme-ink    {
   --paper: #23231F; --paper-deep: #1B1B18; --surface: #2C2C27; --surface-2: #333330;
   /* --ink-faint was #7E7869, 3.6:1 on this paper -- readable as a heading,
@@ -101,7 +116,9 @@ body.theme-ink    {
      the same four patterns come back as light on dark. */
   --tex-blend: screen; --tex-shade: 255, 255, 255;
 }
-body.theme-clean  { --paper: #F4F2EC; --paper-deep: #EAE7DF; }
+/* theme-clean is gone. It was #F4F2EC against bone's #EDEAE2 -- three
+   points of lightness apart, which is not a theme, it is a rounding
+   error. Four rooms left, and each one is somewhere else. */
 
 /* pocari: the bottle. Cold near-white paper and the label's cobalt, with
    the greys pulled blue so nothing on the page reads warm. */
@@ -119,7 +136,6 @@ body.theme-pocari {
    reading brown however cold the paper underneath it was. */
 body.theme-pocari {
   background-image:
-    var(--tex-image-1), var(--tex-image-2),
     radial-gradient(circle at 15% 12%, rgba(0,94,184,.06) 0, transparent 38%),
     radial-gradient(circle at 85% 78%, rgba(62,143,214,.07) 0, transparent 42%);
 }
@@ -380,19 +396,22 @@ body.tex-grain {
 /* scan — a photocopy of a photocopy. One dark line every third. */
 body.tex-scan {
   --tex-image-1: repeating-linear-gradient(
-    to bottom, rgba(var(--tex-shade), .16) 0 1px, transparent 1px 3px);
+    to bottom, rgba(var(--tex-shade), .13) 0 1px, transparent 1px 6px);
 }
 
 /* weave — the tooth of laid paper: two hatchings crossing at right angles. */
 body.tex-weave {
-  --tex-image-1: repeating-linear-gradient(45deg,  rgba(var(--tex-shade), .085) 0 1px, transparent 1px 5px);
-  --tex-image-2: repeating-linear-gradient(-45deg, rgba(var(--tex-shade), .085) 0 1px, transparent 1px 5px);
+  --tex-image-1: repeating-linear-gradient(45deg,  rgba(var(--tex-shade), .075) 0 1px, transparent 1px 10px);
+  --tex-image-2: repeating-linear-gradient(-45deg, rgba(var(--tex-shade), .075) 0 1px, transparent 1px 10px);
 }
 
 /* dots — a newsprint screen, coarse enough that you can see it is dots. */
+/* A dot every four pixels is not a pattern, it is a moire. Every eleven,
+   and a smaller dot, so it reads as paper that has been printed on rather
+   than as a screen door. */
 body.tex-dots {
-  --tex-image-1: radial-gradient(rgba(var(--tex-shade), .22) 32%, transparent 34%);
-  --tex-size-1: 4px 4px;
+  --tex-image-1: radial-gradient(rgba(var(--tex-shade), .26) 13%, transparent 15%);
+  --tex-size-1: 11px 11px;
 }
 
 /* ---------------------------------------------------------------- taskbar */
@@ -2066,47 +2085,6 @@ body[data-scene="moonlight"] .item .meta {
   color: var(--ink-soft);
 }
 
-/* ============================================================== THE SHELF
-   By the door of the front page: one small object for everything this
-   visitor has finished. Put back does not clear it.
-   ------------------------------------------------------------------------ */
-
-#shelf {
-  position: fixed;
-  left: 14px;
-  bottom: 54px;
-  transition: transform .34s cubic-bezier(.3, .8, .3, 1), opacity .25s ease;
-  z-index: 3;
-  padding: .4rem .55rem .3rem;
-  border: 1px solid var(--rule);
-  border-bottom-width: 3px;
-  background: var(--surface);
-  opacity: .55;
-  transition: opacity .25s ease;
-}
-#shelf:hover { opacity: 1; }
-.shelf-say {
-  margin: 0 0 .25rem;
-  font-family: var(--mono);
-  font-size: .58rem;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.shelf-row { display: flex; gap: .45rem; align-items: flex-end; }
-.trophy pre {
-  margin: 0;
-  white-space: pre;
-  font-family: var(--mono);
-  font-size: 8px;
-  line-height: 8px;
-  font-weight: 700;
-  color: var(--ink-soft);
-  cursor: help;
-}
-.trophy:hover pre { color: var(--ochre); }
-@media (max-width: 559px) { #shelf { display: none; } }
-
 /* =============================================================== TOSSING
    Over the side of the page and down the shaft. Nothing on the disk moves;
    the site simply stops drawing it until somebody fetches it back.
@@ -2532,7 +2510,8 @@ body[data-scene="crypt"] {
 
 #spade {
   position: fixed;
-  left: 8%;
+  /* Clear of the bin in the corner, at any window width. */
+  left: max(104px, 12%);
   bottom: 52px;
   z-index: 3;
   padding: 0;
@@ -2805,52 +2784,22 @@ body.dragging * {
 body.dragging { cursor: grabbing; }
 
 
-/* The shelf pushes into the wall. One press and it slides off the left
-   edge, leaving only its tab -- because the bottom corner is also where
-   things get put down, and a shelf there is sometimes just in the way. */
-body.shelf-tucked #shelf {
-  transform: translateX(calc(-100% - 20px));
-  opacity: 0;
-  pointer-events: none;
-}
-#shelf-tuck {
-  position: fixed;
-  left: 0;
-  bottom: 54px;
-  z-index: 4;
-  padding: .3rem .4rem;
-  border: 1px solid var(--rule);
-  border-left: 0;
-  background: var(--surface);
-  color: var(--ink-faint);
-  font-family: var(--mono);
-  font-size: .58rem;
-  letter-spacing: .16em;
-  line-height: 1;
-  cursor: pointer;
-  opacity: .5;
-  transition: opacity .2s ease, transform .34s cubic-bezier(.3, .8, .3, 1);
-  transform: translateX(120px);
-}
-#shelf-tuck:hover { opacity: 1; }
-body.shelf-tucked #shelf-tuck { transform: translateX(0); }
-@media (max-width: 559px) { #shelf-tuck { display: none; } }
 
 
-/* The shelf switch in the taskbar takes the whole thing away, tab included.
-   The tab itself only pushes it into the wall; this is the off. */
-body.shelf-off #shelf,
-body.shelf-off #shelf-tuck { display: none !important; }
+
 
 /* ================================================================== BIN
    A bin in the corner of every page. Drag something onto it and it goes to
    the bottom of the garden, whether or not the shaft has been dug.
    ------------------------------------------------------------------------ */
 
+/* Bottom left, where the shelf used to stand and nothing does now. The
+   right-hand corner already belongs to the music player, and before this
+   the bin was sitting on top of it. */
 #bin {
   position: fixed;
-  right: 16px;
-  bottom: 54px;
+  left: 14px;
+  bottom: 52px;
   z-index: 4;
   padding: .2rem .3rem;
   border: 1px solid transparent;
@@ -2882,7 +2831,6 @@ body.shelf-off #shelf-tuck { display: none !important; }
   border-color: var(--ochre);
   transform: scale(1.14);
 }
-body.music-docked #bin { right: 16px; }
 @media (max-width: 559px) { #bin { display: none; } }
 
 /* Arming the full reset. It asks once before it does it. */
@@ -2940,4 +2888,110 @@ body.music-docked #bin { right: 16px; }
 @media (prefers-reduced-motion: reduce) {
   .plant.glory .plant-art .fl, .plant.glory .plant-art .fr,
   .plant.glory .plant-pot { animation: none !important; }
+}
+
+
+/* ============================================================== TEXTURE
+   The pattern used to be painted into the page's own background, which
+   meant it ran under everything -- the clock, the still, the prickly pear,
+   the name of the site. It is its own layer now, and that layer starts at
+   the rule under the masthead: below the line, where the files are.
+
+   It blends with the paper behind it rather than being drawn on top, so
+   it still cannot sit over a folder or a photograph -- only under one.
+   ------------------------------------------------------------------------ */
+
+#tex {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: var(--tex-image-1), var(--tex-image-2);
+  background-size: var(--tex-size-1), var(--tex-size-2);
+  background-repeat: repeat, repeat;
+  mix-blend-mode: var(--tex-blend);
+}
+/* The places that are places have weather of their own. */
+body[data-scene] #tex { display: none; }
+
+/* ================================================================ NOTES
+   A pad of stickies. On the body at page coordinates, not in the bed --
+   the bed is drawn scaled and its coordinates belong to Finder.
+   ------------------------------------------------------------------------ */
+
+.sticky {
+  position: absolute;
+  width: 12.5rem;
+  min-height: 6.5rem;
+  padding: 0 .55rem .55rem;
+  background: var(--sticky-bg, #F6E9A8);
+  color: #33302A;
+  box-shadow: 0 1px 2px rgba(38, 36, 31, .18), 0 10px 22px -12px rgba(38, 36, 31, .5);
+  transform-origin: 50% 0;
+  transition: box-shadow .18s ease, transform .2s ease, opacity .24s ease;
+}
+.sticky.c0 { --sticky-bg: #F6E9A8; }
+.sticky.c1 { --sticky-bg: #DCEAC0; }
+.sticky.c2 { --sticky-bg: #F3D9C6; }
+.sticky.c3 { --sticky-bg: #D6E6EE; }
+
+/* Each one hangs at a slightly different angle, so a wall of them reads as
+   paper somebody stuck up rather than as a grid of boxes. */
+.sticky.c0 { rotate: -1.1deg; }
+.sticky.c1 { rotate:  0.8deg; }
+.sticky.c2 { rotate: -0.5deg; }
+.sticky.c3 { rotate:  1.3deg; }
+.sticky:hover { box-shadow: 0 1px 2px rgba(38, 36, 31, .2), 0 16px 30px -14px rgba(38, 36, 31, .55); }
+.sticky.focused { rotate: 0deg; }
+.sticky.binned { opacity: 0; transform: scale(.9) translateY(10px); }
+
+.sticky-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 1.35rem;
+  cursor: grab;
+}
+.sticky-head:active { cursor: grabbing; }
+.sticky-grip { display: flex; gap: 3px; padding: .4rem .1rem; }
+.sticky-grip i {
+  width: 3px; height: 3px;
+  background: rgba(51, 48, 42, .32);
+  border-radius: 50%;
+}
+.sticky-bin {
+  border: 0;
+  background: none;
+  padding: 0 .15rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: rgba(51, 48, 42, .35);
+  cursor: pointer;
+}
+.sticky-bin:hover { color: #A8321E; }
+
+.sticky-body {
+  font-family: var(--serif);
+  font-size: .88rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  outline: none;
+  min-height: 4.4rem;
+}
+.sticky.empty .sticky-body::before {
+  content: 'write something';
+  color: rgba(51, 48, 42, .32);
+  font-style: italic;
+}
+.sticky.empty .sticky-body:focus::before { content: ''; }
+
+/* A note is paper. It does not change colour with the room -- but on the
+   dark theme a bright square would be a floodlight, so it is dimmed. */
+body.theme-ink .sticky { filter: brightness(.82) saturate(.9); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sticky { rotate: 0deg !important; transition: none; }
 }
