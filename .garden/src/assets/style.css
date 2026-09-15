@@ -1655,6 +1655,9 @@ body[data-scene] main { min-height: 100vh; }
   align-items: center;
   justify-content: center;
   text-align: center;
+  /* The glasshouse stands in here now, so the storey is taller than the
+     window and its last row of files would otherwise sit under the taskbar. */
+  padding-block: 2.5rem 5rem;
   background-image: linear-gradient(to bottom, #F6D98A 0%, #F2E7BE 55%, #BFD9E8 100%);
   color: #3A2E10;
 }
@@ -2383,6 +2386,7 @@ body[data-scene="crypt"] {
 #crypt-level {
   position: relative;
   min-height: 100vh;
+  padding-block: 2rem 4rem;
   display: flex;
   align-items: center;
   justify-content: center;

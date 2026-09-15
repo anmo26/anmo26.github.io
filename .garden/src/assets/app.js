@@ -725,15 +725,6 @@
 
   function mountItems() {
     document.querySelectorAll('.plantbed > .item').forEach(function (item) {
-      /* Where this page put it before anybody touched anything. Read now,
-         because restorePositions is about to write a remembered position
-         over the top of it and then there is no way back to Finder's own
-         arrangement short of reloading. This is what "tidy up" uses. */
-      if (!item.hasAttribute('data-home-x')) {
-        item.setAttribute('data-home-x', item.style.left || '');
-        item.setAttribute('data-home-y', item.style.top || '');
-      }
-
       // The browser's own link and image dragging would otherwise take over
       // the moment you grab an icon, which is the obvious thing to grab.
       item.querySelectorAll('a, img').forEach(function (n) { n.draggable = false; });
@@ -1531,33 +1522,42 @@
       var items = bed.querySelectorAll(':scope > .item');
       var i, el, k;
 
-      bed.classList.add('tidying');
-
       for (i = 0; i < items.length; i++) {
-        el = items[i];
-        k = el.dataset.key;
+        k = items[i].dataset.key;
         if (k) { delete moved[k]; delete sized[k]; }
-        if (el.hasAttribute('data-home-x')) {
-          el.style.left = el.getAttribute('data-home-x');
-          el.style.top = el.getAttribute('data-home-y');
-        }
-        // Anything pulled bigger goes back to the size the picture is.
-        if (el.classList.contains('kind-image') || el.classList.contains('kind-video')) {
-          var box = el.querySelector('[data-resizable]');
-          if (box) { box.style.width = ''; box.style.height = ''; }
-        }
-        el.style.zIndex = '';
       }
-
       set('moved', moved);
       set('sized', sized);
+
+      /* On a narrow screen the whole bed is pinned by hand -- every item
+         has a left and a top written onto it by mobilizeBed, and clearing
+         those would drop the lot into a heap. There is nothing to animate
+         back to, so that layout is simply built again. */
+      if (!wide()) { location.reload(); return; }
+
+      bed.classList.add('tidying');
+
+      /* Each page carries its own arrangement in its own stylesheet -- the
+         Finder coordinates are rules, not inline styles. So putting an item
+         back is a matter of taking OFF what the visitor wrote on it and
+         letting the page's own rule surface again, which the transition
+         above then slides it to. */
+      for (i = 0; i < items.length; i++) {
+        el = items[i];
+        el.style.left = '';
+        el.style.top = '';
+        el.style.zIndex = '';
+        var box = el.querySelector('[data-resizable]');
+        if (box) { box.style.width = ''; box.style.height = ''; }
+      }
+
       play('tick');
 
       setTimeout(function () {
         bed.classList.remove('tidying');
         growBed(bed);
         fitSoon();
-      }, 560);
+      }, 600);
     });
     bar.appendChild(tidy);
   }
