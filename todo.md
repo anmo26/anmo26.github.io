@@ -5,7 +5,9 @@
 - the visitor count is a plain figure, not a wall of scratches
 - dragging a photo no longer highlights half the page
 - an opened picture sits over the clock and the plants instead of under them
-- the photograph of the sea is the one picture that never opens. it is a door
+- the photograph of the sea is the one picture that never opens. five clicks and it is a door
+- every plant in the glasshouse has a +12 hours button of its own
+- dragging an opened picture follows the cursor now, and stays over the clock
 - the shelf pushes into the wall. press the tab to pull it back out
 
 ## next
