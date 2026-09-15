@@ -75,6 +75,27 @@ const CLIPPING_CACHE = '.clippings';
 // below): any of these names, any case, dropped inside a folder in Finder.
 const DESCRIPTION_RE = /^description\.(txt|md|markdown|mdown)$/i;
 
+// The plain-text convention for a hidden folder. Put a file called
+// secret.txt inside a folder, write one word in it, and the folder stops
+// being drawn on the page that holds it until that word has been earned --
+// twenty clicks on the clock, a picked fruit, a finished still, nightfall.
+// The folder is still built and still has an address: this is a door, not
+// a lock. Naming the key in a file rather than matching folder names means
+// the folder can be renamed in Finder without the door moving.
+const SECRET_RE = /^secret\.(txt|md)$/i;
+
+function folderSecret(full) {
+  let entries;
+  try { entries = fs.readdirSync(full, { withFileTypes: true }); } catch { return null; }
+  const found = entries.find(e => e.isFile() && SECRET_RE.test(e.name));
+  if (!found) return null;
+  try {
+    const key = fs.readFileSync(path.join(full, found.name), 'utf8')
+      .split('\n')[0].trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+    return key || null;
+  } catch { return null; }
+}
+
 // Anything wider than this gets a smaller copy made for it. The page shows
 // that copy and links to the full file, so a 4000px photo does not have to
 // come down the wire just to be looked at at 400px.
@@ -176,6 +197,7 @@ function isIgnored(name, isDir, rules) {
   // content of its own -- it never appears as an item, on this folder's page
   // or anyone else's. See readFolderDescription.
   if (!isDir && DESCRIPTION_RE.test(name)) return true;
+  if (!isDir && SECRET_RE.test(name)) return true;
 
   if (rules.deny.some(r => (!r.dirOnly || isDir) && r.re.test(name))) return true;
 
@@ -295,6 +317,7 @@ function describe(dir, entry, rules, root, isRoot) {
     const bytes = folderBytes(full, rules);
     return { name: name + '/', href, type: 'directory', iconOnly: true,
              icon: folderIcon(full, root),
+             secret: folderSecret(full),
              contents: `${n} item${n === 1 ? '' : 's'}` +
                        (bytes ? `, ${prettyBytes(bytes)}` : '') };
   }
@@ -777,16 +800,6 @@ function renderBody(f, assetPrefix = '') {
  * weighs, and then the thing itself. No frame around it -- the page is the
  * folder, and the items are lying on it.
  */
-/**
- * The folders that are not on the map. A name listed here is still built and
- * still has a real address -- it is simply not drawn on the page it lives on
- * until the visitor has found the way in (twenty rapid clicks on the clock;
- * see app.js). Hiding it in the generator rather than the stylesheet alone
- * would mean rebuilding the site to let somebody in, which is not a secret,
- * it is a deployment.
- */
-const SECRET = [/^library/i];
-
 function renderItem(f, i, assetPrefix = '', isRoot = false) {
   const meta = f.type === 'directory' ? f.contents
     : f.type === 'clipping' && f.contents ? `${f.size} — “${f.contents}”`
@@ -809,9 +822,10 @@ function renderItem(f, i, assetPrefix = '', isRoot = false) {
   // describe's `!isRoot` short-circuit) -- iconOnly is exactly that signal.
   const todoClass = f.name === 'todo.md' && !f.iconOnly ? ' kind-todo' : '';
 
-  // Secret only where it lives. Inside the folder itself the files are the
-  // point; it is the door on the front page that is meant to be invisible.
-  const secret = isRoot && SECRET.some(re => re.test(f.name)) ? ' data-secret' : '';
+  // Which key opens this one, if it is a door at all. See folderSecret.
+  // Secret only where it lives: inside the folder the files are the point,
+  // it is the way in that is meant to be invisible.
+  const secret = f.secret ? ` data-secret="${escapeHtml(f.secret)}"` : '';
 
   return `      <div class="item kind-${f.type}${todoClass}${f.iconOnly ? ' as-icon' : ''}" id="p${i}" data-key="${escapeHtml(f.name)}"${secret}>
         ${icon}<h3><a href="${f.href}">${escapeHtml(f.name)}</a>` +
