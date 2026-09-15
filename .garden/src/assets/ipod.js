@@ -788,6 +788,9 @@
 
     var queueIds = [];
 
+    // Default on: the track list is the point of a playlist. See buildQueue.
+    var queueWanted = get('ipod.tracks', true);
+
     /** Repaint which row is lit, without rebuilding the list. */
     function markQueue() {
       var at = -1;
@@ -810,6 +813,16 @@
         return;
       }
       queueBtn.hidden = false;
+
+      /* A playlist opens ON its track list.
+       *
+       * The screen is a music player. What is wanted there is the songs --
+       * which one is on, what is coming -- not a video nobody is looking
+       * at. The video has not gone anywhere: it is the layer underneath,
+       * still playing, one press of `tracks` away. The preference is
+       * remembered, so a visitor who prefers to watch closes it once and
+       * it stays closed for them. */
+      if (queueWanted && queue.hidden) showQueue(true);
 
       // Same queue as last time: only the lit row can have moved.
       if (ids.join(',') === queueIds.join(',')) { markQueue(); return; }
@@ -859,13 +872,11 @@
     /**
      * THE `tracks` PANEL IS A GUEST, NOT A VIEW.
      *
-     * It used to be sticky: one press of `tracks` opened it and nothing
-     * ever closed it again. Because it is a layer above BOTH the stage and
-     * the menu, that one press meant every playlist opened afterwards came
-     * up showing the track list instead of the video -- and so did MENU.
-     * That is the whole of the "it defaults to tracks rather than the
-     * video" complaint. Every move that changes what the screen is meant to
-     * be showing now closes it, and it is hidden outright on the menu.
+     * It is a layer above BOTH the stage and the menu, so it cannot be
+     * left lying open across a move that changes what the screen is meant
+     * to be showing -- MENU especially, which means the playlists. Every
+     * such move closes it, and buildQueue opens it again by itself once a
+     * real playlist is loaded and playing (see queueWanted).
      */
     function showQueue(on) {
       queue.hidden = !on;
@@ -874,7 +885,11 @@
     }
     function closeQueue() { showQueue(false); }
 
-    queueBtn.addEventListener('click', function () { showQueue(queue.hidden); });
+    queueBtn.addEventListener('click', function () {
+      queueWanted = queue.hidden;          // whichever way they just chose
+      set('ipod.tracks', queueWanted);
+      showQueue(queueWanted);
+    });
 
     /* --------------------------------------------------- the stage's shape
 
@@ -1306,7 +1321,8 @@
       root.setAttribute('data-loaded', 'yes');   // something has been picked
                                                   // at least once -- see the
                                                   // strip eq's CSS gate
-      closeQueue();          // picking a playlist lands on the video, always
+      closeQueue();          // a clean screen; buildQueue brings the track
+                             // list back up as soon as there is one to show
       sizeStage();           // and in the shape of whatever is about to play
 
       var t = tracks[state.playing];

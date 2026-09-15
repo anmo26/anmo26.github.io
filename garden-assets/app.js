@@ -751,11 +751,38 @@
 
     var media = item.querySelector('img, video');
     if (!media) return;
+
+    /** The picture's own shape, once it is known. */
+    function aspect() {
+      var w = media.naturalWidth || media.videoWidth ||
+              parseInt(media.getAttribute('width'), 10) || 0;
+      var h = media.naturalHeight || media.videoHeight ||
+              parseInt(media.getAttribute('height'), 10) || 0;
+      return w && h ? w / h : 0;
+    }
+
+    /**
+     * Put the corner back on the corner.
+     *
+     * `resize: both` hands the visitor a free rectangle, and a picture set
+     * to fit inside one letterboxes: pull down and you get a tall grey box
+     * with a small photo floating in it, the grip stranded in empty space
+     * far below the image. Nobody is asking for a box. They are asking for
+     * a bigger picture -- so the height is taken back off the drag and
+     * derived from the width, which leaves the grip sitting exactly on the
+     * bottom-right corner of what is actually on screen.
+     */
+    function snap(box) {
+      var a = aspect();
+      if (!a) return;
+      box.style.height = Math.round(box.clientWidth / a) + 'px';
+    }
     var box = media.parentNode;
     if (!box || box === item) box = media;      // no wrapping link: resize the media
     if (box.hasAttribute('data-resizable')) return;
 
     box.setAttribute('data-resizable', '');
+    box.title = 'drag the bottom-right corner to resize';
 
     var key = item.dataset.key;
     var sizes = get('sized', {});
@@ -770,6 +797,12 @@
       box.style.width = (nat ? Math.min(nat, MEDIA_START_PX) : MEDIA_START_PX) + 'px';
     }
 
+    // The shape is only knowable once the picture has arrived, and the very
+    // first sizing happens long before that.
+    if (media.complete || media.videoWidth) snap(box);
+    else media.addEventListener('load', function () { snap(box); }, { once: true });
+    media.addEventListener('loadedmetadata', function () { snap(box); }, { once: true });
+
     if (!key || !window.ResizeObserver) return;
 
     // Only record once the pointer is up: an observer firing mid-drag would
@@ -782,6 +815,7 @@
 
     window.addEventListener('pointerup', function () {
       if (!pendingW) return;
+      snap(box);
       var all = get('sized', {});
       all[key] = { w: pendingW };
       set('sized', all);
@@ -1990,6 +2024,7 @@
      ------------------------------------------------------------------- */
 
   function bootPage() {
+    cactusVisit();          // a new page is a new chance to water the plant
     mountItems();
     mountGuestbook();
     // Ahead of restorePositions: a returning visitor who has already moved
@@ -2081,8 +2116,225 @@
     });
   }
 
+
+  /* ============================================================== SECRET
+     One folder is not drawn on the front page. The way in is the clock:
+     twenty clicks in a hurry. It is deliberately a gesture nobody arrives
+     at by accident and anybody can be told in one sentence -- and once it
+     has been found, it stays found, because making a visitor earn it twice
+     would be a chore rather than a secret. */
+
+  var SECRET_CLICKS = 20;
+  var SECRET_WINDOW_MS = 9000;
+
+  function openSecret(announce) {
+    document.body.classList.add('secret-open');
+    set('secret.open', true);
+    if (!announce) return;
+
+    var toast = document.createElement('div');
+    toast.className = 'secret-toast';
+    toast.textContent = 'the library is open';
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.classList.add('going'); }, 3600);
+    setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 4600);
+
+    var lib = document.querySelector('.item[data-secret]');
+    if (lib && lib.scrollIntoView) lib.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  function mountSecret() {
+    if (get('secret.open', false)) openSecret(false);
+
+    var shell = document.getElementById('clock-shell');
+    if (!shell) return;
+    var hits = [];
+
+    shell.addEventListener('click', function () {
+      if (document.body.classList.contains('secret-open')) return;
+
+      var now = Date.now();
+      hits.push(now);
+      // Only a spam counts. A click a minute all afternoon is somebody
+      // changing the time format, which is what this control is for.
+      while (hits.length && now - hits[0] > SECRET_WINDOW_MS) hits.shift();
+
+      if (hits.length >= SECRET_CLICKS) { hits = []; openSecret(true); return; }
+
+      // Past halfway the clock starts to rattle, so that somebody who is
+      // already doing the right thing is told to keep going.
+      if (hits.length >= SECRET_CLICKS / 2) {
+        shell.classList.add('rattling');
+        setTimeout(function () { shell.classList.remove('rattling'); }, 220);
+      }
+    });
+  }
+
+  /* ============================================================== CACTUS
+     A prickly pear that belongs to the visitor, not to the site: it lives
+     in their own browser, and everybody's is at a different height. It
+     cannot die. Water is the only input, days are the only clock, and the
+     end of it is fruit.
+     ------------------------------------------------------------------- */
+
+  // Nine rows, eleven columns, every stage -- so the drawing grows without
+  // the page around it shifting. The last four rows are the pot.
+  var POT = [
+    '  ,,,,,,,  ',
+    ' \\mmmmmmm/ ',
+    '  |ooooo|  ',
+    '  \\_____/  '
+  ];
+
+  var CROWN = [
+    ['', '', '', '', ''],
+    ['', '', '', '', '     i     '],
+    ['', '', '', '    ooo    ', '    oio    '],
+    ['', '', '    ooo    ', '   onaoo   ', '   olioo   '],
+    ['', '    ooo    ', '   onaoo   ', ' ooooooooo ', '   olioo   '],
+    ['    !@!    ', '    ooo    ', '   onaoo   ', ' ooooooooo ', '   olioo   '],
+    ['   6 6 6   ', '    ooo    ', '  6onaoo6  ', ' ooooooooo ', '   olioo   ']
+  ];
+
+  // What each stage is called, and how many waterings it takes to get there.
+  var STAGE_NAME = ['a pot', 'a sprout', 'a pad', 'growing', 'arms out', 'in flower', 'fruiting'];
+  var STAGE_NEED = [0, 1, 2, 4, 6, 9, 12];
+
+  var DROPS_A_DAY = 6;   // past this it is a flood, not a garden
+
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function stageOf(drops) {
+    var s = 0, i;
+    for (i = 0; i < STAGE_NEED.length; i++) if (drops >= STAGE_NEED[i]) s = i;
+    return s;
+  }
+
+  var cactusVisit = function () {};
+
+  function mountCactus() {
+    var host = document.getElementById('cactus');
+    var shell = document.getElementById('cactus-shell');
+    var fill = document.getElementById('cactus-fill');
+    var say = document.getElementById('cactus-say');
+    if (!host || !shell) return;
+
+    var plant = get('cactus', null);
+    if (!plant || typeof plant.drops !== 'number') plant = { drops: 0, day: '', today: 0, last: 0 };
+    if (plant.day !== today()) { plant.day = today(); plant.today = 0; }
+
+    var thisVisit = true;      // one drink per page; see cactusVisit, below
+    var sayTimer = null;
+
+    function canWater() { return thisVisit && plant.today < DROPS_A_DAY; }
+
+    /** Colour comes from where a character sits, not from what it is: the
+        pot is the pot whatever letter draws it. Fruit and flowers are the
+        exception -- those are themselves wherever they appear. */
+    function paint() {
+      var stage = stageOf(plant.drops);
+      var rows = CROWN[stage].concat(POT);
+      var dry = plant.today === 0;
+      var html = '';
+      var r, c, ch, cls;
+
+      for (r = 0; r < rows.length; r++) {
+        var row = rows[r] || '           ';
+        for (c = 0; c < row.length; c++) {
+          ch = row.charAt(c);
+          if (ch === ' ') { html += ' '; continue; }
+          if (ch === '@' || ch === '!') cls = 'fl';
+          else if (ch === '6' || ch === '$') cls = 'fr';
+          else if (r >= CROWN[stage].length) cls = 'po';
+          else cls = dry ? 'pa dry' : 'pa';
+          html += '<span class="' + cls + '">' + ch + '</span>';
+        }
+        html += r === rows.length - 1 ? '' : '\n';
+      }
+      host.innerHTML = html;
+      host.setAttribute('aria-label',
+        'a prickly pear cactus, ' + STAGE_NAME[stage] + (dry ? ', thirsty' : ', watered'));
+
+      if (fill) {
+        var at = STAGE_NEED[stage];
+        var next = stage + 1 < STAGE_NEED.length ? STAGE_NEED[stage + 1] : at;
+        var pc = next > at ? (plant.drops - at) / (next - at) : 1;
+        fill.style.width = Math.round(Math.max(0, Math.min(1, pc)) * 100) + '%';
+        fill.parentNode.setAttribute('title',
+          stage + 1 < STAGE_NEED.length
+            ? STAGE_NAME[stage] + ' — ' + (STAGE_NEED[stage + 1] - plant.drops) + ' more waterings to go'
+            : 'fruiting. it does not get better than this.');
+      }
+
+      shell.classList.toggle('thirsty', canWater());
+      shell.classList.toggle('dry', dry);
+    }
+
+    function speak(text, revert) {
+      if (!say) return;
+      clearTimeout(sayTimer);
+      say.textContent = text;
+      if (revert) sayTimer = setTimeout(function () { say.textContent = revert; }, 3200);
+    }
+
+    function rest() {
+      if (canWater()) { speak('water me'); return; }
+      speak(plant.today >= DROPS_A_DAY ? 'soaked for today' : 'thank you');
+    }
+
+    function water() {
+      if (!canWater()) {
+        speak(plant.today >= DROPS_A_DAY ? 'come back tomorrow' : 'already watered', null);
+        setTimeout(rest, 2400);
+        shell.classList.add('nope');
+        setTimeout(function () { shell.classList.remove('nope'); }, 320);
+        return;
+      }
+
+      var before = stageOf(plant.drops);
+      plant.drops++;
+      plant.today++;
+      plant.last = Date.now();
+      thisVisit = false;
+      set('cactus', plant);
+      paint();
+
+      shell.classList.add('drinking');
+      setTimeout(function () { shell.classList.remove('drinking'); }, 700);
+
+      var after = stageOf(plant.drops);
+      if (after > before) speak(after === STAGE_NEED.length - 1 ? 'it fruited!' : 'it grew!', null);
+      else speak('thank you', null);
+      setTimeout(rest, 3200);
+    }
+
+    shell.addEventListener('click', water);
+    shell.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); water(); }
+    });
+    shell.setAttribute('tabindex', '0');
+    shell.setAttribute('role', 'button');
+
+    // Every page walked into is a fresh chance to water -- the site swaps
+    // <main> rather than reloading, so nothing else would ever reset this.
+    cactusVisit = function () {
+      if (plant.day !== today()) { plant.day = today(); plant.today = 0; set('cactus', plant); }
+      thisVisit = true;
+      paint();
+      rest();
+    };
+
+    paint();
+    rest();
+  }
+
   function boot() {
     mountClock();
+    mountSecret();
+    mountCactus();
     mountToggles();
     mountHint();
     mountNav();

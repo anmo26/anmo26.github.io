@@ -691,11 +691,21 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
 /* Anchored to the top of the page, not to the viewport. It was `fixed`, so
    it rode along on every scroll and sat on top of whatever you scrolled to.
    It belongs at the top of the site and should leave when you leave. */
-#clock-shell {
+/* The top-right corner is a pair now -- the plant, then the clock -- so the
+   corner itself is the thing that is placed, and the two of them sit in it
+   side by side. The plant is on the left of the clock and therefore on the
+   right of the masthead, which is where it was asked to be. */
+#corner {
   position: absolute;
   top: 1.4rem;
   right: 1.6rem;
   z-index: 9996;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+#clock-shell {
   cursor: pointer;
   user-select: none;
   text-align: right;
@@ -742,8 +752,11 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
     max-width: none;
     margin: 0 0 1rem;
     text-align: left;
-    /* the corner the clock occupies */
-    padding-right: 33rem;
+    /* the corner the clock and the cactus occupy between them. A share of
+       the window rather than a fixed measure: the corner is mostly the
+       clock, the clock is a character field, and on a narrow laptop
+       reserving its full width in ems would leave the title nowhere to go. */
+    padding-right: min(40rem, 44%);
     /* and its height, so the ticker rules a line beneath it, not through it */
     min-height: 10.5rem;
   }
@@ -755,7 +768,8 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
 }
 
 @media (max-width: 899px) {
-  #clock-shell { position: static; margin: 0 auto 2rem; text-align: center; }
+  #corner { position: static; margin: 0 auto 2rem; justify-content: center; }
+  #clock-shell { text-align: center; }
   #clock { font-size: 8px; }
   #clock-date { font-size: 8px; }
 }
@@ -763,8 +777,9 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
 /* 8px is below reading. The field drops its seconds on a phone, so it is
    five cards wide instead of eight and there is room to grow. */
 @media (max-width: 559px) {
-  #clock-shell {
+  #corner {
     margin: 0 auto 1.25rem;
+    gap: .9rem;
     /* The five-card field above assumes app.js caught the phone in time to
        drop the seconds; a device slow to settle its own viewport can still
        hand it eight for one frame. This is a clip, not a design choice --
@@ -986,4 +1001,180 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
   }
   .plantbed [data-resizable] img,
   .plantbed [data-resizable] video { height: auto; }
+}
+
+/* --------------------------------------------------------------- cactus
+   A prickly pear drawn out of the letters of the owner's name, standing in
+   a pot beside the clock. It belongs to whoever is looking at it: the
+   growth is kept in their own browser, so every visitor has a different
+   plant, and nobody can kill anybody else's. It cannot be killed at all --
+   the worst that happens is that it goes thirsty and waits.
+   ------------------------------------------------------------------------ */
+
+:root {
+  --cactus-green:  #4E7A3E;
+  --cactus-dry:    #8A6A3A;
+  --cactus-pot:    #A5643B;
+  --cactus-flower: #D99A1F;
+  --cactus-fruit:  #B23A57;
+}
+body.theme-ink {
+  --cactus-green:  #86B36E;
+  --cactus-dry:    #A98A55;
+  --cactus-pot:    #C08457;
+  --cactus-flower: #E8BE5A;
+  --cactus-fruit:  #D96F86;
+}
+body.theme-pocari {
+  --cactus-green:  #1B7A63;
+  --cactus-dry:    #5B7183;
+  --cactus-pot:    #2F6FA8;
+  --cactus-fruit:  #A83060;
+}
+
+#cactus-shell {
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  width: 5.2rem;
+  outline-offset: 3px;
+}
+#cactus-shell:focus-visible { outline: 2px solid var(--ochre); }
+
+#cactus {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0.95;
+  letter-spacing: .06em;
+  font-weight: 700;
+  transition: transform .25s ease;
+}
+
+#cactus .pa  { color: var(--cactus-green); }
+#cactus .dry { color: var(--cactus-dry); }
+#cactus .po  { color: var(--cactus-pot); }
+#cactus .fl  { color: var(--cactus-flower); }
+#cactus .fr  { color: var(--cactus-fruit); }
+
+/* how far along it is towards its next size */
+#cactus-bar {
+  height: 3px;
+  margin: .4rem auto 0;
+  width: 4.4rem;
+  background: var(--rule-soft);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+#cactus-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--cactus-green);
+  transition: width .4s ease;
+}
+
+#cactus-say {
+  margin: .3rem 0 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .04em;
+  color: var(--ink-faint);
+}
+/* Only asks when it can actually be given something. */
+#cactus-shell.thirsty #cactus-say { color: var(--ochre); }
+#cactus-shell.thirsty:hover #cactus { transform: translateY(-2px); }
+
+#cactus-shell.drinking #cactus { animation: cactus-drink .7s ease; }
+#cactus-shell.nope     #cactus { animation: cactus-nope .32s ease; }
+
+@keyframes cactus-drink {
+  0%   { transform: translateY(0) scale(1); }
+  35%  { transform: translateY(-4px) scale(1.06); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes cactus-nope {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-2px); }
+  75%      { transform: translateX(2px); }
+}
+
+/* --------------------------------------------------------------- secret
+   A folder that is not drawn until it has been found. The page it points
+   at is built either way -- this is a door, not a lock, and it is meant to
+   be the kind of thing you can tell a friend about in one sentence. */
+
+.item[data-secret] { display: none; }
+body.secret-open .item[data-secret] {
+  display: block;
+  animation: secret-in .7s ease both;
+}
+@keyframes secret-in {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+#clock-shell.rattling #clock { animation: cactus-nope .22s ease; }
+
+.secret-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 4.5rem;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: .55rem 1.1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  box-shadow: 0 8px 28px rgba(38, 36, 31, .16);
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .08em;
+  color: var(--ink);
+  opacity: 1;
+  transition: opacity .9s ease;
+}
+.secret-toast.going { opacity: 0; }
+
+/* ------------------------------------------------------- the pull corner
+   A picture on the front page can be pulled bigger, and until now the only
+   sign of that was the cursor changing -- which you have to already be over
+   the right nine pixels to find. The corner is drawn now, and the whole
+   picture says so when the pointer is on it. */
+
+@media (min-width: 560px) {
+  .plantbed [data-resizable] { position: relative; }
+
+  .plantbed [data-resizable]::after {
+    content: '';
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    opacity: .3;
+    pointer-events: none;      /* the browser's own grip lives under this */
+    transition: opacity .15s ease, border-color .15s ease;
+  }
+
+  .plantbed [data-resizable]:hover::after {
+    opacity: 1;
+    border-color: var(--ochre);
+  }
+
+  /* and a wedge of shade behind it, so the corner reads as a thing to take
+     hold of rather than a stray mark on the photograph */
+  .plantbed [data-resizable]:hover {
+    box-shadow: inset -14px -14px 16px -14px rgba(38, 36, 31, .55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #cactus, #cactus-fill { transition: none; }
+  #cactus-shell.drinking #cactus,
+  #cactus-shell.nope #cactus,
+  #clock-shell.rattling #clock { animation: none; }
+  body.secret-open .item[data-secret] { animation: none; }
 }

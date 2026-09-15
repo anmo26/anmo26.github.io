@@ -1226,14 +1226,16 @@ ${showMusic ? `  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamp
 </head>
 
 <body>
-  <div id="cactus-shell" title="click to water">
-    <pre id="cactus" role="img" aria-label="a prickly pear cactus"></pre>
-    <div id="cactus-bar" aria-hidden="true"><i id="cactus-fill"></i></div>
-    <p id="cactus-say">water me</p>
-  </div>
-  <div id="clock-shell" title="click to change format">
-    <pre id="clock"></pre>
-    <p id="clock-date"></p>
+  <div id="corner">
+    <div id="cactus-shell" title="click to water">
+      <pre id="cactus" role="img" aria-label="a prickly pear cactus"></pre>
+      <div id="cactus-bar" aria-hidden="true"><i id="cactus-fill"></i></div>
+      <p id="cactus-say">water me</p>
+    </div>
+    <div id="clock-shell" title="click to change format">
+      <pre id="clock"></pre>
+      <p id="clock-date"></p>
+    </div>
   </div>
 ${showMusic ? musicWindow(musicData) + '\n' : ''}\
 
