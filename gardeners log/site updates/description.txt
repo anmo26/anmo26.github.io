@@ -1,0 +1,1 @@
+every update to the site, oldest at the top. the to-do card on the front page is only ever the latest one; when a new one is written the old one moves in here.
