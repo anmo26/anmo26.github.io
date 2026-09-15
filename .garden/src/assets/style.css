@@ -1118,6 +1118,7 @@ body.theme-pocari {
 body.secret-library .item[data-secret="library"],
 body.secret-garden  .item[data-secret="garden"],
 body.secret-bar     .item[data-secret="bar"],
+body.secret-sun     .item[data-secret="sun"],
 body.secret-night   .item[data-secret="night"] {
   display: block;
   animation: secret-in .7s ease both;
@@ -1473,8 +1474,10 @@ body[data-scene="garden"] {
   --rule:       rgba(31, 42, 27, .18);
   --rule-soft:  rgba(31, 42, 27, .08);
 
-  --leaf:  #2E7D32;
-  --bark:  #6B4A2B;
+  --leaf:   #2E7D32;
+  --leaf-2: #1B5E20;
+  --bark:   #4A3220;
+  --bark-2: #17110B;
   --grass: #3E8E41;
   --sky-1: #BFD9E8;
   --sky-2: #DCE7CE;
@@ -1560,7 +1563,8 @@ body.roof-broken #roof { opacity: .9; animation: roof-crack .9s ease-out; }
 
 #adam {
   position: fixed;
-  left: 32%;                 /* clear of the corner the iPod docks into */
+  left: 50%;
+  transform: translateX(-50%);
   bottom: calc(44px + 56px);
   z-index: -1;
   text-align: center;
@@ -1571,7 +1575,8 @@ body.roof-broken #roof { opacity: .9; animation: roof-crack .9s ease-out; }
    above it can be as tall as it likes without eating anybody's clicks. */
 #adam-hit {
   position: fixed;
-  left: 32%;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: 44px;
   z-index: 3;
   width: 120px;
@@ -1608,7 +1613,9 @@ body.roof-broken #roof { opacity: .9; animation: roof-crack .9s ease-out; }
   transition: transform .18s ease;
 }
 #adam-art .lf { color: var(--leaf); }
+#adam-art .lg { color: var(--leaf-2); }
 #adam-art .bk { color: var(--bark); }
+#adam-art .bd { color: var(--bark-2); }
 #adam.drinking #adam-art { transform: scaleY(1.04); }
 #adam-hit:hover ~ #adam #adam-art { filter: brightness(1.12); }
 
@@ -1667,7 +1674,35 @@ body[data-scene="garden"] main { min-height: 100vh; }
   font-weight: 700;
 }
 #sun-level p { margin: 0 0 .5rem; font-family: var(--serif); font-size: 1rem; }
-#sun-level .sun-link a { color: #8A5A1F; }
+
+/* The room's own floor: the SUN LEVEL folder's files, laid out in a row up
+   here rather than described from a distance. */
+.sun-bed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.6rem 2.2rem;
+  margin-top: 1.4rem;
+  text-align: center;
+}
+.sun-bed .item {
+  position: static !important;
+  margin: 0;
+  max-width: 11rem;
+}
+.sun-bed .item h3 { margin: 0; }
+.sun-bed .item h3 a { color: #6B4A12; }
+.sun-bed .item .meta { color: #7C6A3A; }
+.sun-bed .item .icon { height: 72px; }
+.sun-bed .item .md, .sun-bed .item pre, .sun-bed .item .read-more { display: none; }
+
+.sun-wait {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .06em;
+  color: #7C6A3A;
+}
 
 .sun-floor {
   position: absolute;
@@ -1685,12 +1720,15 @@ body[data-scene="garden"] main { min-height: 100vh; }
   opacity: .8;
 }
 
+/* The garden and the storey above it are their own weather. The still and
+   the prickly pear belong to the front of the site, not in here. */
+body[data-scene="garden"] #plants { display: none; }
+
 /* A phone has no room for a cow and a tree beside the folder. The ground
    and the sky stay; the livestock does not. */
 @media (max-width: 559px) {
   #cow { display: none; }
-  #adam, #adam-hit { left: 26%; }
-  #adam-art { font-size: 9px; line-height: 9px; }
+  #adam-art { font-size: 7px; line-height: 7px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

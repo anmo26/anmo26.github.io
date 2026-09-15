@@ -1469,12 +1469,19 @@
     reset.type = 'button';
     reset.innerHTML = '<span class="led"></span>put back';
     reset.title = 'put every item back where Finder has it';
+    /* Put back means put back: the arrangement, the sizes, every door that
+       has been found, and every living thing's progress. What it does not
+       touch is preference -- the theme, the texture, the switches, the
+       clock's format and the player are how this visitor likes the place,
+       not something they have done to it. */
+    var WORLD = ['moved', 'sized', 'cactus', 'still', 'adam',
+                 'secret.garden', 'secret.bar', 'secret.sun', 'secret.night'];
+
     reset.addEventListener('click', function () {
-      set('moved', {});
-      set('sized', {});
-      // Putting everything back puts the library back too. It is the one
-      // door that is only ever a guest -- it closes when the tab closes,
-      // and it closes when the visitor asks for the page as it was found.
+      WORLD.forEach(function (k) {
+        try { localStorage.removeItem(STORE + k); } catch (e) {}
+        try { sessionStorage.removeItem(STORE + k); } catch (e) {}
+      });
       try { sessionStorage.removeItem(STORE + 'secret.library'); } catch (e) {}
       location.reload();
     });
@@ -2187,6 +2194,7 @@
     library: 'session',
     garden:  'forever',
     bar:     'forever',
+    sun:     'forever',
     night:   'hour'
   };
 
@@ -3045,24 +3053,24 @@
     '   /    |    \\   '
   ];
 
-  // The canopy, by how tall the trunk under it has got.
-  var CANOPY = [
-    ['i'],
-    ['\\|/'],
-    ['ooo', '\\|/'],
-    ['ooooo', ' ooo ', ' \\|/ '],
-    ['  ooooo  ', ' ooooooo ', 'ooooooooo', '  \\|/  '],
-    ['   ooooooo   ', ' ooooooooooo ', 'ooooooooooooo', ' ooooooooooo ', '    \\|/    ']
-  ];
-  var CANOPY_AT = [0, 2, 5, 12, 28, 46];
+  /* THE TREE IS A MASS, NOT A LINE.
+     An adam tree is the wood they build ships out of -- it wants to read as
+     something enormous and slightly threatening standing in the garden, not
+     as a stick with a bobble on top. So it is not drawn: it is grown, cell
+     by cell, out of a field of letters. Bark is a dense block of dark
+     browns and near-blacks; leaves are a ragged green mass that crawls up
+     and out over it. Every cell picks its own letter and its own shade from
+     a hash of where it sits, so the texture is random but it is the SAME
+     random every time it is redrawn -- otherwise the whole tree would
+     shimmer on every watering. */
 
-  var TREE_W = 17;
+  var FIELD_W = 49;
+  var BARK_CH = 'anmoli268@#%&$';
+  var LEAF_CH = 'anmoli&%o0@6';
 
-  function centre(str, w) {
-    var pad = Math.max(0, Math.floor((w - str.length) / 2));
-    var out = new Array(pad + 1).join(' ') + str;
-    while (out.length < w) out += ' ';
-    return out;
+  function noise(r, c, k) {
+    var x = Math.sin((r + 1) * 127.1 + (c + 1) * 311.7 + (k || 0) * 74.7) * 43758.5453;
+    return x - Math.floor(x);
   }
 
   var sceneOn = false;
@@ -3224,33 +3232,109 @@
       return Math.round(Math.pow(t, 0.7) * maxRows());
     }
 
-    function canopyFor(h) {
-      var c = 0, k;
-      for (k = 0; k < CANOPY_AT.length; k++) if (h >= CANOPY_AT[k]) c = k;
-      return CANOPY[c];
+    /** Paint an ellipse of leaves into the grid, edges roughened. */
+    function blob(grid, cy, cx, rx, ry, seed) {
+      var r, c, dy, dx, edge;
+      for (r = Math.max(0, Math.round(cy - ry)); r <= cy + ry && r < grid.length; r++) {
+        dy = (r - cy) / ry;
+        if (dy * dy > 1) continue;
+        edge = Math.sqrt(1 - dy * dy);
+        for (c = 0; c < FIELD_W; c++) {
+          dx = Math.abs(c - cx);
+          // the ragged margin: a leaf mass has no clean outline
+          if (dx > rx * edge + (noise(r, c, seed) - 0.45) * 2.6) continue;
+          grid[r][c] = 'L';
+        }
+      }
+    }
+
+    function buildGrid() {
+      var t = Math.min(1, tree.clicks / TREE_CLICKS);
+      var h = Math.max(1, trunkRows(tree.clicks));
+      var halfW = 1 + Math.round(Math.pow(t, 0.7) * 8);       // trunk 3..19 wide
+      var canH = 2 + Math.round(Math.pow(t, 0.55) * 9);
+      var canR = 2 + Math.round(Math.pow(t, 0.55) * 21);
+      var rootH = h > 4 ? 3 : 1;
+      var rows = canH + h + rootH;
+      var mid = Math.floor(FIELD_W / 2);
+      var grid = [], r, c, k;
+
+      for (r = 0; r < rows; r++) {
+        grid.push([]);
+        for (c = 0; c < FIELD_W; c++) grid[r].push(' ');
+      }
+
+      // the crown
+      blob(grid, canH - 1, mid, canR, canH * 0.9, 1);
+
+      // the trunk: narrow at the shoulders, heavy at the foot, and never
+      // straight -- the edge wanders a character either way
+      for (k = 0; k < h; k++) {
+        r = canH + k;
+        var frac = h === 1 ? 1 : k / (h - 1);
+        var hw = 1 + (halfW - 1) * Math.pow(frac, 0.8);
+        var lean = Math.round((noise(r, 0, 3) - 0.5) * 2.2);
+        for (c = 0; c < FIELD_W; c++) {
+          if (Math.abs(c - mid - lean) <= hw + (noise(r, c, 2) - 0.5) * 1.6) grid[r][c] = 'B';
+        }
+      }
+
+      // limbs, once there is a tree to hang them off
+      if (h > 14) {
+        [0.30, 0.52, 0.74].forEach(function (at, i) {
+          var rr = canH + Math.round(h * at);
+          var side = i % 2 ? 1 : -1;
+          var reach = Math.round(canR * (0.55 - at * 0.25));
+          if (reach < 3) return;
+          blob(grid, rr, mid + side * (halfW + reach * 0.7), reach, reach * 0.55, 10 + i);
+          // the branch that holds it up
+          for (c = 0; c < FIELD_W; c++) {
+            if (side > 0 ? (c > mid && c < mid + halfW + reach * 0.7)
+                         : (c < mid && c > mid - halfW - reach * 0.7)) {
+              if (grid[rr][c] === ' ') grid[rr][c] = 'B';
+            }
+          }
+        });
+      }
+
+      // roots, splaying out into the grass
+      for (k = 0; k < rootH; k++) {
+        r = canH + h + k;
+        var rw = halfW + (k + 1) * 2.2;
+        for (c = 0; c < FIELD_W; c++) {
+          if (Math.abs(c - mid) <= rw && noise(r, c, 5) > k * 0.22) grid[r][c] = 'B';
+        }
+      }
+
+      return grid;
     }
 
     function paintTree() {
-      var h = trunkRows(tree.clicks);
-      var rows = canopyFor(h).map(function (r) { return centre(r, TREE_W); });
-      var k, row;
-      for (k = 0; k < h; k++) {
-        row = centre('|', TREE_W).split('');
-        // a leaf every few feet, alternating sides, the way a beanstalk goes
-        if (k % 5 === 2) row[k % 10 === 2 ? 5 : 11] = 'o';
-        rows.push(row.join(''));
-      }
-      rows.push(centre('\\_|_/', TREE_W));
+      var grid = buildGrid();
+      var html = '', r, c, cell, cls, ch, run = '', runCls = null;
 
-      var html = '', r, c, ch, cls;
-      for (r = 0; r < rows.length; r++) {
-        for (c = 0; c < rows[r].length; c++) {
-          ch = rows[r].charAt(c);
-          if (ch === ' ') { html += ' '; continue; }
-          cls = ch === 'o' ? 'lf' : ch === '|' || ch === '\\' || ch === '/' || ch === '_' ? 'bk' : 'lf';
-          html += '<span class="' + cls + '">' + ch + '</span>';
+      function flush() {
+        if (!run) return;
+        html += runCls ? '<span class="' + runCls + '">' + run + '</span>' : run;
+        run = '';
+      }
+
+      for (r = 0; r < grid.length; r++) {
+        for (c = 0; c < FIELD_W; c++) {
+          cell = grid[r][c];
+          if (cell === ' ') { cls = null; ch = ' '; }
+          else if (cell === 'L') {
+            cls = noise(r, c, 7) < 0.42 ? 'lg' : 'lf';
+            ch = LEAF_CH.charAt(Math.floor(noise(r, c, 8) * LEAF_CH.length));
+          } else {
+            cls = noise(r, c, 9) < 0.38 ? 'bd' : 'bk';
+            ch = BARK_CH.charAt(Math.floor(noise(r, c, 6) * BARK_CH.length));
+          }
+          if (cls !== runCls) { flush(); runCls = cls; }
+          run += ch;
         }
-        html += r === rows.length - 1 ? '' : '\n';
+        flush(); runCls = null;
+        if (r !== grid.length - 1) html += '\n';
       }
       art.innerHTML = html;
 
@@ -3313,6 +3397,58 @@
 
     /* ---------------------------------------------------- the sun level */
 
+    /** Where the site's root is, whatever path it is served from. */
+    function siteRoot() {
+      var back = document.querySelector('.masthead a[href]');
+      try { return new URL(back ? back.getAttribute('href') : '/', location.href); }
+      catch (e) { return new URL('/', location.href); }
+    }
+
+    /**
+     * The storey above is a ROOM, not a poster of a room.
+     *
+     * It was a panel with a link on it, which is a strange thing to climb a
+     * tree for. It holds the SUN LEVEL folder's own contents now -- the
+     * same files, the same icons, opening the same way -- fetched once and
+     * laid out in a row up here. The ids are dropped on the way in: they
+     * are this OTHER page's Finder coordinates, and the stylesheet in force
+     * is the garden's, which would scatter them by somebody else's map.
+     */
+    function fillSunRoom(bed) {
+      if (!bed) return;
+      var url;
+      try { url = new URL('SUN LEVEL/', siteRoot()).href; } catch (e) { return; }
+
+      fetch(url, { credentials: 'same-origin', headers: { accept: 'text/html' } })
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+          if (!html) throw new Error('no room');
+          var doc = new DOMParser().parseFromString(html, 'text/html');
+          var incoming = doc.querySelector('main');
+          if (!incoming) throw new Error('no main');
+          absolutise(incoming, url);
+
+          var items = incoming.querySelectorAll('.plantbed > .item');
+          bed.innerHTML = '';
+          if (!items.length) {
+            bed.innerHTML = '<p class="sun-wait">nothing up here yet. ' +
+              'put something in the SUN LEVEL folder.</p>';
+            return;
+          }
+          var i, node;
+          for (i = 0; i < items.length; i++) {
+            node = document.importNode(items[i], true);
+            node.removeAttribute('id');
+            node.style.position = 'static';
+            bed.appendChild(node);
+          }
+        })
+        .catch(function () {
+          bed.innerHTML = '<p class="sun-wait">the room is up here, but the ' +
+            'site could not read it just now.</p>';
+        });
+    }
+
     function openSun(scrollUp) {
       if (!document.getElementById('sun-level')) {
         var sun = document.createElement('section');
@@ -3322,12 +3458,11 @@
             '<pre class="sun-art" aria-hidden="true">' +
               SUN_ART.join('\n') + '</pre>' +
             '<h2>SUN LEVEL</h2>' +
-            '<p>the adam jewel tree came through the floor. this is the ' +
-            'storey above the garden.</p>' +
-            '<p class="sun-link"><a href="SUN LEVEL/">open the folder &rarr;</a></p>' +
+            '<div class="sun-bed"><p class="sun-wait">opening the room…</p></div>' +
           '</div>' +
           '<pre class="sun-floor" aria-hidden="true"></pre>';
         document.body.insertBefore(sun, document.body.firstChild);
+        fillSunRoom(sun.querySelector('.sun-bed'));
 
         // Inserting a whole storey above the page would otherwise yank
         // whatever is being read upwards by exactly that much.
@@ -3346,7 +3481,7 @@
 
       document.documentElement.classList.add('sun-open');
       document.body.classList.add('sun-open');
-      set('sun', true);
+      openSecret('sun', false);
 
       if (!scrollUp) return;
       setTimeout(function () {
