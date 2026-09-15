@@ -1,12 +1,12 @@
-# 15 september 2026, 14:27
+# 15 september 2026, 14:48
 
 ## what changed
 
-- this card carries the time now, not just the day
-- the archive has a folder per day, and a file per update named by its hour
-- every past to-do has the time it went out written into it
-- the jazz trio, the six-pose cat and the wider quote shelf went out at 14:24
-- a plan for the conversations folder sits in gardeners log / plans
+- the clock flips through wrong faces and the change rolls right to left
+- four themes instead of five. olive is an actual olive now
+- patterns only live below the rule, and the dots have room to breathe
+- press note in the taskbar to stick a note anywhere. drag it, bin it
+- the crypt shows the real files now, and they open. the shelf is gone
 
 ## you planned
 
@@ -20,6 +20,6 @@
 
 - your own handwriting, traced from a photo, as the heading font
 - a key hidden in one exact spot of one exact photograph
+- notes other people can read, not just you — the same sticky, shared
 - birds that land on folders and leave when you drag one
-- the pogo man fetching a file when you point at it
 - a folder that only opens on your birthday
