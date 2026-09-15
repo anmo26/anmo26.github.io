@@ -2896,7 +2896,7 @@
     }
 
     // the rocket, standing on the ground under all that
-    mountRocket(scene);
+    mountRocket();
 
     paintSky();
     paintMoon();
@@ -3370,13 +3370,17 @@
     setTimeout(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 300);
   }
 
-  function mountRocket(host) {
-    if (!host) return;
+  function mountRocket() {
+    /* NOT inside the scene. The scene is scenery: it is painted behind the
+       page and it takes no pointer events at all, so a button parked in it
+       is a button nobody can press. The pad goes on the body, above the
+       files, like the tree's watering button does. */
     var pad = document.createElement('div');
     pad.id = 'pad';
     pad.innerHTML = '<pre id="rocket" role="img" aria-label="a model rocket"></pre>' +
       '<button id="rocket-hit" type="button"><span id="rocket-fuel"></span></button>';
-    host.appendChild(pad);
+    document.body.appendChild(pad);
+    sceneNodes.push(pad);
 
     var art = pad.querySelector('#rocket');
     var hit = pad.querySelector('#rocket-hit');
@@ -3540,7 +3544,7 @@
     document.body.classList.remove('moon-open');
     floorWatch = null;
     pogoGravity(1);
-    ['scene', 'adam', 'adam-hit', 'sun-level', 'moon-level'].forEach(function (id) {
+    ['scene', 'adam', 'adam-hit', 'pad', 'sun-level', 'moon-level'].forEach(function (id) {
       var n = document.getElementById(id);
       if (n && n.parentNode) n.parentNode.removeChild(n);
     });
@@ -3627,19 +3631,68 @@
        Walks, stops, puts her head down, eats whatever is in front of her,
        and wanders off again. She is never in a hurry and she never leaves. */
 
+    /* She is drawn once, facing right, and mirrored for the other way --
+       hand-drawing both directions is how you end up with a cow whose legs
+       do not line up. Her legs alternate as she walks, her tail swishes,
+       and when she stops her whole head goes down into the grass. */
+
+    var COW_WALK = [
+      [
+        '                ^__^  ',
+        ' |\\____________/(oo)  ',
+        ' |/  @@   @   @ \\__/  ',
+        ' |     @  @@@  @   |  ',
+        '  \\__||______||___/   ',
+        '     ||      ||       '
+      ],
+      [
+        '                ^__^  ',
+        ' /|____________/(oo)  ',
+        '|/   @@   @   @ \\__/  ',
+        ' |     @  @@@  @   |  ',
+        '  \\__||______||___/   ',
+        '     |\\      /|       '
+      ]
+    ];
+
+    var COW_EAT = [
+      '                      ',
+      ' |\\____________       ',
+      ' |/  @@   @   @\\      ',
+      ' |     @  @@@  @\\^__^ ',
+      '  \\__||______||_(oo)  ',
+      '     ||      || (__)  '
+    ];
+
+    var COW_FLIP = { '/': '\\', '\\': '/', '(': ')', ')': '(' };
+
+    function mirror(rows) {
+      var out = [], r, i, line, ch;
+      for (r = 0; r < rows.length; r++) {
+        line = '';
+        for (i = rows[r].length - 1; i >= 0; i--) {
+          ch = rows[r].charAt(i);
+          line += COW_FLIP[ch] || ch;
+        }
+        out.push(line);
+      }
+      return out;
+    }
+
     var COW = {
-      right: ['  ^__^      ', '  (oo)\\_____', '  (__)\\    |', '      ||  ||'],
-      rightEat: ['            ', '      \\_____', '  ^__^\\    |', '  (oo)||  ||'],
-      left: ['      ^__^  ', '_____/(oo)  ', '|    /(__)  ', '||  ||      '],
-      leftEat: ['            ', '_____/      ', '|    /^__^  ', '||  ||(oo)  ']
+      right: COW_WALK,
+      rightEat: [COW_EAT],
+      left: [mirror(COW_WALK[0]), mirror(COW_WALK[1])],
+      leftEat: [mirror(COW_EAT)]
     };
 
     // Starting clear of the corner the music player docks into.
-    var cowX = 470, cowDir = 1, cowEating = 0, cowRest = 0;
+    var cowX = 470, cowDir = 1, cowEating = 0, cowRest = 0, cowStep = 0;
 
     function paintCow() {
       var key = (cowDir > 0 ? 'right' : 'left') + (cowEating > 0 ? 'Eat' : '');
-      cow.textContent = COW[key].join('\n');
+      var frames = COW[key];
+      cow.textContent = frames[cowStep % frames.length].join('\n');
       cow.style.transform = 'translateX(' + Math.round(cowX) + 'px)';
     }
 
@@ -3665,6 +3718,7 @@
       if (cowRest > 0) { cowRest--; if (!cowRest) cowEating = 24; paintCow(); return; }
 
       cowX += cowDir * 2.2;
+      cowStep++;
       if (cowX < 0) { cowX = 0; cowDir = 1; }
       if (cowX > w) { cowX = w; cowDir = -1; }
       if (Math.random() < 0.012) cowRest = 4;

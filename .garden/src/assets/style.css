@@ -1530,10 +1530,11 @@ body[data-scene="garden"] {
   margin: 0;
   white-space: pre;
   font-family: var(--mono);
-  font-size: 11px;
-  line-height: 0.95;
+  font-size: 14px;
+  line-height: 0.92;
   font-weight: 700;
-  color: var(--ink-soft);
+  color: #2E2A24;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
   transition: transform .13s linear;
 }
 
@@ -1706,6 +1707,7 @@ body[data-scene] main { min-height: 100vh; }
    tree are pinned to the window, so they have to be told to stay downstairs. */
 body.upstairs #scene,
 body.upstairs #adam,
+body.upstairs #pad,
 body.upstairs #adam-hit {
   opacity: 0;
   pointer-events: none;
@@ -1830,8 +1832,8 @@ body[data-scene="moonlight"] .item .meta {
   letter-spacing: 0;
   filter: drop-shadow(0 0 18px rgba(232, 237, 245, .28));
 }
-#moondisc .lt { color: var(--silver); }
-#moondisc .dk { color: var(--dim); }
+#moondisc .lt { color: var(--silver); text-shadow: 0 0 6px rgba(232, 237, 245, .55); }
+#moondisc .dk { color: rgba(140, 152, 178, .045); }
 
 #moonsays {
   position: absolute;
