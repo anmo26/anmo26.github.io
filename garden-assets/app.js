@@ -588,6 +588,14 @@
     drop(d);
     swallowNextClick(d.el);
 
+    // Left hanging over the side of the page, with the shaft dug: it falls.
+    if (d.key && overTheEdge(d.el)) {
+      tossItem(d.el);
+      growBed(bedOf(d.el));
+      fitSoon();
+      return;
+    }
+
     var x = parseInt(d.el.style.left, 10);
     var y = parseInt(d.el.style.top, 10);
 
@@ -717,6 +725,15 @@
 
   function mountItems() {
     document.querySelectorAll('.plantbed > .item').forEach(function (item) {
+      /* Where this page put it before anybody touched anything. Read now,
+         because restorePositions is about to write a remembered position
+         over the top of it and then there is no way back to Finder's own
+         arrangement short of reloading. This is what "tidy up" uses. */
+      if (!item.hasAttribute('data-home-x')) {
+        item.setAttribute('data-home-x', item.style.left || '');
+        item.setAttribute('data-home-y', item.style.top || '');
+      }
+
       // The browser's own link and image dragging would otherwise take over
       // the moment you grab an icon, which is the obvious thing to grab.
       item.querySelectorAll('a, img').forEach(function (n) { n.draggable = false; });
@@ -1492,6 +1509,57 @@
       location.reload();
     });
     bar.appendChild(reset);
+
+    /* Tidy up is the smaller, gentler half of put back. It moves the things
+       on THIS page back to where Finder has them and lets go of any sizes,
+       and it does it in front of you rather than reloading -- half the
+       pleasure of tidying a desk is watching it happen. Nothing else is
+       touched: every door stays open, every plant keeps growing, and
+       anything thrown down the shaft stays down there. */
+    var tidy = document.createElement('button');
+    tidy.className = 'toggle';
+    tidy.type = 'button';
+    tidy.innerHTML = '<span class="led"></span>tidy up';
+    tidy.title = 'slide everything on this page back into place';
+
+    tidy.addEventListener('click', function () {
+      var bed = document.querySelector('.plantbed');
+      if (!bed) return;
+
+      var moved = get('moved', {});
+      var sized = get('sized', {});
+      var items = bed.querySelectorAll(':scope > .item');
+      var i, el, k;
+
+      bed.classList.add('tidying');
+
+      for (i = 0; i < items.length; i++) {
+        el = items[i];
+        k = el.dataset.key;
+        if (k) { delete moved[k]; delete sized[k]; }
+        if (el.hasAttribute('data-home-x')) {
+          el.style.left = el.getAttribute('data-home-x');
+          el.style.top = el.getAttribute('data-home-y');
+        }
+        // Anything pulled bigger goes back to the size the picture is.
+        if (el.classList.contains('kind-image') || el.classList.contains('kind-video')) {
+          var box = el.querySelector('[data-resizable]');
+          if (box) { box.style.width = ''; box.style.height = ''; }
+        }
+        el.style.zIndex = '';
+      }
+
+      set('moved', moved);
+      set('sized', sized);
+      play('tick');
+
+      setTimeout(function () {
+        bed.classList.remove('tidying');
+        growBed(bed);
+        fitSoon();
+      }, 560);
+    });
+    bar.appendChild(tidy);
   }
 
   /* ============================================================ GUESTBOOK
@@ -2069,6 +2137,9 @@
     // coordinates would arrive one call too late to matter.
     mobilizeBed(document.querySelector('.plantbed'));
     restorePositions();
+    applyTossed();          // anything thrown down the shaft is not drawn
+    mountSeaDoor();         // three clicks on the photograph of the sea
+    mountVisitors();        // the scratches on the wall of this room
     fitBed();
     // Pictures settle after they load, and the bed is only as big as what is
     // in it -- so measure again once they have.
@@ -2686,6 +2757,7 @@
 
       if (inBucket() >= TUNAS) {
         speak('bucket full', null);
+        earn('pear');
         openSecret('garden', true);
         setTimeout(rest, 3600);
       } else {
@@ -2879,6 +2951,7 @@
 
     function takeDrink() {
       if (progress() < 1 || secretOpen('bar')) return;
+      earn('still');
       openSecret('bar', true);
       drink.innerHTML = '';
       paintDrink(true);
@@ -3023,6 +3096,7 @@
 
   function mountMoonlight() {
     sceneOn = 'moonlight';
+    sceneTone = 'moonlight';
 
     var scene = document.createElement('div');
     scene.id = 'scene';
@@ -3076,6 +3150,7 @@
 
     paintSky();
     paintMoon();
+    ambience('moonlight');
     window.addEventListener('resize', paintSky);
     window.addEventListener('resize', paintMoon);
     sceneTimers.push(setInterval(function () {
@@ -3156,6 +3231,7 @@
     var lastLand = null;       // how high the last landing was
     var errand = null;         // somewhere he has been asked to go
     var grav = 1;              // 1 on earth, a sixth of that on the moon
+    var swimming = false;      // in the sea nothing below applies at all
     var ledges = [];
     var last = 0;
     var drawn = '';
@@ -3210,13 +3286,64 @@
     function sprite(name) {
       if (drawn === name) return;
       drawn = name;
-      var rows = name === 'sleep' ? POGO_SLEEP : name === 'water' ? POGO_WATER
+      var rows = name === 'swim0' ? POGO_SWIM[0] : name === 'swim1' ? POGO_SWIM[1]
+               : name === 'sleep' ? POGO_SLEEP : name === 'water' ? POGO_WATER
                : name === 'down' ? POGO_DOWN : POGO_UP;
       art.textContent = rows.join('\n');
       man.classList.toggle('asleep', name === 'sleep');
     }
 
+    /* ------------------------------------------------------------ water
+       Underwater there is nothing to push off, so none of the machinery
+       above applies: no springs, no ledges, no floor. He paddles towards
+       the cursor in both directions at once, the water drags at him the
+       whole time, and when nobody is pointing anywhere he sinks very
+       slowly, which is what a person made of letters would do. */
+
+    var SWIM_SPEED = 230;      // px/sec, flat out
+    var SWIM_DRAG = 1.35;      // halvings per second with nothing driving him
+    var SINK = 30;             // px/sec/sec: heavier than water, but barely
+    var swimClock = 0;
+
+    function swimStep(dt) {
+      swimClock += dt;
+
+      var dx = targetX - x;
+      var dy = (targetY - y) + H * 0.45;   // aim his middle at the cursor
+      var d = Math.sqrt(dx * dx + dy * dy) || 1;
+      // He eases off as he arrives rather than stopping dead on the spot.
+      var pull = Math.min(1, d / 110);
+      var blend = Math.min(1, dt * 2.4);
+
+      vx += ((dx / d) * SWIM_SPEED * pull - vx) * blend;
+      vy += ((dy / d) * SWIM_SPEED * pull - vy) * blend;
+      vy += SINK * dt;
+
+      var drag = Math.pow(0.5, dt * SWIM_DRAG);
+      vx *= drag;
+      vy *= drag;
+
+      x += vx * dt;
+      // a slow bob, so he is never quite still even when he has arrived
+      y += vy * dt + Math.sin(swimClock * 1.7) * 14 * dt;
+
+      var minX = window.pageXOffset + W / 2;
+      var maxX = window.pageXOffset + window.innerWidth - W / 2;
+      if (x < minX) { x = minX; vx = Math.abs(vx) * 0.3; }
+      if (x > maxX) { x = maxX; vx = -Math.abs(vx) * 0.3; }
+
+      var top = window.pageYOffset + 56;
+      var bed = floor();
+      if (y < top) { y = top; if (vy < 0) vy = -vy * 0.3; }
+      if (y > bed) { y = bed; if (vy > 0) vy = -vy * 0.25; }
+
+      sprite(Math.floor(swimClock * 2.4) % 2 ? 'swim1' : 'swim0');
+      man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
+                            Math.round(y - H) + 'px,0)';
+    }
+
     function step(dt) {
+      if (swimming) { swimStep(dt); return; }
       /* An errand overrides the cursor: somebody has asked him to go and
          stand somewhere and do something. He walks over, stops bouncing,
          does it, and then goes back to following the pointer. */
@@ -3363,6 +3490,21 @@
        a slow enormous bound rather than a man vanishing upwards. */
     pogoGravity = function (mult) {
       grav = mult || 1;
+    };
+
+    /* The sea. He stops bouncing entirely and starts swimming: see
+       swimStep. Coming back out, he is dropped wherever he was floating
+       and the ordinary rules catch him. */
+    pogoSwim = function (on) {
+      if (swimming === !!on) return;
+      swimming = !!on;
+      drawn = '';
+      vx = 0; vy = 0;
+      errand = null;
+      asleep = false;
+      energy = 0.3;
+      lastLand = null;
+      if (!swimming) lastPointed = performance.now();
     };
 
     y = floor();
@@ -3669,6 +3811,8 @@
           pad.style.transform = '';
           paint();
           toast('the moon');
+          earn('rocket');
+          earn('moon');
           openMoon(true);
         }, 40);
       }
@@ -3776,9 +3920,13 @@
 
   function mountGarden() {
     sceneOn = 'garden';
+    sceneTone = 'garden';
 
     var tree = get('adam', null);
     if (!tree || typeof tree.clicks !== 'number') tree = { clicks: 0 };
+
+    var dug = get('dig', null);
+    if (!dug || typeof dug.turns !== 'number') dug = { turns: 0 };
 
     /* ------------------------------------------------------------ build */
 
@@ -3787,8 +3935,15 @@
     scene.setAttribute('aria-hidden', 'true');
     scene.innerHTML =
       '<pre id="roof"></pre>' +
+      '<pre id="sky"></pre>' +
       '<div id="ground"><div id="grass"></div><pre id="cow"></pre></div>';
     document.body.appendChild(scene);
+
+    var says = document.createElement('p');
+    says.id = 'wx-say';
+    says.hidden = true;
+    document.body.appendChild(says);
+    sceneNodes.push(says);
 
     /* The tree and the thing you press are two elements, not one.
        A grown beanstalk is a column the whole height of the window, and a
@@ -3834,8 +3989,10 @@
 
     sceneTimers.push(setInterval(function () {
       if (document.hidden) return;
-      // A few blades at a time, so it is never obviously a timer.
-      for (var n = 0; n < 3; n++) {
+      // A few blades at a time, so it is never obviously a timer -- and
+      // more of them when it is actually raining where the visitor is.
+      var many = document.body.classList.contains('wx-wet') ? 8 : 3;
+      for (var n = 0; n < many; n++) {
         var t = tufts[Math.floor(Math.random() * tufts.length)];
         if (t.h < TUFT_CHARS.length - 1) { t.h++; paintTuft(t); }
       }
@@ -4089,10 +4246,131 @@
       var box = hit.getBoundingClientRect();
       pogoErrand(box.left + box.width / 2 + window.pageXOffset, 1100);
 
-      if (tree.clicks >= TREE_CLICKS) setTimeout(function () { breakRoof(); }, 500);
+      if (tree.clicks >= TREE_CLICKS) {
+        earn('adam');
+        setTimeout(function () { breakRoof(); }, 500);
+      }
     }
 
     hit.addEventListener('click', water);
+
+    /* ----------------------------------------------------- the weather
+       Whatever is going on outside the window of whoever is looking. The
+       sky changes colour, rain and snow fall through the garden, and in
+       wet weather the grass comes on without anybody watering it -- which
+       is the only part of this that does anything. */
+
+    var sky = document.getElementById('sky');
+    var wet = false;
+
+    function paintSky() {
+      var kind = document.body.getAttribute('data-wx');
+      if (!kind || (kind !== 'rain' && kind !== 'drizzle' &&
+                    kind !== 'snow' && kind !== 'storm')) {
+        sky.textContent = '';
+        return;
+      }
+      var flake = kind === 'snow';
+      var w = Math.ceil(window.innerWidth / 6.7);
+      var rows = Math.ceil(window.innerHeight / 12);
+      var thick = kind === 'storm' ? 0.90 : kind === 'drizzle' ? 0.972 : 0.945;
+      var out = '', r, c, n;
+      for (r = 0; r < rows; r++) {
+        for (c = 0; c < w; c++) {
+          n = noise(r + skyPhase, c, 71);
+          out += n > thick ? (flake ? '*' : '/') : (n > thick - 0.02 ? (flake ? '.' : '\'') : ' ');
+        }
+        if (r !== rows - 1) out += '\n';
+      }
+      sky.textContent = out;
+    }
+
+    var skyPhase = 0;
+    sceneTimers.push(setInterval(function () {
+      if (document.hidden || !wet) return;
+      skyPhase = (skyPhase + 1) % 997;
+      paintSky();
+    }, 220));
+
+    weather(function (w) {
+      document.body.setAttribute('data-wx', w.kind);
+      document.body.classList.toggle('wx-night', !w.day);
+      wet = w.kind === 'rain' || w.kind === 'drizzle' ||
+            w.kind === 'snow' || w.kind === 'storm';
+      document.body.classList.toggle('wx-wet', wet);
+      says.hidden = false;
+      says.textContent = w.place.toLowerCase() + '  ·  ' + w.temp + '°  ·  ' +
+                         (WX_WORD[w.kind] || w.kind) +
+                         (w.wind >= 25 ? '  ·  windy' : '');
+      paintSky();
+    });
+    window.addEventListener('resize', paintSky);
+
+    /* -------------------------------------------------------- the spade
+       There is a floor under the garden the same way there was a ceiling
+       over it. Sixty turns and it gives. */
+
+    var spade = document.createElement('button');
+    spade.id = 'spade';
+    spade.type = 'button';
+    spade.innerHTML = '<pre aria-hidden="true">' + SPADE.join('\n') + '</pre>' +
+                      '<span id="spade-count"></span>';
+    document.body.appendChild(spade);
+    sceneNodes.push(spade);
+    var spadeCount = spade.querySelector('#spade-count');
+
+    function paintSpade() {
+      var left = DIG_CLICKS - dug.turns;
+      spadeCount.textContent = left > 0 ? dug.turns + ' / ' + DIG_CLICKS : 'the shaft';
+      spade.setAttribute('title', left > 0
+        ? 'dig — ' + left + ' more turns'
+        : 'the shaft is open. throw something over the side.');
+      spade.setAttribute('aria-label', 'dig at the bottom of the garden, ' +
+        dug.turns + ' of ' + DIG_CLICKS);
+      spade.classList.toggle('through', left <= 0);
+    }
+
+    function dig() {
+      if (dug.turns >= DIG_CLICKS) { openCrypt(true); return; }
+      dug.turns++;
+      set('dig', dug);
+      paintSpade();
+      play('tick');
+      spade.classList.add('turning');
+      setTimeout(function () { spade.classList.remove('turning'); }, 200);
+      if (dug.turns >= DIG_CLICKS) setTimeout(breakFloor, 420);
+    }
+    spade.addEventListener('click', dig);
+
+    function breakFloor() {
+      document.body.classList.add('floor-broken');
+      play('rustle');
+      earn('crypt');
+      toast('the floor gave way');
+      setTimeout(function () { openCrypt(true); }, 1200);
+    }
+
+    function openCrypt(scrollDown) {
+      if (!document.getElementById('crypt-level')) {
+        var c = document.createElement('section');
+        c.id = 'crypt-level';
+        document.body.appendChild(c);
+        cryptRoom(c, 'BOTTOM CRYPT');
+        var up = document.createElement('p');
+        up.className = 'crypt-up';
+        up.innerHTML = '&uarr; the garden is above';
+        c.querySelector('.crypt-inner').appendChild(up);
+      }
+      document.documentElement.classList.add('crypt-open');
+      document.body.classList.add('crypt-open');
+      openSecret('crypt', false);
+      watchFloor();
+      if (!scrollDown) return;
+      setTimeout(function () {
+        var c = document.getElementById('crypt-level');
+        if (c) window.scrollTo({ top: c.offsetTop, behavior: 'smooth' });
+      }, 300);
+    }
 
     /* -------------------------------------------------------- the roof */
 
@@ -4131,11 +4409,13 @@
             '<pre class="sun-art" aria-hidden="true">' +
               SUN_ART.join('\n') + '</pre>' +
             '<h2>SUN LEVEL</h2>' +
+            '<div class="sun-house"></div>' +
             '<div class="sun-bed"><p class="sun-wait">opening the room…</p></div>' +
             '<p class="sun-down">&darr; the garden is below</p>' +
           '</div>' +
           '<pre class="sun-floor" aria-hidden="true"></pre>';
         document.body.insertBefore(sun, document.body.firstChild);
+        mountNursery(sun.querySelector('.sun-house'));
         fillRoom(sun.querySelector('.sun-bed'), 'SUN LEVEL/');
 
         // Inserting a whole storey above the page would otherwise yank
@@ -4184,10 +4464,920 @@
     window.addEventListener('resize', paintTree);
     window.addEventListener('resize', paintRoof);
 
+    paintSpade();
+    ambience('garden');
+
     if (tree.clicks >= TREE_CLICKS) {
       document.body.classList.add('roof-broken');
       openSun(false);
     }
+    if (dug.turns >= DIG_CLICKS) {
+      document.body.classList.add('floor-broken');
+      openCrypt(false);
+    }
+  }
+
+  /* ============================================================ VISITORS
+     Not a number in a box. A wall with a scratch on it for everybody who
+     has stood in this room -- five to a gate, the way you count days in a
+     cell -- and the plain figure underneath for when the wall gets full.
+
+     The count itself lives on a small free service that stores one integer
+     against one name and nothing else: no visitor, no address, no session.
+     If it is ever gone the wall simply does not appear, which is the right
+     way for a decoration to fail.
+     ------------------------------------------------------------------- */
+
+  var COUNTER = 'https://abacus.jasoncameron.dev';
+  var COUNTER_NS = 'anmo-garden';
+  var TALLY_MAX = 160;              // scratches before the wall is just full
+
+  // Which rooms keep a count, by the name at the top of the page.
+  var VISIT_ROOMS = {
+    'THE GARDEN': 'garden',
+    'MOON': 'moon',
+    'LIBRARY!!!!!': 'library'
+  };
+
+  function tallyArt(n) {
+    var shown = Math.min(n, TALLY_MAX);
+    var gates = Math.floor(shown / 5);
+    var rest = shown % 5;
+    var out = [], line = '', g;
+
+    for (g = 0; g < gates; g++) {
+      line += '|||/ ';                       // four and one struck through
+      if (line.length >= 60) { out.push(line); line = ''; }
+    }
+    if (rest) line += new Array(rest + 1).join('|') + ' ';
+    if (line) out.push(line);
+    return out.join('\n');
+  }
+
+  function mountVisitors() {
+    var h1 = document.querySelector('.masthead h1');
+    var room = h1 && VISIT_ROOMS[h1.textContent.trim()];
+    if (!room) return;
+
+    var wall = document.createElement('div');
+    wall.id = 'visitors';
+    wall.innerHTML = '<pre class="tally" aria-hidden="true"></pre>' +
+                     '<p class="tally-say"></p>';
+    var rule = document.querySelector('.masthead .rule');
+    if (rule && rule.parentNode) rule.parentNode.insertBefore(wall, rule);
+    else document.querySelector('.masthead').appendChild(wall);
+
+    var art = wall.querySelector('.tally');
+    var say = wall.querySelector('.tally-say');
+
+    // One scratch per visit, not per visitor -- honest, and it means the
+    // wall answers you the moment you walk in.
+    fetch(COUNTER + '/hit/' + COUNTER_NS + '/' + room, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || typeof d.value !== 'number') throw new Error('no count');
+        art.textContent = tallyArt(d.value);
+        say.textContent = d.value === 1
+          ? 'you are the first person in this room'
+          : d.value.toLocaleString() + ' people have stood here' +
+            (d.value > TALLY_MAX ? '. the wall only has room for ' + TALLY_MAX + '.' : '');
+        wall.classList.add('counted');
+      })
+      .catch(function () { if (wall.parentNode) wall.parentNode.removeChild(wall); });
+  }
+
+  /* ============================================================= WEATHER
+     The garden gets the weather you are actually standing in.
+
+     Nobody is asked for their location and nothing is sent anywhere that
+     could identify them: the browser already knows its own time zone, and
+     "America/Toronto" contains the name of a city. That name is looked up
+     for a latitude and a longitude, and those go to a free forecast with
+     no account and no key. The answer is kept for half an hour.
+     ------------------------------------------------------------------- */
+
+  var WX_CACHE_MS = 30 * 60 * 1000;
+
+  /* World Meteorological Organization present-weather codes, grouped into
+     the handful of things a garden can visibly do. */
+  function wxKind(code) {
+    if (code === 0) return 'clear';
+    if (code === 1 || code === 2) return 'part';
+    if (code === 3) return 'cloud';
+    if (code === 45 || code === 48) return 'fog';
+    if (code >= 51 && code <= 57) return 'drizzle';
+    if (code >= 61 && code <= 67) return 'rain';
+    if (code >= 71 && code <= 77) return 'snow';
+    if (code >= 80 && code <= 82) return 'rain';
+    if (code === 85 || code === 86) return 'snow';
+    if (code >= 95) return 'storm';
+    return 'cloud';
+  }
+
+  var WX_WORD = {
+    clear: 'clear', part: 'a few clouds', cloud: 'overcast', fog: 'fog',
+    drizzle: 'drizzle', rain: 'rain', snow: 'snow', storm: 'thunder'
+  };
+
+  function myCity() {
+    var tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    if (!tz || tz.indexOf('/') < 0) return '';
+    return tz.split('/').pop().replace(/_/g, ' ');
+  }
+
+  function weather(done) {
+    var city = myCity();
+    if (!city) return;
+
+    var cached = get('wx', null);
+    if (cached && cached.city === city && Date.now() - cached.at < WX_CACHE_MS) {
+      done(cached);
+      return;
+    }
+
+    fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&name=' +
+          encodeURIComponent(city))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var hit = d && d.results && d.results[0];
+        if (!hit) throw new Error('nowhere');
+        return fetch('https://api.open-meteo.com/v1/forecast?latitude=' +
+          hit.latitude + '&longitude=' + hit.longitude +
+          '&current=temperature_2m,weather_code,wind_speed_10m,is_day')
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (w) {
+            if (!w || !w.current) throw new Error('no sky');
+            var out = {
+              at: Date.now(),
+              city: city,
+              place: hit.name,
+              temp: Math.round(w.current.temperature_2m),
+              wind: Math.round(w.current.wind_speed_10m),
+              day: !!w.current.is_day,
+              kind: wxKind(w.current.weather_code)
+            };
+            set('wx', out);
+            done(out);
+          });
+      })
+      .catch(function () { /* the garden keeps its own weather */ });
+  }
+
+  /* ============================================================ TROPHIES
+     A shelf by the door of everything this visitor has ever finished. It
+     is the one thing "put back" does not touch: putting the world back
+     where you found it does not mean none of it happened.
+     ------------------------------------------------------------------- */
+
+  var TROPHY = {
+    pear:   { art: [' _@_ ', '(6 6)', ' \\_/ '], name: 'the prickly pear',   note: 'grown and picked' },
+    still:  { art: [' _^_ ', '|~~~|', ' \\_/ '], name: 'the pot still',      note: 'ran its course' },
+    adam:   { art: [' @@@ ', '@@#@@', '  #  '], name: 'the adam jewel tree', note: 'two hundred and fifty' },
+    rocket: { art: ['  /\\ ', ' |an|', ' /||\\'], name: 'the model rocket',   note: 'flew' },
+    moon:   { art: [' .oO ', 'o  O ', ' `o\' '], name: 'the moon',            note: 'landed on' },
+    ocean:  { art: ['~~~~~', ' ><> ', '.....'], name: 'the sea',             note: 'swum in' },
+    crypt:  { art: ['[===]', ' | | ', ' \\_/ '], name: 'the shaft',          note: 'dug' },
+    bloom:  { art: ['  *  ', ' *o* ', '  |  '], name: 'first flower',        note: 'in the nursery' }
+  };
+
+  function earned() { return get('trophies', {}); }
+
+  function earn(key) {
+    if (!TROPHY[key]) return;
+    var have = earned();
+    if (have[key]) return;
+    have[key] = Date.now();
+    set('trophies', have);
+    paintShelf();
+    toast('for the shelf: ' + TROPHY[key].name);
+    play('pluck');
+  }
+
+  /** The front page only. Everywhere else the shelf would be in the way. */
+  function isRoot() {
+    return !document.querySelector('.masthead a[href]');
+  }
+
+  function paintShelf() {
+    var shelf = document.getElementById('shelf');
+    if (!shelf) return;
+    var have = earned();
+    var keys = Object.keys(TROPHY).filter(function (k) { return have[k]; });
+    shelf.hidden = !keys.length;
+    if (!keys.length) return;
+
+    var html = '', i, t;
+    for (i = 0; i < keys.length; i++) {
+      t = TROPHY[keys[i]];
+      html += '<div class="trophy" title="' + t.name + ' — ' + t.note + '">' +
+              '<pre>' + t.art.join('\n') + '</pre></div>';
+    }
+    shelf.innerHTML = '<p class="shelf-say">the shelf</p>' +
+                      '<div class="shelf-row">' + html + '</div>';
+  }
+
+  function mountShelf() {
+    if (!isRoot() || !wide()) return;
+    var shelf = document.createElement('aside');
+    shelf.id = 'shelf';
+    shelf.hidden = true;
+    document.body.appendChild(shelf);
+    paintShelf();
+  }
+
+  /* ============================================================= TOSSING
+     Once the shaft is dug, the edge of the page is an edge. Drag anything
+     over the side and it falls -- and it is not gone, it is in the crypt,
+     by name, with everything else that was thrown down there. Put back
+     fetches the lot.
+
+     Nothing on the actual disk moves. This is a site deciding not to draw
+     something; the file is exactly where its owner left it.
+     ------------------------------------------------------------------- */
+
+  function tossedList() { return get('tossed', {}); }
+
+  function applyTossed() {
+    var t = tossedList();
+    document.querySelectorAll('.plantbed > .item').forEach(function (el) {
+      var k = el.dataset.key;
+      el.classList.toggle('tossed-away', !!(k && t[k]));
+    });
+    paintPile();
+  }
+
+  function pileName(key) { return String(key).replace(/\/$/, ''); }
+
+  function paintPile() {
+    var piles = document.querySelectorAll('.crypt-pile');
+    if (!piles.length) return;
+    var t = tossedList();
+    var keys = Object.keys(t).sort(function (a, b) { return t[b].at - t[a].at; });
+
+    var html;
+    if (!keys.length) {
+      html = '<p class="crypt-empty">nothing has been thrown down here yet. ' +
+             'drag something over the side of the garden.</p>';
+    } else {
+      html = '<ul class="crypt-heap">';
+      keys.forEach(function (k) {
+        html += '<li><span class="heap-mark">&#9587;</span> ' +
+                escapeText(pileName(k)) + '</li>';
+      });
+      html += '</ul>';
+    }
+    piles.forEach(function (p) { p.innerHTML = html; });
+  }
+
+  function escapeText(s) {
+    var d = document.createElement('span');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  /** True if the item was left hanging over the side of the page. */
+  function overTheEdge(el) {
+    if (!secretOpen('crypt')) return false;
+    var r = el.getBoundingClientRect();
+    var mid = r.left + r.width / 2;
+    return mid < 6 || mid > window.innerWidth - 6;
+  }
+
+  function tossItem(el) {
+    var key = el.dataset.key;
+    if (!key) return;
+    var t = tossedList();
+    t[key] = { at: Date.now() };
+    set('tossed', t);
+
+    el.classList.add('falling');
+    play('rustle');
+    setTimeout(function () {
+      el.classList.remove('falling');
+      el.classList.add('tossed-away');
+      paintPile();
+      fitSoon();
+    }, 640);
+    toast(pileName(key) + ' went down the shaft');
+  }
+  /* ============================================================= NURSERY
+     The sun level is a glasshouse. Eight plants, in the ground, growing at
+     the speed those plants actually grow at -- a jasmine takes two years to
+     flower and a magnolia grown from seed takes ten, and that is how long
+     they take here. There is nothing to click. The only thing that makes
+     them grow is time passing, and the clock they use is the real one, so
+     shutting the tab does not pause anything and nothing is lost.
+
+     Everything is drawn from one date: the first time somebody opened the
+     glasshouse. That date survives "put back" -- four years of a magnolia
+     is not the kind of thing anybody should lose by tidying their desk.
+     ------------------------------------------------------------------- */
+
+  var DAY_MS = 86400000;
+
+  var NURSERY = [
+    { key: 'pear',      name: 'prickly pear',   latin: 'Opuntia ficus-indica',   days: 730,  form: 'cactus', bloom: 'fruit' },
+    { key: 'jasmine',   name: 'jasmine',        latin: 'Jasminum officinale',    days: 730,  form: 'vine',   bloom: 'flower' },
+    { key: 'gardenia',  name: 'gardenia',       latin: 'Gardenia jasminoides',   days: 900,  form: 'shrub',  bloom: 'flower' },
+    { key: 'osmanthus', name: 'osmanthus',      latin: 'Osmanthus fragrans',     days: 1460, form: 'shrub',  bloom: 'flower' },
+    { key: 'sassafras', name: 'sassafras',      latin: 'Sassafras albidum',      days: 1825, form: 'tree',   bloom: 'leaf' },
+    { key: 'cherry',    name: 'cherry blossom', latin: 'Prunus serrulata',       days: 2190, form: 'tree',   bloom: 'blossom' },
+    { key: 'bergamot',  name: 'bergamot',       latin: 'Citrus bergamia',        days: 2555, form: 'tree',   bloom: 'fruit' },
+    { key: 'magnolia',  name: 'magnolia',       latin: 'Magnolia grandiflora',   days: 3650, form: 'tree',   bloom: 'flower' }
+  ];
+
+  var PLANT_W = 15, PLANT_H = 11;
+  var BLOOM_CH = { flower: '*', blossom: 'o', fruit: '@', leaf: '&' };
+
+  function blank(w, h) {
+    var g = [], r, c;
+    for (r = 0; r < h; r++) { g.push([]); for (c = 0; c < w; c++) g[r].push(null); }
+    return g;
+  }
+
+  function put(g, r, c, ch, cls) {
+    if (r < 0 || r >= g.length || c < 0 || c >= g[0].length) return;
+    g[r][c] = { ch: ch, cls: cls };
+  }
+
+  /** An ellipse of leaves, thinned at the edge so it is a bush and not an egg. */
+  function canopy(g, cr, cc, rx, ry, seed, bloomCh, bloomFrom, t) {
+    var r, c, dx, dy, d, n;
+    for (r = Math.floor(cr - ry); r <= Math.ceil(cr + ry); r++) {
+      for (c = Math.floor(cc - rx); c <= Math.ceil(cc + rx); c++) {
+        dx = (c - cc) / (rx || 1);
+        dy = (r - cr) / (ry || 1);
+        d = dx * dx + dy * dy;
+        if (d > 1) continue;
+        n = noise(r + 40, c + 40, seed);
+        if (d > 0.62 && n < 0.45) continue;                 // a ragged edge
+        if (t >= bloomFrom && n > 0.78) { put(g, r, c, bloomCh, 'fl'); continue; }
+        put(g, r, c, n < 0.4 ? 'o' : n < 0.7 ? '&' : '%', n < 0.35 ? 'lg' : 'lf');
+      }
+    }
+  }
+
+  function plantGrid(spec, t) {
+    var g = blank(PLANT_W, PLANT_H);
+    var mid = Math.floor(PLANT_W / 2);
+    var soil = PLANT_H - 1;
+    var seed = spec.key.charCodeAt(0) + spec.key.length;
+    var c, r;
+
+    for (c = 0; c < PLANT_W; c++) {
+      put(g, soil, c, noise(9, c, seed) > 0.62 ? '~' : '_', 'so');
+    }
+
+    if (t < 0.02) {                                   // still just a seed in soil
+      put(g, soil - 1, mid, '.', 'bk');
+      return g;
+    }
+
+    var reach = 1 + Math.round(t * (PLANT_H - 3));    // rows of plant above the soil
+    var topRow = soil - reach;
+    var bloomCh = BLOOM_CH[spec.bloom] || '*';
+
+    if (spec.form === 'cactus') {
+      // Pads stacked on each other, each one a squat ellipse.
+      var pads = 1 + Math.floor(t * 3.2);
+      var base = soil - 1, k, off;
+      for (k = 0; k < pads; k++) {
+        off = k === 0 ? 0 : (k % 2 ? -2 : 2);
+        canopy(g, base - 1, mid + off, 2.4, 1.6, seed + k * 5, bloomCh, 0.86, t);
+        base -= 3;
+      }
+      return g;
+    }
+
+    if (spec.form === 'vine') {
+      // A cane that wanders as it climbs, with leaves hung off both sides.
+      var col = mid;
+      for (r = soil - 1; r >= topRow; r--) {
+        put(g, r, col, '|', 'bk');
+        if (noise(r, 3, seed) > 0.62) put(g, r, col - 1, '&', 'lf');
+        if (noise(r, 7, seed) > 0.62) put(g, r, col + 1, '&', 'lf');
+        if (t >= 0.8 && noise(r, 11, seed) > 0.80) put(g, r, col + (noise(r, 13, seed) > 0.5 ? 2 : -2), bloomCh, 'fl');
+        if (noise(r, 17, seed) > 0.72) col += noise(r, 19, seed) > 0.5 ? 1 : -1;
+        col = Math.max(2, Math.min(PLANT_W - 3, col));
+      }
+      return g;
+    }
+
+    // tree and shrub: a stem with a head on it
+    var head = spec.form === 'shrub' ? 0.55 : 0.42;     // how much is canopy
+    var stemTop = Math.round(soil - 1 - reach * (1 - head));
+    var thick = t > 0.62 ? 1 : 0;                        // trunk goes to three wide
+
+    for (r = soil - 1; r >= stemTop; r--) {
+      put(g, r, mid, '|', 'bk');
+      if (thick && r > stemTop + 1) {
+        put(g, r, mid - 1, noise(r, 1, seed) > 0.5 ? '#' : '|', 'bd');
+        put(g, r, mid + 1, noise(r, 2, seed) > 0.5 ? '#' : '|', 'bd');
+      }
+    }
+
+    var rx = (spec.form === 'shrub' ? 2.2 : 1.6) + t * (spec.form === 'shrub' ? 4.4 : 5.0);
+    var ry = 1.0 + t * (spec.form === 'shrub' ? 2.2 : 2.8);
+    canopy(g, stemTop - Math.round(ry * 0.55), mid, rx, ry, seed,
+           bloomCh, spec.bloom === 'leaf' ? 0.55 : 0.8, t);
+    return g;
+  }
+
+  function gridHtml(g) {
+    var html = '', r, c, cell, run = '', runCls = null;
+    function flush() {
+      if (!run) return;
+      html += runCls ? '<span class="' + runCls + '">' + run + '</span>' : run;
+      run = '';
+    }
+    for (r = 0; r < g.length; r++) {
+      for (c = 0; c < g[r].length; c++) {
+        cell = g[r][c];
+        var cls = cell ? cell.cls : null;
+        if (cls !== runCls) { flush(); runCls = cls; }
+        run += cell ? cell.ch : ' ';
+      }
+      flush(); runCls = null;
+      if (r !== g.length - 1) html += '\n';
+    }
+    return html;
+  }
+
+  /** "4 years 2 months", "11 days", "today" -- never a number of seconds. */
+  function spanWords(ms) {
+    if (ms <= 0) return 'now';
+    var d = ms / DAY_MS;
+    if (d < 1) return 'today';
+    if (d < 45) return Math.round(d) + (Math.round(d) === 1 ? ' day' : ' days');
+    var years = Math.floor(d / 365);
+    var months = Math.round((d - years * 365) / 30.44);
+    if (months === 12) { years++; months = 0; }
+    var out = [];
+    if (years) out.push(years + (years === 1 ? ' year' : ' years'));
+    if (months) out.push(months + (months === 1 ? ' month' : ' months'));
+    return out.join(' ') || 'a month';
+  }
+
+  function nurseryStart() {
+    var n = get('nursery', null);
+    if (!n || typeof n.started !== 'number') {
+      n = { started: Date.now() };
+      set('nursery', n);
+    }
+    return n.started;
+  }
+
+  /**
+   * The glasshouse itself, built into whatever is handed to it -- the room
+   * above the garden, or the SUN LEVEL folder's own page. Both are the
+   * same eight plants on the same clock.
+   */
+  function mountNursery(host) {
+    if (!host) return;
+    var started = nurseryStart();
+
+    var wrap = document.createElement('div');
+    wrap.className = 'nursery';
+    host.appendChild(wrap);
+
+    var beds = NURSERY.map(function (spec) {
+      var bed = document.createElement('div');
+      bed.className = 'plant p-' + spec.key;
+      bed.innerHTML =
+        '<pre class="plant-art" role="img" aria-label="' + spec.name + '"></pre>' +
+        '<p class="plant-name">' + spec.name + '</p>' +
+        '<p class="plant-latin">' + spec.latin + '</p>' +
+        '<div class="plant-bar"><i></i></div>' +
+        '<p class="plant-when"></p>';
+      wrap.appendChild(bed);
+      return { spec: spec, el: bed,
+               art: bed.querySelector('.plant-art'),
+               fill: bed.querySelector('.plant-bar i'),
+               when: bed.querySelector('.plant-when') };
+    });
+
+    function paint() {
+      var now = Date.now();
+      var anyBloom = false;
+      beds.forEach(function (b) {
+        var span = b.spec.days * DAY_MS;
+        var t = Math.max(0, Math.min(1, (now - started) / span));
+        b.art.innerHTML = gridHtml(plantGrid(b.spec, t));
+        b.fill.style.width = (t * 100).toFixed(2) + '%';
+        b.el.classList.toggle('grown', t >= 1);
+        if (t >= 1) {
+          anyBloom = true;
+          b.when.textContent = b.spec.bloom === 'fruit' ? 'fruiting' : 'in flower';
+        } else {
+          b.when.textContent = spanWords(span - (now - started)) + ' to go';
+        }
+      });
+      if (anyBloom) earn('bloom');
+    }
+
+    paint();
+    // A magnolia does not need watching closely. Twice a minute is already
+    // far more often than anything here can visibly change.
+    sceneTimers.push(setInterval(function () { if (!document.hidden) paint(); }, 30000));
+    window.addEventListener('resize', paint);
+  }
+
+  /** The SUN LEVEL folder opened directly, rather than climbed up into. */
+  function mountNurseryScene() {
+    sceneOn = 'nursery';
+    sceneTone = 'nursery';
+
+    var scene = document.createElement('div');
+    scene.id = 'scene';
+    scene.className = 'glass';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML = '<pre id="sunbeam"></pre><div id="glassfloor"></div>';
+    document.body.appendChild(scene);
+
+    var beam = document.getElementById('sunbeam');
+    function paintBeam() {
+      var w = Math.ceil(window.innerWidth / 6.7), rows = 5, out = '', r, c, n;
+      for (r = 0; r < rows; r++) {
+        for (c = 0; c < w; c++) {
+          n = noise(r, c, 55);
+          out += n > 0.93 ? '\\' : n > 0.88 ? '|' : n > 0.85 ? '/' : ' ';
+        }
+        if (r !== rows - 1) out += '\n';
+      }
+      beam.textContent = out;
+    }
+    paintBeam();
+    window.addEventListener('resize', paintBeam);
+
+    var house = document.createElement('section');
+    house.className = 'glasshouse';
+    house.innerHTML = '<h2>the glasshouse</h2>' +
+      '<p class="glass-say">eight plants, in the ground, growing at the speed ' +
+      'they really grow at. there is nothing to press. come back in a year.</p>';
+    var main = document.querySelector('main');
+    if (main) main.appendChild(house);
+    sceneNodes.push(house);
+    mountNursery(house);
+
+    ambience('nursery');
+  }
+  /* =============================================================== OCEAN
+     Found by clicking the photograph of the sea three times, which is what
+     anybody does with a photograph of the sea.
+
+     Down here the man on the pogo stick stops bouncing. There is nothing
+     to push off, so he swims: he paddles towards the cursor in both
+     directions at once, the water drags at him, and when nobody is
+     pointing anywhere he sinks, very slowly. See pogoSwim.
+     ------------------------------------------------------------------- */
+
+  var FISH = [
+    { art: '><>',        depth: 0.30, speed: 34 },
+    { art: '<><',        depth: 0.52, speed: -26 },
+    { art: '>=<',        depth: 0.68, speed: 19 },
+    { art: '><>',        depth: 0.44, speed: -41 },
+    { art: '}-{><',      depth: 0.78, speed: 14 },
+    { art: '><>',        depth: 0.86, speed: -22 }
+  ];
+
+  function mountOcean() {
+    sceneOn = 'ocean';
+    sceneTone = 'ocean';
+
+    var scene = document.createElement('div');
+    scene.id = 'scene';
+    scene.className = 'sea';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML =
+      '<pre id="surface"></pre>' +
+      '<pre id="shafts"></pre>' +
+      '<div id="shoal"></div>' +
+      '<div id="bubbles"></div>' +
+      '<pre id="seabed"></pre>';
+    document.body.appendChild(scene);
+
+    var surface = document.getElementById('surface');
+    var shafts = document.getElementById('shafts');
+    var shoal = document.getElementById('shoal');
+    var bubbles = document.getElementById('bubbles');
+    var seabed = document.getElementById('seabed');
+
+    /* ----------------------------------------------------- the surface
+       Two lines of swell, moving at different speeds so the water never
+       repeats on itself as obviously as one line would. */
+
+    var phase = 0;
+    function paintSurface() {
+      var w = Math.ceil(window.innerWidth / 6.7) + 2;
+      var a = '', b = '', c, h;
+      for (c = 0; c < w; c++) {
+        h = Math.sin(c * 0.22 + phase) + Math.sin(c * 0.09 - phase * 0.6);
+        a += h > 1.1 ? '~' : h > 0.2 ? '^' : h > -0.7 ? '~' : '-';
+        h = Math.sin(c * 0.31 - phase * 1.4) + Math.sin(c * 0.13 + phase * 0.3);
+        b += h > 0.9 ? '~' : h > -0.4 ? '-' : ' ';
+      }
+      surface.textContent = a + '\n' + b;
+    }
+
+    function paintShafts() {
+      var w = Math.ceil(window.innerWidth / 6.7);
+      var rows = 14, out = '', r, c, n;
+      for (r = 0; r < rows; r++) {
+        for (c = 0; c < w; c++) {
+          n = noise(0, c, 61);
+          out += (n > 0.955 && r < rows - 2) ? '\\' : n > 0.93 ? '|' : ' ';
+        }
+        if (r !== rows - 1) out += '\n';
+      }
+      shafts.textContent = out;
+    }
+
+    function paintBed() {
+      var w = Math.ceil(window.innerWidth / 6.7);
+      var a = '', b = '', c, n;
+      for (c = 0; c < w; c++) {
+        n = noise(0, c, 63);
+        a += n > 0.94 ? 'Y' : n > 0.88 ? 'o' : n > 0.8 ? ',' : '.';
+        b += n > 0.7 ? '_' : '.';
+      }
+      seabed.textContent = a + '\n' + b;
+    }
+
+    /* ---------------------------------------------------------- fish
+       Each one crosses the whole window at its own pace and comes back
+       round the other side. They do not react to anything; they are
+       weather, not company. */
+
+    var swimmers = FISH.map(function (f) {
+      var el = document.createElement('pre');
+      el.className = 'fish' + (f.speed < 0 ? ' back' : '');
+      el.textContent = f.art;
+      el.style.top = (f.depth * 100) + '%';
+      shoal.appendChild(el);
+      return { el: el, x: Math.random() * window.innerWidth, spec: f };
+    });
+
+    var bubbleSeed = 0;
+    function blow() {
+      var b = document.createElement('i');
+      b.className = 'bubble';
+      b.textContent = ['o', '°', '.', 'O'][bubbleSeed++ % 4];
+      b.style.left = (4 + Math.random() * 92) + '%';
+      b.style.animationDuration = (5 + Math.random() * 5).toFixed(1) + 's';
+      bubbles.appendChild(b);
+      setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 11000);
+    }
+
+    paintSurface(); paintShafts(); paintBed();
+    window.addEventListener('resize', paintShafts);
+    window.addEventListener('resize', paintBed);
+
+    sceneTimers.push(setInterval(function () {
+      if (document.hidden) return;
+      phase += 0.22;
+      paintSurface();
+      var w = window.innerWidth;
+      swimmers.forEach(function (s) {
+        s.x += s.spec.speed * 0.12;
+        if (s.x > w + 60) s.x = -60;
+        if (s.x < -60) s.x = w + 60;
+        s.el.style.transform = 'translateX(' + Math.round(s.x) + 'px)';
+      });
+    }, 120));
+
+    sceneTimers.push(setInterval(function () { if (!document.hidden) blow(); }, 1400));
+
+    pogoSwim(true);
+    ambience('ocean');
+    earn('ocean');
+  }
+
+  /* ------------------------------------------------ the sea, three clicks
+     One photograph on the front page is of the sea. Click it three times
+     and it lets you in. It has to be three clicks and not one, because one
+     click on a photograph means "show me the photograph", and that is
+     already what it does. */
+
+  var SEA_PHOTO = 'IMG_3427.JPG';
+  var SEA_CLICKS = 3;
+
+  function mountSeaDoor() {
+    var item = document.querySelector('.item[data-key="' + CSS.escape(SEA_PHOTO) + '"]');
+    if (!item) return;
+    item.classList.add('sea-photo');
+    if (secretOpen('ocean')) return;
+
+    var hits = 0, timer = 0;
+    item.addEventListener('click', function () {
+      hits++;
+      clearTimeout(timer);
+      timer = setTimeout(function () { hits = 0; item.classList.remove('rippling'); }, 1800);
+      if (hits < SEA_CLICKS) {
+        item.classList.add('rippling');
+        play('tick');
+        return;
+      }
+      hits = 0;
+      item.classList.remove('rippling');
+      openSecret('ocean', false);
+      toast('the sea');
+      play('rustle');
+      setTimeout(function () { go(new URL('THE OCEAN/', siteRoot()).href, true, 0); }, 420);
+    }, true);
+  }
+
+  /* =============================================================== CRYPT
+     The bottom of the garden. It is dug, not found: sixty turns of a spade
+     at the foot of the page, and then the floor gives way the same way the
+     roof did. What is down here is whatever has been thrown down here.
+     ------------------------------------------------------------------- */
+
+  var DIG_CLICKS = 60;
+  var SPADE = ['  __  ', ' |  | ', ' |__| ', '  ||  ', '  ||  '];
+
+  function cryptRoom(host, heading) {
+    host.innerHTML =
+      '<pre class="crypt-bricks" aria-hidden="true"></pre>' +
+      '<div class="crypt-inner">' +
+        '<pre class="crypt-lamp" aria-hidden="true">' +
+          '  .-.  \n (   ) \n  `|\'  \n   |   ' + '</pre>' +
+        '<h2>' + heading + '</h2>' +
+        '<p class="crypt-say">nothing down here is deleted. it is only down here.</p>' +
+        '<div class="crypt-pile"></div>' +
+      '</div>';
+
+    var bricks = host.querySelector('.crypt-bricks');
+    function paintBricks() {
+      var w = Math.ceil(window.innerWidth / 6.7);
+      var rows = 22, out = '', r, c, n;
+      for (r = 0; r < rows; r++) {
+        for (c = 0; c < w; c++) {
+          n = noise(r, c, 77);
+          if ((c + (r % 2) * 5) % 10 === 0) out += '|';
+          else if (r % 3 === 0) out += '_';
+          else out += n > 0.94 ? '.' : n > 0.9 ? ',' : ' ';
+        }
+        if (r !== rows - 1) out += '\n';
+      }
+      bricks.textContent = out;
+    }
+    paintBricks();
+    window.addEventListener('resize', paintBricks);
+    paintPile();
+  }
+
+  /** The BOTTOM CRYPT folder opened directly. */
+  function mountCrypt() {
+    sceneOn = 'crypt';
+    sceneTone = 'crypt';
+
+    var scene = document.createElement('div');
+    scene.id = 'scene';
+    scene.className = 'tomb';
+    scene.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(scene);
+
+    var room = document.createElement('section');
+    room.className = 'crypt-room';
+    var main = document.querySelector('main');
+    if (main) main.appendChild(room);
+    sceneNodes.push(room);
+    cryptRoom(room, 'the heap');
+
+    ambience('crypt');
+  }
+
+  /* ================================================================= BAR
+     A basement somewhere, six seats, a record on, rain outside that has
+     been going on for hours. Nobody comes in. The bartender does not talk
+     unless you do. There is a cat, some of the time.
+     ------------------------------------------------------------------- */
+
+  var BOTTLES = [
+    ' /^\\ ', ' |=| ', ' /"\\ ', ' |_| ', ' /~\\ ', ' |o| ', ' /-\\ '
+  ];
+
+  var CAT = [
+    ' /\\_/\\ ',
+    '( o.o )',
+    ' > ^ < '
+  ];
+
+  /* Written for this bar, not borrowed from anybody. The register is the
+     point: flat, patient, slightly off. */
+  var BAR_LINES = [
+    'the rain has been going on for four hours. nobody has mentioned it.',
+    'the record is side two. nobody got up to turn it over, so somebody must have.',
+    'the ice in this glass is a different shape from the ice in the last one.',
+    'a cat came in at some point. it is not clear when, or whether it left.',
+    'the bartender dries the same glass he has been drying since you arrived.',
+    'there is a telephone on the wall that has never rung.',
+    'whisky, no water, and a small dish of something salty nobody ordered.',
+    'somebody is playing a bass line very slowly, as if it were a kind of weather.',
+    'the clock behind the bar is eleven minutes slow, and has been for years.',
+    'you could leave. the rain will still be doing this.'
+  ];
+
+  function mountBar() {
+    sceneOn = 'bar';
+    sceneTone = 'bar';
+
+    var scene = document.createElement('div');
+    scene.id = 'scene';
+    scene.className = 'basement';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML =
+      '<pre id="barrain"></pre>' +
+      '<div id="backbar"><pre id="shelfrow"></pre><pre id="record"></pre></div>' +
+      '<pre id="barcat"></pre>' +
+      '<div id="bartop"></div>';
+    document.body.appendChild(scene);
+
+    var rain = document.getElementById('barrain');
+    var shelfrow = document.getElementById('shelfrow');
+    var record = document.getElementById('record');
+    var cat = document.getElementById('barcat');
+
+    shelfrow.textContent = new Array(5).join(BOTTLES.join('')) ;
+    cat.textContent = CAT.join('\n');
+
+    /* --------------------------------------------------- the record
+       A disc with one groove mark on it, and the mark goes round. That
+       is the whole of it, and it is enough: the eye reads any moving
+       mark on a circle as thirty-three and a third. */
+
+    var R = 6, spin = 0;
+    function paintRecord() {
+      var rows = [], r, c, dx, dy, d, ang, ch;
+      var mark = spin;
+      for (r = -R; r <= R; r++) {
+        var line = '';
+        for (c = -R * 2; c <= R * 2; c++) {
+          dx = c / 2; dy = r;
+          d = Math.sqrt(dx * dx + dy * dy);
+          if (d > R) { line += ' '; continue; }
+          if (d < 1.2) { line += '@'; continue; }        // the spindle
+          ang = Math.atan2(dy, dx);
+          var off = Math.abs(((ang - mark + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+          ch = off < 0.18 ? '/' : (Math.round(d) % 2 ? '.' : ' ');
+          line += ch;
+        }
+        rows.push(line);
+      }
+      record.textContent = rows.join('\n');
+    }
+
+    function paintRain() {
+      var w = Math.ceil(window.innerWidth / 6.7);
+      var rows = 12, out = '', r, c, n;
+      for (r = 0; r < rows; r++) {
+        for (c = 0; c < w; c++) {
+          n = noise(r + (rainPhase % 7), c, 83);
+          out += n > 0.955 ? '/' : n > 0.93 ? '.' : ' ';
+        }
+        if (r !== rows - 1) out += '\n';
+      }
+      rain.textContent = out;
+    }
+    var rainPhase = 0;
+    paintRain();
+    paintRecord();
+
+    var say = document.createElement('p');
+    say.className = 'bar-line';
+    var main = document.querySelector('main');
+    if (main) main.insertBefore(say, main.firstChild);
+    sceneNodes.push(say);
+
+    var lineIdx = Math.floor(Math.random() * BAR_LINES.length);
+    function nextLine() {
+      say.classList.add('fading');
+      setTimeout(function () {
+        say.textContent = BAR_LINES[lineIdx % BAR_LINES.length];
+        lineIdx++;
+        say.classList.remove('fading');
+      }, 700);
+    }
+    say.textContent = BAR_LINES[lineIdx++ % BAR_LINES.length];
+
+    sceneTimers.push(setInterval(function () {
+      if (document.hidden) return;
+      spin += 0.42;
+      paintRecord();
+      rainPhase++;
+      if (rainPhase % 3 === 0) paintRain();
+    }, 110));
+
+    sceneTimers.push(setInterval(function () { if (!document.hidden) nextLine(); }, 13000));
+
+    // The cat is there, and then it is not, and nobody sees it move.
+    sceneTimers.push(setInterval(function () {
+      if (document.hidden) return;
+      cat.classList.toggle('here', Math.random() < 0.45);
+    }, 9000));
+
+    ambience('bar');
   }
 
   function boot() {
@@ -4196,6 +5386,7 @@
     mountCactus();
     mountStill();
     mountPogo();
+    mountShelf();
     mountToggles();
     mountHint();
     mountNav();

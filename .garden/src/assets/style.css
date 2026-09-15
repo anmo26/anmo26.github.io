@@ -1121,6 +1121,8 @@ body.secret-bar     .item[data-secret="bar"],
 body.secret-sun     .item[data-secret="sun"],
 body.secret-moon    .item[data-secret="moon"],
 body.secret-family  .item[data-secret="family"],
+body.secret-ocean   .item[data-secret="ocean"],
+body.secret-crypt   .item[data-secret="crypt"],
 body.secret-night   .item[data-secret="night"] {
   display: block;
   animation: secret-in .7s ease both;
@@ -1629,10 +1631,12 @@ body.roof-broken #roof { opacity: .9; animation: roof-crack .9s ease-out; }
    because there are only two places worth standing, the two of them are
    snap points and the page holds whichever one you arrive at. */
 
-html.sun-open, html.moon-open { scroll-snap-type: y proximity; }
+html.sun-open, html.moon-open, html.crypt-open { scroll-snap-type: y proximity; }
 html.sun-open #sun-level,
 html.moon-open #moon-level,
-html.sun-open main, html.moon-open main { scroll-snap-align: start; }
+html.sun-open main, html.moon-open main,
+html.crypt-open main { scroll-snap-align: start; }
+html.crypt-open #crypt-level { scroll-snap-align: start; }
 
 /* The clock and the plants are pinned to the top of the DOCUMENT, so a new
    storey above has to push them down with everything else. */
@@ -1646,7 +1650,7 @@ body[data-scene] main { min-height: 100vh; }
 
 #sun-level {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1708,7 +1712,15 @@ body[data-scene] main { min-height: 100vh; }
 body.upstairs #scene,
 body.upstairs #adam,
 body.upstairs #pad,
-body.upstairs #adam-hit {
+body.upstairs #spade,
+body.upstairs #wx-say,
+body.upstairs #adam-hit,
+body.downstairs #scene,
+body.downstairs #adam,
+body.downstairs #pad,
+body.downstairs #spade,
+body.downstairs #wx-say,
+body.downstairs #adam-hit {
   opacity: 0;
   pointer-events: none;
   transition: opacity .35s ease;
@@ -1832,8 +1844,8 @@ body[data-scene="moonlight"] .item .meta {
   letter-spacing: 0;
   filter: drop-shadow(0 0 18px rgba(232, 237, 245, .28));
 }
-#moondisc .lt { color: var(--silver); text-shadow: 0 0 6px rgba(232, 237, 245, .55); }
-#moondisc .dk { color: rgba(140, 152, 178, .045); }
+#moondisc .lt { color: var(--silver); }
+#moondisc .dk { color: var(--dim); }
 
 #moonsays {
   position: absolute;
