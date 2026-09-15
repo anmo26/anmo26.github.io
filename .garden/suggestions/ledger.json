@@ -2,9 +2,12 @@
   "notes": {
     "17895017606536nvo": {
       "id": "17895017606536nvo",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.241Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.072Z new -> done",
+        "2026-09-15T20:58:57.701Z taken off the wall"
+      ],
       "room": "/",
       "text": "this clock looks late by one second",
       "kind": "idea",
@@ -13,14 +16,18 @@
       "near": "",
       "at": 1789501760653,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "the clock lands on the second now"
     },
     "1789501773928f852": {
       "id": "1789501773928f852",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.138Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
       "text": "for theme and patter, when hovering, show options and allow user to select the option they want rather than clicking thru all the options. also delete scan one. its an ugly patterns",
       "kind": "idea",
@@ -29,14 +36,18 @@
       "near": "",
       "at": 1789501773928,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "theme and pattern open on hover; scan deleted"
     },
     "1789501801963fr7t": {
       "id": "1789501801963fr7t",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.205Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
       "text": "for notes, every distinct user gets their own colored notes, and have like some sort of signature so sort of who is writing the same notes",
       "kind": "idea",
@@ -45,14 +56,18 @@
       "near": "",
       "at": 1789501801963,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "colour comes from the hand; notes can be signed"
     },
     "1789501827701rbnb": {
       "id": "1789501827701rbnb",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.274Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
       "text": "for pogo, dont just have it be pogo. make it say mini fig and allow users to choose if they want to fly, pogo, run, jump etc",
       "kind": "idea",
@@ -61,30 +76,38 @@
       "near": "",
       "at": 1789501827701,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "he is a mini fig with four gaits"
     },
     "1789501911640f557": {
       "id": "1789501911640f557",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.346Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
-      "text": "Allow claude ot read these notes and incorporate them into the next ui update so that i dont have to manually copy everything from these sticky notes to input. it should be like an easy automatic process so that people who visit this site somehwat have control over small thigns that i do not notice. be careful of bad actors",
+      "text": "Allow claude to read these notes and incorporate them into the next ui update so that i dont have to manually copy everything from these sticky notes to input. it should be like an easy automatic process so that people who visit this site somehwat have control over small thigns that i do not notice. be careful of bad actors",
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "",
       "near": "",
       "at": 1789501911640,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "the ledger and the inbox — read, triaged, and only built when you say so"
     },
     "1789502556750ab36": {
       "id": "1789502556750ab36",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.423Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
       "text": "allow pogo guy or runners or flyers to jump onto these sticky notes, or get trapped in them!",
       "kind": "idea",
@@ -93,14 +116,18 @@
       "near": "",
       "at": 1789502556750,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "he lands on notes and sometimes goes head first into one"
     },
     "17895040098726vyz": {
       "id": "17895040098726vyz",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.495Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
       "text": "allow peple to respond to these sticky notes(have a see reply buttons so these stickies dont overpopulate the screen). Also make sure people are able to turn off the stickies so that it doesnt affec their experience with the site. make there the option to have two types of stickies. one for suggestions, one for like ocmmenting and chatting. both can have the reply feature which allows me to respond to ppl",
       "kind": "idea",
@@ -109,14 +136,18 @@
       "near": "",
       "at": 1789504022089,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "replies behind a fold, a notes switch, and idea vs chat"
     },
     "1789504380969dddi": {
       "id": "1789504380969dddi",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.564Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
       "text": "make a folder purely for an online forum to chat about anything. make it pretty standard forum(not using sticky notes)",
       "kind": "idea",
@@ -125,14 +156,17 @@
       "near": "",
       "at": 1789504380969,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "THE FORUM, a real board on its own document"
     },
     "1789504711825155i": {
       "id": "1789504711825155i",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.630Z new -> parked"
+      ],
       "room": "/",
       "text": "i want an easy way to upload things to this site from my iphone. i dont want to always like upload photos to my computer, then drag them into the garden folder from there. any easy way to streamline this process? connect the garden folder into my iphone???",
       "kind": "idea",
@@ -140,15 +174,25 @@
       "name": "",
       "near": "",
       "at": 1789504711825,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude (via anmo)",
+          "text": "parked, and not because it is a bad idea — it is not a change to the site. the site is a folder on your mac; nothing on the web can put a photo into it. the two real answers are (1) move the garden folder into icloud drive and save straight to it from your phone, or (2) an apple shortcut on the phone that drops a photo into a synced folder. say which and i will set it up.",
+          "at": 1789505931179
+        }
+      ],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "not a change to the site — see the answer"
     },
     "1789504862707fkf5": {
       "id": "1789504862707fkf5",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:44:16.254Z",
-      "history": [],
+      "history": [
+        "2026-09-15T20:58:08.696Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
       "room": "/",
       "text": "allow myself to save files from the crypt back into the overworld",
       "kind": "idea",
@@ -157,9 +201,173 @@
       "near": "",
       "at": 1789504862708,
       "replies": [],
+      "gone": true,
+      "flags": [],
+      "why": "put back on every thing in the crypt"
+    },
+    "1789505186101nwl9": {
+      "id": "1789505186101nwl9",
+      "status": "done",
+      "firstSeen": "2026-09-15T20:53:01.025Z",
+      "history": [
+        "2026-09-15T20:58:08.763Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
+      "room": "/",
+      "text": "show how many unique* players have explored different pages on this site (allows me to track traffic on each page)",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "",
+      "near": "",
+      "at": 1789505186101,
+      "replies": [],
+      "gone": true,
+      "flags": [],
+      "why": "every page counts its own people, once per browser"
+    },
+    "17895052380903b28": {
+      "id": "17895052380903b28",
+      "status": "parked",
+      "firstSeen": "2026-09-15T20:53:01.030Z",
+      "history": [
+        "2026-09-15T20:58:08.828Z new -> parked"
+      ],
+      "room": "/",
+      "text": "the iphone version of this site IS BUTTCHEEKS!!!!! NEED MASSIVE UI OVERHAUL!!!!! might have to operate completely from desktop. DONT FIX THIS RN. WE DONT HAVE ENOUGH USAGE LEFT ON CLAUDE!!!!",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "",
+      "near": "",
+      "at": 1789505238090,
+      "replies": [
+        {
+          "name": "claude (via anmo)",
+          "text": "agreed, and it needs a session of its own rather than a corner of this one. tell me what you do on your phone — look at photos? show it to someone? — and i will rebuild the phone layout around that instead of shrinking the desktop one.",
+          "at": 1789505931179
+        }
+      ],
       "gone": false,
+      "flags": [],
+      "why": "needs a session of its own and your eye on it"
+    },
+    "1789505423818kqmw": {
+      "id": "1789505423818kqmw",
+      "status": "done",
+      "firstSeen": "2026-09-15T20:53:01.030Z",
+      "history": [
+        "2026-09-15T20:58:08.897Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
+      "room": "/",
+      "text": "i dont think its smart to have to dig 50 times to unlcok the crypt. keep the crypt a secret folder, but if you cick on the trash bin that you throw things down into the crypt. you get automatically taken there. delete the shovel in garden.",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "",
+      "near": "",
+      "at": 1789505423818,
+      "replies": [],
+      "gone": true,
+      "flags": [],
+      "why": "the bin is the door to the crypt; the spade is gone"
+    },
+    "1789505514089i5zs": {
+      "id": "1789505514089i5zs",
+      "status": "done",
+      "firstSeen": "2026-09-15T20:53:01.030Z",
+      "history": [
+        "2026-09-15T20:58:08.964Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
+      "room": "/",
+      "text": "it shoulndt be hard for the pogo sticker to jump lower, irl pogo stickers can kinda kill their bounce in 3 bounces or less",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "",
+      "near": "",
+      "at": 1789505514090,
+      "replies": [],
+      "gone": true,
+      "flags": [],
+      "why": "three landings and he is standing still"
+    },
+    "1789505525165yv2m": {
+      "id": "1789505525165yv2m",
+      "status": "declined",
+      "firstSeen": "2026-09-15T20:53:01.030Z",
+      "history": [
+        "2026-09-15T20:58:07.878Z taken off the wall",
+        "2026-09-15T20:58:09.046Z new -> declined"
+      ],
+      "room": "/",
+      "text": "",
+      "kind": "idea",
+      "by": "1jqlbgq2",
+      "name": "",
+      "near": "0N7A2311.JPG",
+      "at": 1789505525166,
+      "replies": [],
+      "gone": true,
+      "flags": [],
+      "why": "empty note"
+    },
+    "1789505526180nw8p": {
+      "id": "1789505526180nw8p",
+      "status": "declined",
+      "firstSeen": "2026-09-15T20:53:01.030Z",
+      "history": [
+        "2026-09-15T20:58:07.878Z taken off the wall",
+        "2026-09-15T20:58:09.117Z new -> declined"
+      ],
+      "room": "/",
+      "text": "",
+      "kind": "idea",
+      "by": "1jqlbgq2",
+      "name": "",
+      "near": "todo.md",
+      "at": 1789505526181,
+      "replies": [],
+      "gone": true,
+      "flags": [],
+      "why": "empty note"
+    },
+    "1789505115588e10y": {
+      "id": "1789505115588e10y",
+      "status": "done",
+      "firstSeen": "2026-09-15T20:53:01.030Z",
+      "history": [
+        "2026-09-15T20:58:09.183Z new -> done",
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
+      "room": "/THE GARDEN/",
+      "text": "when i try to drag files into the crypt. it looks like somethign is blocking it from moving into the bucket!!!",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "",
+      "near": "",
+      "at": 1789505115589,
+      "replies": [],
+      "gone": true,
+      "flags": [],
+      "why": "the bin was under the music player. it is on the other side now"
+    },
+    "1789505682452de1g": {
+      "id": "1789505682452de1g",
+      "status": "new",
+      "firstSeen": "2026-09-15T20:58:07.873Z",
+      "history": [
+        "2026-09-15T20:58:57.714Z taken off the wall"
+      ],
+      "room": "/",
+      "text": "after fixing the ui in accordance to a sticky note. please delete the sticky note. also check in the garden. i left a note in there that you may have missed. ",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "",
+      "near": "",
+      "at": 1789505682452,
+      "replies": [],
+      "gone": true,
       "flags": []
     }
   },
-  "updated": "2026-09-15T20:44:16.255Z"
+  "updated": "2026-09-15T20:58:57.715Z"
 }

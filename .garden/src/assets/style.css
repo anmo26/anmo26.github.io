@@ -459,6 +459,9 @@ body.tex-dots {
    being pressed over and over to walk through it. */
 
 .picker { position: relative; display: inline-flex; }
+/* `display: flex` below beats the browser's own [hidden] rule, which is
+   how all three of these came to be standing open at once. */
+.picker-menu[hidden] { display: none; }
 .picker-menu {
   position: absolute;
   bottom: 100%;
@@ -2920,11 +2923,17 @@ body.dragging { cursor: grabbing; }
 /* Bottom left, where the shelf used to stand and nothing does now. The
    right-hand corner already belongs to the music player, and before this
    the bin was sitting on top of it. */
+/* The bin was in the bottom-left, which is where the music player lives:
+   a 268 x 391 panel at z-index 9997 sitting squarely on top of a bin at
+   z-index 4. Dragging a file towards it took the file behind the player,
+   which is exactly what "something is blocking it" looks like. It is on
+   the other side now, where nothing else is, and it is above the furniture
+   rather than under it. */
 #bin {
   position: fixed;
-  left: 14px;
+  right: 18px;
   bottom: 52px;
-  z-index: 4;
+  z-index: 9998;
   padding: .2rem .3rem;
   border: 1px solid transparent;
   background: none;
@@ -3240,4 +3249,172 @@ body.theme-ink .sticky { filter: brightness(.82) saturate(.9); }
 
 @media (prefers-reduced-motion: reduce) {
   .sticky { rotate: 0deg !important; transition: none; }
+}
+
+/* ================================================================ FORUM
+   A board, and it is meant to look like one: subjects down the page, a
+   rule between each, the newest conversation at the top. Nothing about it
+   borrows from the stickies -- a note is a remark stuck to a thing, and
+   this is the other shape entirely.
+   ------------------------------------------------------------------------ */
+
+#forum {
+  max-width: 44rem;
+  margin: 2rem auto 4rem;
+  padding: 0 1rem;
+}
+.forum-head h2 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: .8rem;
+  font-weight: 400;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.forum-sub {
+  margin: .3rem 0 1.4rem;
+  font-size: .78rem;
+  color: var(--ink-faint);
+}
+
+.forum-start {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.4rem;
+  border-bottom: 1px solid var(--rule);
+}
+.forum-title {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .4rem .55rem;
+  font-family: var(--mono);
+  font-size: .8rem;
+  color: var(--ink);
+}
+.forum-title:focus, .forum-write:focus { outline: 1px solid var(--ochre-pale); }
+.forum-write {
+  min-height: 3.4rem;
+  padding: .45rem .55rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-family: var(--serif);
+  font-size: .9rem;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.forum-write:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-faint);
+  font-style: italic;
+}
+.forum-post {
+  align-self: flex-start;
+  border: 1px solid var(--rule);
+  background: none;
+  padding: .25rem .8rem;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.forum-post:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+.forum-list { margin: 0; padding: 0; list-style: none; }
+.forum-list li {
+  padding: .7rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.forum-open {
+  display: block;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--serif);
+  font-size: 1rem;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+.forum-open:hover { color: var(--ochre); }
+.forum-meta {
+  display: block;
+  margin-top: .15rem;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .07em;
+  color: var(--ink-faint);
+}
+.forum-none { color: var(--ink-faint); font-style: italic; }
+
+.forum-back {
+  border: 0; background: none; padding: 0;
+  font-family: var(--mono); font-size: .62rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-faint); cursor: pointer;
+}
+.forum-back:hover { color: var(--ink); }
+.forum-title-line {
+  margin: .8rem 0 .1rem;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+.forum-byline {
+  margin: 0 0 1.4rem;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .07em;
+  color: var(--ink-faint);
+}
+.forum-p {
+  position: relative;
+  padding: .7rem 0;
+  border-top: 1px solid var(--rule-soft);
+}
+.forum-p-head {
+  margin: 0 0 .25rem;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .07em;
+  color: var(--ink-faint);
+}
+.forum-p-text {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: .92rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.forum-del {
+  position: absolute;
+  top: .65rem; right: 0;
+  border: 0; background: none; padding: 0;
+  font-family: var(--mono); font-size: .58rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-faint);
+  cursor: pointer; opacity: 0; transition: opacity .15s ease;
+}
+.forum-p:hover .forum-del { opacity: 1; }
+.forum-del:hover { color: #A8321E; }
+
+.forum-reply {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  margin-top: 1.6rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* the one who started it can take the whole subject down */
+.forum-del-thread {
+  position: static;
+  opacity: .8;
+  margin-left: .6rem;
 }

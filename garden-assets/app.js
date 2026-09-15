@@ -3880,7 +3880,12 @@
   var HOP_MIN = Math.sqrt(2 * GRAVITY * 12);           // a tick over on the spot
   var HOP_MAX = Math.sqrt(2 * GRAVITY * POGO_H * 3);   // the ceiling: three of him
   var ENERGY_UP = 0.28;      // per second, winding up
-  var ENERGY_DOWN = 0.24;    // per second, winding down
+  /* A real pogo stick can be killed in about three bounces -- you simply
+     stop pushing and let the spring have it. He used to take the better
+     part of ten, winding down on a clock rather than on his own landings,
+     which read as a man who could not stop rather than one who had. */
+  var ENERGY_DOWN = 0.9;     // per second, winding down
+  var ENERGY_LAND = 0.35;    // and what each landing takes off, once idle
   var RUN = 300;             // top speed along the ground
   var IDLE_AFTER = 1600;     // pointer still this long and he starts to settle
 
@@ -4165,6 +4170,10 @@
             else if (rise < -POGO_H * 0.75) energy = Math.min(1, energy + Math.min(0.6, -rise / (POGO_H * 3)));
           }
           lastLand = y;
+
+          /* Nothing to chase: take it out of the spring, not out of a
+             timer. Three landings and he is standing still. */
+          if (idle && !errand) energy *= ENERGY_LAND;
 
           /* A sticky note is paper, not a paving slab. Land on one and
              every so often you go straight through the top of it and
@@ -5090,48 +5099,14 @@
     });
     window.addEventListener('resize', paintSky);
 
-    /* -------------------------------------------------------- the spade
-       There is a floor under the garden the same way there was a ceiling
-       over it. Sixty turns and it gives. */
+    /* The spade is gone. Sixty turns of a shovel to find a room is a toll,
+       not a secret -- and the way in was under everybody's nose the whole
+       time. The bin in the corner is the door: press it and you go down
+       with everything you have ever thrown away. The room itself is still
+       not listed anywhere, which is the part that made it a secret.
 
-    var spade = document.createElement('button');
-    spade.id = 'spade';
-    spade.type = 'button';
-    spade.innerHTML = '<pre aria-hidden="true">' + SPADE.join('\n') + '</pre>' +
-                      '<span id="spade-count"></span>';
-    document.body.appendChild(spade);
-    sceneNodes.push(spade);
-    var spadeCount = spade.querySelector('#spade-count');
-
-    function paintSpade() {
-      var left = DIG_CLICKS - dug.turns;
-      spadeCount.textContent = left > 0 ? dug.turns + ' / ' + DIG_CLICKS : 'the shaft';
-      spade.setAttribute('title', left > 0
-        ? 'dig — ' + left + ' more turns'
-        : 'the shaft is open. throw something over the side.');
-      spade.setAttribute('aria-label', 'dig at the bottom of the garden, ' +
-        dug.turns + ' of ' + DIG_CLICKS);
-      spade.classList.toggle('through', left <= 0);
-    }
-
-    function dig() {
-      if (dug.turns >= DIG_CLICKS) { openCrypt(true); return; }
-      dug.turns++;
-      set('dig', dug);
-      paintSpade();
-      play('tick');
-      spade.classList.add('turning');
-      setTimeout(function () { spade.classList.remove('turning'); }, 200);
-      if (dug.turns >= DIG_CLICKS) setTimeout(breakFloor, 420);
-    }
-    spade.addEventListener('click', dig);
-
-    function breakFloor() {
-      document.body.classList.add('floor-broken');
-      play('rustle');
-      toast('the floor gave way');
-      setTimeout(function () { openCrypt(true); }, 1200);
-    }
+       The shaft in the floor of the garden stays for the people who found
+       it the old way, and for throwing things over the side. */
 
     function openCrypt(scrollDown) {
       if (!document.getElementById('crypt-level')) {
@@ -5247,14 +5222,15 @@
     window.addEventListener('resize', paintTree);
     window.addEventListener('resize', paintRoof);
 
-    paintSpade();
     ambience('garden');
 
     if (tree.clicks >= TREE_CLICKS) {
       document.body.classList.add('roof-broken');
       openSun(false);
     }
-    if (dug.turns >= DIG_CLICKS) {
+    /* The shaft is there for anybody who has found the crypt -- by the bin,
+       or by having dug for it back when digging was the way. */
+    if (secretOpen('crypt') || dug.turns >= DIG_CLICKS) {
       document.body.classList.add('floor-broken');
       openCrypt(false);
     }
@@ -5287,33 +5263,51 @@
     library: 'have found the library'
   };
 
+  /** The page, as a name a counter can be kept under. */
+  function visitKey() {
+    var p = noteRoom().replace(/^\/|\/$/g, '');
+    if (!p) return 'front';
+    return p.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'front';
+  }
+
   function mountVisitors() {
+    var head = document.querySelector('.masthead');
+    if (!head || document.getElementById('visitors')) return;
+
     var h1 = document.querySelector('.masthead h1');
     var room = h1 && VISIT_ROOMS[h1.textContent.trim()];
-    if (!room) return;
+    var key = room || visitKey();
 
     var wall = document.createElement('p');
     wall.id = 'visitors';
     wall.innerHTML = '<b></b><span></span>';
     var rule = document.querySelector('.masthead .rule');
     if (rule && rule.parentNode) rule.parentNode.insertBefore(wall, rule);
-    else document.querySelector('.masthead').appendChild(wall);
+    else head.appendChild(wall);
 
     var figure = wall.querySelector('b');
     var say = wall.querySelector('span');
 
-    // One count per visit, not per visitor -- honest, and it means the
-    // number answers you the moment you walk in.
-    fetch(COUNTER + '/hit/' + COUNTER_NS + '/' + room, { cache: 'no-store' })
+    /* One scratch per browser per room, not one per visit. Coming back to
+       a page you have already seen reads the number without adding to it,
+       so what it says is how many people have been here rather than how
+       many times the page has been opened -- which is the thing anybody
+       actually wants to know, and the only version of it that can be
+       counted without following anybody around. */
+    var first = !get('seen.' + key, false);
+    var url = COUNTER + (first ? '/hit/' : '/get/') + COUNTER_NS + '/' + key;
+
+    fetch(url, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || typeof d.value !== 'number') throw new Error('no count');
-        if (d.value === 1) {
+        if (first) set('seen.' + key, true);
+        if (d.value <= 1) {
           figure.textContent = '';
           say.textContent = 'you are the first person in this room';
         } else {
           figure.textContent = d.value.toLocaleString();
-          say.textContent = ' ' + (ROOM_WORD[room] || 'have stood here');
+          say.textContent = ' ' + (ROOM_WORD[room] || 'people have been here');
         }
         wall.classList.add('counted');
       })
@@ -6181,6 +6175,21 @@
       var who = document.createElement('p');
       who.className = 'forum-byline';
       who.textContent = 'started by ' + (t.name || 'someone') + ' · ' + forumAgo(t.at);
+      if (t.by === myHand()) {
+        var kill = document.createElement('button');
+        kill.className = 'forum-del forum-del-thread';
+        kill.type = 'button';
+        kill.textContent = 'delete subject';
+        kill.addEventListener('click', function () {
+          board.threads = board.threads.filter(function (q) { return q.id !== t.id; });
+          boardEdit(function (b) {
+            b.threads = b.threads.filter(function (q) { return q.id !== t.id; });
+          });
+          openThread = null;
+          draw();
+        });
+        who.appendChild(kill);
+      }
       bodyEl.appendChild(who);
 
       t.posts.forEach(function (p) {
@@ -6495,15 +6504,15 @@
     bin.setAttribute('aria-label', 'the bin');
     document.body.appendChild(bin);
 
+    /* The bin is the way down. Everything thrown away goes to the same
+       room, and it was never sensible that you had to turn a shovel sixty
+       times somewhere else to be allowed to follow it. The crypt is still
+       not listed anywhere -- you have to notice the bin, and notice that
+       it opens -- but noticing is now all it costs. */
     bin.addEventListener('click', function () {
-      if (secretOpen('crypt')) {
-        go(new URL('BOTTOM CRYPT/', siteRoot()).href, true, 0);
-        return;
-      }
-      var n = Object.keys(tossedList()).length;
-      toast(n ? 'it all goes somewhere. you have not found where yet.'
-              : 'drag something in here');
-      play('tick');
+      if (!secretOpen('crypt')) openSecret('crypt', false);
+      play('pluck');
+      go(new URL('BOTTOM CRYPT/', siteRoot()).href, true, 0);
     });
 
     paintBin();
