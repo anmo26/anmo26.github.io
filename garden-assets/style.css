@@ -1997,3 +1997,594 @@ body[data-scene="moonlight"] .item .meta {
 @media (prefers-reduced-motion: reduce) {
   #pad, #pad.fuelled #rocket-hit { transition: none; animation: none; }
 }
+
+/* ============================================================== VISITORS
+   A wall with a scratch on it for every person who has stood in the room,
+   five to a gate. See app.js — the count comes from a service that stores
+   one integer and nothing else, and if it is gone the wall never appears.
+   ------------------------------------------------------------------------ */
+
+#visitors {
+  margin: .9rem 0 0;
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+#visitors.counted { opacity: 1; }
+#visitors .tally {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: -.04em;
+  color: var(--ink-faint);
+  opacity: .7;
+}
+#visitors .tally-say {
+  margin: .25rem 0 0 !important;
+  font-family: var(--mono) !important;
+  font-size: .66rem !important;
+  letter-spacing: .1em;
+  color: var(--ink-faint) !important;
+}
+
+/* ============================================================== THE SHELF
+   By the door of the front page: one small object for everything this
+   visitor has finished. Put back does not clear it.
+   ------------------------------------------------------------------------ */
+
+#shelf {
+  position: fixed;
+  left: 14px;
+  bottom: 54px;
+  z-index: 3;
+  padding: .4rem .55rem .3rem;
+  border: 1px solid var(--rule);
+  border-bottom-width: 3px;
+  background: var(--surface);
+  opacity: .55;
+  transition: opacity .25s ease;
+}
+#shelf:hover { opacity: 1; }
+.shelf-say {
+  margin: 0 0 .25rem;
+  font-family: var(--mono);
+  font-size: .58rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.shelf-row { display: flex; gap: .45rem; align-items: flex-end; }
+.trophy pre {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 8px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: help;
+}
+.trophy:hover pre { color: var(--ochre); }
+@media (max-width: 899px) { #shelf { display: none; } }
+
+/* =============================================================== TOSSING
+   Over the side of the page and down the shaft. Nothing on the disk moves;
+   the site simply stops drawing it until somebody fetches it back.
+   ------------------------------------------------------------------------ */
+
+.item.tossed-away { display: none !important; }
+.item.falling {
+  animation: down-the-shaft .64s cubic-bezier(.5, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+@keyframes down-the-shaft {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(70vh) rotate(26deg); opacity: 0; }
+}
+
+/* Tidy up: the same move, but watched. */
+.plantbed.tidying > .item {
+  transition: left .52s cubic-bezier(.22, .8, .3, 1),
+              top  .52s cubic-bezier(.22, .8, .3, 1);
+}
+
+/* =============================================================== NURSERY
+   The glasshouse on the sun level. Eight plants on the real calendar.
+   ------------------------------------------------------------------------ */
+
+.nursery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1.1rem .6rem;
+  margin: 1.2rem auto 0;
+  max-width: 54rem;
+}
+.plant { width: 6.2rem; text-align: center; }
+.plant-art {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 9px;
+  font-weight: 700;
+  color: #4A3220;
+  min-height: 99px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.plant-art .so { color: #6B5136; }
+.plant-art .bk { color: #3A2616; }
+.plant-art .bd { color: #241609; }
+.plant-art .lf { color: #2E7D32; }
+.plant-art .lg { color: #5FA85A; }
+.plant-art .fl { color: #E8E3D2; }
+
+/* Each one flowers its own colour. */
+.p-cherry    .plant-art .fl { color: #F3AFC4; }
+.p-magnolia  .plant-art .fl { color: #F6EDE3; }
+.p-osmanthus .plant-art .fl { color: #F0A441; }
+.p-jasmine   .plant-art .fl { color: #FFFDF4; }
+.p-gardenia  .plant-art .fl { color: #FBF6E4; }
+.p-bergamot  .plant-art .fl { color: #D8D44A; }
+.p-pear      .plant-art .fl { color: #C6402F; }
+.p-sassafras .plant-art .fl { color: #C98A2E; }
+
+.plant-name {
+  margin: .35rem 0 0 !important;
+  font-family: var(--mono) !important;
+  font-size: .64rem !important;
+  letter-spacing: .08em;
+  font-weight: 700;
+}
+.plant-latin {
+  margin: 0 !important;
+  font-family: var(--serif) !important;
+  font-size: .58rem !important;
+  font-style: italic;
+  opacity: .6;
+}
+.plant-bar {
+  height: 3px;
+  margin: .3rem .4rem 0;
+  background: rgba(58, 38, 22, .18);
+}
+.plant-bar i { display: block; height: 100%; background: #3E8E41; transition: width 1s linear; }
+.plant.grown .plant-bar i { background: #C98A2E; }
+.plant-when {
+  margin: .25rem 0 0 !important;
+  font-family: var(--mono) !important;
+  font-size: .55rem !important;
+  letter-spacing: .04em;
+  opacity: .65;
+}
+
+.sun-house { margin-top: .4rem; }
+
+/* the SUN LEVEL folder opened on its own, rather than climbed up into */
+body[data-scene="nursery"] {
+  --paper:      #F6EEDA;
+  --paper-deep: #EDE2C6;
+  --surface:    #FCF7E9;
+  --surface-2:  #FFFCF3;
+  --ink:        #3A2E10;
+  --ink-soft:   #5E4C1E;
+  --ink-faint:  #7C6A3A;
+  --ochre:      #9A6B12;
+  --olive:      #6E7A22;
+  --rule:       rgba(58, 46, 16, .18);
+  --rule-soft:  rgba(58, 46, 16, .08);
+  background-image: linear-gradient(to bottom, #F7D98F 0%, #F4E9C4 45%, #E8F0D8 100%);
+  background-attachment: fixed;
+}
+#scene.glass { pointer-events: none; }
+#sunbeam {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  margin: 0;
+  white-space: pre;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 13px;
+  color: rgba(255, 226, 140, .55);
+}
+#glassfloor {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 44px;
+  height: 3px;
+  background: linear-gradient(to right, transparent, rgba(154, 107, 18, .4) 15%,
+              rgba(154, 107, 18, .4) 85%, transparent);
+}
+.glasshouse { margin-top: 2.2rem; text-align: center; }
+.glasshouse h2 {
+  margin: 0 0 .3rem;
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  letter-spacing: .22em;
+}
+.glass-say {
+  max-width: 30rem;
+  margin: 0 auto !important;
+  font-family: var(--serif) !important;
+  font-size: .9rem !important;
+  opacity: .75;
+}
+
+/* ================================================================ OCEAN
+   Three clicks on the photograph of the sea. Down here the man on the
+   pogo stick swims; everything else drifts.
+   ------------------------------------------------------------------------ */
+
+.sea-photo { transition: filter .3s ease; }
+.sea-photo.rippling { filter: hue-rotate(-18deg) saturate(1.5) brightness(1.06); }
+.sea-photo.rippling img { animation: ripple .5s ease-in-out; }
+@keyframes ripple {
+  0%, 100% { transform: scale(1) skewX(0deg); }
+  30%      { transform: scale(1.015) skewX(.7deg); }
+  65%      { transform: scale(1.01) skewX(-.6deg); }
+}
+
+body[data-scene="ocean"] {
+  --paper:      #06202E;
+  --paper-deep: #03141F;
+  --surface:    #0C2E40;
+  --surface-2:  #123B50;
+  --ink:        #D6EEF6;
+  --ink-soft:   #9FC9D8;
+  --ink-faint:  #6E9FB2;
+  --ochre:      #7FD4D0;
+  --olive:      #58B8AE;
+  --rule:       rgba(214, 238, 246, .2);
+  --rule-soft:  rgba(214, 238, 246, .08);
+  background-image: linear-gradient(to bottom, #1E6E8C 0%, #0B3A52 34%, #04212F 70%, #01101A 100%);
+  background-attachment: fixed;
+}
+body[data-scene="ocean"] .item.kind-directory h3 a { color: #7FD4D0; }
+
+#scene.sea { pointer-events: none; }
+#surface {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 13px;
+  font-weight: 700;
+  color: rgba(198, 240, 255, .75);
+  text-shadow: 0 0 12px rgba(160, 230, 255, .5);
+}
+#shafts {
+  position: absolute;
+  top: 26px; left: 0; right: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 26px;
+  color: rgba(180, 235, 255, .12);
+}
+#shoal { position: absolute; inset: 0; overflow: hidden; }
+.fish {
+  position: absolute;
+  left: 0;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+  color: rgba(190, 236, 246, .5);
+}
+.fish.back { transform-origin: center; }
+#bubbles { position: absolute; inset: 0; overflow: hidden; }
+.bubble {
+  position: absolute;
+  bottom: 40px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-style: normal;
+  color: rgba(214, 245, 255, .5);
+  animation: rise 7s linear forwards;
+}
+@keyframes rise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  12%  { opacity: .7; }
+  100% { transform: translateY(-85vh) translateX(14px); opacity: 0; }
+}
+#seabed {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 44px;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 12px;
+  color: rgba(160, 190, 200, .38);
+}
+/* Everything in the water floats. Left and top still belong to dragging. */
+body[data-scene="ocean"] .plantbed > .item { animation: afloat 7s ease-in-out infinite; }
+body[data-scene="ocean"] .plantbed > .item:nth-child(2n)  { animation-duration: 8.5s; animation-delay: -1.6s; }
+body[data-scene="ocean"] .plantbed > .item:nth-child(3n)  { animation-duration: 6.2s; animation-delay: -3.1s; }
+@keyframes afloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-7px) rotate(.5deg); }
+}
+
+/* ================================================================ CRYPT
+   The bottom of the garden, dug with a spade. Also its own folder.
+   ------------------------------------------------------------------------ */
+
+body[data-scene="crypt"] {
+  --paper:      #15130F;
+  --paper-deep: #0C0B08;
+  --surface:    #1E1B15;
+  --surface-2:  #272219;
+  --ink:        #CFC6B2;
+  --ink-soft:   #9C9280;
+  --ink-faint:  #756D5E;
+  --ochre:      #B08D3E;
+  --olive:      #7E7A50;
+  --rule:       rgba(207, 198, 178, .18);
+  --rule-soft:  rgba(207, 198, 178, .07);
+  background-image: linear-gradient(to bottom, #0A0906 0%, #15130F 50%, #1B1812 100%);
+  background-attachment: fixed;
+}
+#scene.tomb { pointer-events: none; }
+
+#spade {
+  position: fixed;
+  left: 8%;
+  bottom: 52px;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  cursor: pointer;
+  text-align: center;
+  transition: transform .12s ease, color .2s ease;
+}
+#spade pre {
+  margin: 0;
+  white-space: pre;
+  font-size: 11px;
+  line-height: 10px;
+  font-weight: 700;
+  color: var(--bark, #4A3220);
+}
+#spade-count {
+  display: block;
+  margin-top: .25rem;
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+#spade:hover { color: var(--ink-soft); }
+#spade.turning { transform: translateY(3px) rotate(-6deg); }
+#spade.through pre { color: var(--ochre); }
+@media (max-width: 899px) { #spade { display: none; } }
+
+#crypt-level {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  background-image: linear-gradient(to bottom, #1B1812 0%, #0C0B08 60%, #060504 100%);
+  color: #CFC6B2;
+}
+.crypt-room, #crypt-level { --heap: #B08D3E; }
+.crypt-room { position: relative; margin-top: 2rem; text-align: center; }
+
+.crypt-bricks {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 15px;
+  color: rgba(207, 198, 178, .07);
+  pointer-events: none;
+}
+.crypt-inner { position: relative; max-width: 34rem; padding: 2rem 1.5rem; margin: 0 auto; }
+.crypt-lamp {
+  margin: 0 0 .8rem;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.05;
+  font-weight: 700;
+  color: #E8C77A;
+  text-shadow: 0 0 22px rgba(232, 199, 122, .55);
+  animation: lamp 5s ease-in-out infinite;
+}
+@keyframes lamp { 0%, 100% { opacity: .78; } 45% { opacity: 1; } }
+.crypt-inner h2 {
+  margin: 0 0 .5rem;
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  letter-spacing: .24em;
+}
+.crypt-say { margin: 0 0 1.2rem !important; font-family: var(--serif) !important; opacity: .7; }
+.crypt-empty { font-family: var(--serif); font-size: .9rem; opacity: .55; }
+.crypt-heap {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 24rem;
+  text-align: left;
+}
+.crypt-heap li {
+  padding: .22rem 0;
+  border-bottom: 1px dotted rgba(207, 198, 178, .16);
+  font-family: var(--mono);
+  font-size: .76rem;
+  color: #A69C88;
+}
+.heap-mark { color: var(--heap); margin-right: .4rem; }
+.crypt-up {
+  margin-top: 1.6rem !important;
+  font-family: var(--mono) !important;
+  font-size: .7rem !important;
+  letter-spacing: .18em;
+  opacity: .55;
+}
+body.floor-broken #ground { border-bottom-style: dashed; }
+
+/* ================================================================== BAR
+   A basement, six seats, side two of something, and rain that has been
+   going on for hours.
+   ------------------------------------------------------------------------ */
+
+body[data-scene="bar"] {
+  --paper:      #171210;
+  --paper-deep: #0E0A09;
+  --surface:    #221A15;
+  --surface-2:  #2C221B;
+  --ink:        #E4D3B8;
+  --ink-soft:   #B7A488;
+  --ink-faint:  #8B7B63;
+  --ochre:      #D9A441;
+  --olive:      #9A7B3C;
+  --rule:       rgba(228, 211, 184, .18);
+  --rule-soft:  rgba(228, 211, 184, .07);
+  background-image: linear-gradient(to bottom, #0B0807 0%, #171210 45%, #221A15 100%);
+  background-attachment: fixed;
+}
+body[data-scene="bar"] .item.kind-directory h3 a { color: #D9A441; }
+
+#scene.basement { pointer-events: none; }
+#barrain {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 14px;
+  color: rgba(200, 214, 230, .1);
+}
+#backbar {
+  position: absolute;
+  right: 3vw;
+  bottom: 62px;
+  text-align: right;
+  opacity: .55;
+}
+#shelfrow {
+  margin: 0 0 .5rem;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 11px;
+  font-weight: 700;
+  color: #8B6A2F;
+}
+#record {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 8px;
+  color: #6C5B45;
+}
+#bartop {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 44px;
+  height: 6px;
+  background: linear-gradient(to bottom, #55402A, #2A1F14);
+}
+#barcat {
+  position: absolute;
+  left: 11vw;
+  bottom: 52px;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 11px;
+  font-weight: 700;
+  color: #6E6252;
+  opacity: 0;
+  transition: opacity 2.4s ease;
+}
+#barcat.here { opacity: .8; }
+.bar-line {
+  max-width: 34rem;
+  margin: 0 0 1.4rem !important;
+  font-family: var(--serif) !important;
+  font-size: 1rem !important;
+  font-style: italic;
+  color: var(--ink-soft) !important;
+  opacity: 1;
+  transition: opacity .7s ease;
+}
+.bar-line.fading { opacity: 0; }
+
+/* ============================================================== WEATHER
+   The garden gets the sky the visitor is actually standing under.
+   ------------------------------------------------------------------------ */
+
+#sky {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 12px;
+  color: rgba(120, 150, 180, .45);
+  pointer-events: none;
+}
+body[data-wx="snow"] #sky { color: rgba(255, 255, 255, .7); }
+body[data-wx="storm"] #sky { color: rgba(120, 140, 175, .6); }
+
+#wx-say {
+  position: fixed;
+  left: 14px;
+  top: 14px;
+  z-index: 2;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .14em;
+  text-transform: lowercase;
+  color: var(--ink-faint);
+  opacity: .8;
+  pointer-events: none;
+}
+
+/* The sky over the garden takes the real one's colour. */
+body[data-scene="garden"][data-wx="cloud"]   { --sky-1: #B9C3C9; }
+body[data-scene="garden"][data-wx="rain"]    { --sky-1: #93A3AE; --sky-2: #C6D3BC; }
+body[data-scene="garden"][data-wx="drizzle"] { --sky-1: #A6B4BD; }
+body[data-scene="garden"][data-wx="storm"]   { --sky-1: #6E7A88; --sky-2: #B6C6AC; }
+body[data-scene="garden"][data-wx="snow"]    { --sky-1: #D5DEE6; --sky-2: #E4EDDD; }
+body[data-scene="garden"][data-wx="fog"]     { --sky-1: #C9CFCC; --sky-2: #D6DECF; }
+body[data-scene="garden"][data-wx="clear"]   { --sky-1: #9FD0EC; }
+body[data-scene="garden"].wx-night           { --sky-1: #5C6E86; --sky-2: #A8BCA0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .item.falling, .plantbed.tidying > .item, .bubble, .crypt-lamp,
+  body[data-scene="ocean"] .plantbed > .item, .sea-photo.rippling img {
+    animation: none !important;
+    transition: none !important;
+  }
+}
