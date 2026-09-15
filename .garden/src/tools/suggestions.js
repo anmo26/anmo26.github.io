@@ -45,6 +45,14 @@ const DIR = path.join(HOME, 'suggestions');
 const LEDGER = path.join(DIR, 'ledger.json');
 const INBOX = path.join(DIR, 'inbox.md');
 
+/* The same thing again, out where Anmo can read it: a page in the
+   gardeners log rather than a file inside a hidden folder. He asked for
+   the notes to end up somewhere he can look things up later without
+   asking anybody -- so the log gets a copy every time this runs. */
+const LOG = path.join(HOME, '..', 'gardeners log', 'suggestions');
+const LOG_PAGE = path.join(LOG, 'the wall so far.md');
+const LOG_ABOUT = path.join(LOG, 'description.txt');
+
 const WALL = 'https://textdb.dev/api/data/anmo-garden-notes-8f3c1d';
 
 const STATUSES = ['new', 'approved', 'building', 'done', 'declined', 'parked'];
@@ -190,6 +198,12 @@ function writeInbox(ledger) {
 
   fs.mkdirSync(DIR, { recursive: true });
   fs.writeFileSync(INBOX, lines.join('\n'));
+
+  fs.mkdirSync(LOG, { recursive: true });
+  fs.writeFileSync(LOG_PAGE, lines.join('\n'));
+  fs.writeFileSync(LOG_ABOUT,
+    'every note anybody has stuck on the site, and what was decided about ' +
+    'each one. kept up to date whenever the wall is read.\n');
 }
 
 /* ------------------------------------------------------------------ main */

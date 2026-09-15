@@ -3193,7 +3193,7 @@
   // Typed on the keyboard, anywhere on the site. One opens a folder that
   // cannot be stumbled on by any amount of clicking; the other brings the
   // night round early, for showing somebody MOONLIGHT in the afternoon.
-  var CODES = { anmoli: 'family', moonrise: 'night' };
+  var CODES = { anmoli: 'family', moonrise: 'night', gardener: 'gardener' };
   var CODE_LEN = 8;
 
   function mountSecrets() {
@@ -3235,6 +3235,26 @@
         if (typed.slice(-word.length) !== word) continue;
         key = CODES[word];
         typed = '';
+
+        /* The gardener can take anybody's note down. Everybody else can
+           only take down their own, which is the thing that was actually
+           being asked for: a stranger should not be able to bin what you
+           wrote. Type the word again to put the secateurs away.
+
+           It is a latch, not a lock, and it is worth being honest about
+           the difference: the word is in the site's own code, so somebody
+           determined could find it. What it stops is the ordinary case --
+           a visitor idly clearing the wall - and on a site with no
+           accounts and no server, that is the whole of what is possible. */
+        if (key === 'gardener') {
+          var on = !get('gardener', false);
+          set('gardener', on);
+          toast(on ? 'secateurs out — you can take down any note'
+                   : 'secateurs away');
+          play('pluck');
+          paintStickies();
+          return;
+        }
 
         if (key === 'night') {
           // It answers even when it is already dark. A code that types back
@@ -5476,6 +5496,9 @@
     return h;
   }
 
+  /** Whoever is holding the secateurs can take down anybody's note. */
+  function isGardener() { return !!get('gardener', false); }
+
   /** What this hand signs itself. Empty until somebody signs a note. */
   function mySignature() { return String(get('signature', '') || ''); }
 
@@ -5770,8 +5793,10 @@
           note.kind +
         '</button>' +
         '<span class="sticky-grip" title="drag me"><i></i><i></i><i></i></span>' +
-        '<button class="sticky-bin" type="button" title="throw this note away" ' +
-          'aria-label="throw this note away">&times;</button>' +
+        (mine || isGardener()
+          ? '<button class="sticky-bin" type="button" title="throw this note away" ' +
+              'aria-label="throw this note away">&times;</button>'
+          : '<span class="sticky-lock" title="only whoever wrote this can take it down">·</span>') +
       '</div>' +
       '<div class="sticky-body"' + (mine ? ' contenteditable="plaintext-only"' : '') +
         ' role="textbox" aria-multiline="true" spellcheck="true"></div>' +
@@ -5901,7 +5926,8 @@
 
     el.addEventListener('pointerdown', function () { el.style.zIndex = bumpPanel(); });
 
-    el.querySelector('.sticky-bin').addEventListener('click', function () {
+    var binBtn = el.querySelector('.sticky-bin');
+    if (binBtn) binBtn.addEventListener('click', function () {
       el.classList.add('binned');
       noteForget(note.id);
       play('tick');

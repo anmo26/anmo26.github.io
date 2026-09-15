@@ -3116,6 +3116,14 @@ body[data-scene] #tex { display: none; }
   cursor: pointer;
 }
 .sticky-bin:hover { color: #A8321E; }
+/* Somebody else's note: nothing to press. */
+.sticky-lock {
+  padding: 0 .35rem;
+  color: rgba(51, 48, 42, .22);
+  font-size: .9rem;
+  line-height: 1;
+  cursor: default;
+}
 
 .sticky-body {
   font-family: var(--serif);
