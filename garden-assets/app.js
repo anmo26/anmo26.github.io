@@ -360,7 +360,28 @@
 
   /* ============================================================= DRAGGING */
 
+  /* Two stacking bands, not one.
+
+     Everything lying on the bed shares the lower one: whatever was picked
+     up last is on top of the rest, which is what a desk does. But the
+     clock and the plants in the corner are FURNITURE, and have to sit over
+     all of that -- so the bed is capped well below them.
+
+     A picture you have opened is neither. It is the thing you are looking
+     at, and it belongs over the furniture as well, so panels get a band of
+     their own above the corner and below the taskbar. */
   var zTop = 100;
+  var Z_BED_MAX = 7900;
+  var zPanel = 8100;
+
+  function bumpZ() {
+    if (zTop < Z_BED_MAX) zTop++;
+    return zTop;
+  }
+  function bumpPanel() {
+    if (zPanel < 9990) zPanel++;
+    return zPanel;
+  }
 
   /* Only one thing is ever being dragged, so the move and up listeners go on
      the window once, here, rather than once per draggable element. They used
@@ -485,7 +506,7 @@
 
     drag.el.style.left = drag.originX + 'px';
     drag.el.style.top = drag.originY + 'px';
-    drag.el.style.zIndex = ++zTop;
+    drag.el.style.zIndex = bumpZ();
     drag.el.classList.add('focused');
     if (drag.handle && drag.handle.setPointerCapture) {
       try { drag.handle.setPointerCapture(drag.pointerId); } catch (err) {}
@@ -727,7 +748,7 @@
       }
       m.el.style.left = x + 'px';
       m.el.style.top = m.at.y + 'px';
-      m.el.style.zIndex = ++zTop;
+      m.el.style.zIndex = bumpZ();
     });
 
     if (!wide()) growBed(bed);
@@ -741,7 +762,7 @@
       // the moment you grab an icon, which is the obvious thing to grab.
       item.querySelectorAll('a, img').forEach(function (n) { n.draggable = false; });
 
-      item.addEventListener('pointerdown', function () { item.style.zIndex = ++zTop; });
+      item.addEventListener('pointerdown', function () { item.style.zIndex = bumpZ(); });
 
       mountResizable(item);
 
@@ -1939,7 +1960,7 @@
       panel.style.left = (70 + step) + 'px';
       panel.style.top = (70 + step) + 'px';
     }
-    panel.style.zIndex = ++zTop;
+    panel.style.zIndex = bumpPanel();
     openViewers++;
 
     var bar = document.createElement('div');
@@ -2010,7 +2031,7 @@
     }
 
     document.body.appendChild(panel);
-    panel.addEventListener('pointerdown', function () { panel.style.zIndex = ++zTop; });
+    panel.addEventListener('pointerdown', function () { panel.style.zIndex = bumpPanel(); });
     // Nowhere to drag it to when it already fills the screen, and a hold on
     // the title bar would only be a way to lose it off an edge.
     if (wide()) {
@@ -2041,7 +2062,7 @@
       e.preventDefault();
       e.stopPropagation();
 
-      panel.style.zIndex = ++zTop;
+      panel.style.zIndex = bumpPanel();
 
       var rect = panel.getBoundingClientRect();
       var startX = e.clientX, startY = e.clientY;
@@ -4790,33 +4811,206 @@
     toast(pileName(key) + ' went down the shaft');
   }
   /* ============================================================= NURSERY
-     The sun level is a glasshouse. Eight plants, in the ground, growing at
-     the speed those plants actually grow at -- a jasmine takes two years to
-     flower and a magnolia grown from seed takes ten, and that is how long
-     they take here. There is nothing to click. The only thing that makes
-     them grow is time passing, and the clock they use is the real one, so
-     shutting the tab does not pause anything and nothing is lost.
+     The sun level is a glasshouse. Thirteen plants, in the ground, growing
+     at the speed those plants actually grow at -- a pepper fruits in four
+     months and a saguaro does not flower until it is thirty-five, and that
+     is how long they take here. There is nothing to click except the plant
+     itself, which tells you about itself, including what it smells like.
+
+     Three of them are on a yearly round rather than a one-way journey: a
+     pepper is an annual and dies back every autumn, garlic goes in before
+     the frost and comes out in July, and a shiitake log flushes every few
+     months for years. Those loop. The rest only ever get older.
 
      Everything is drawn from one date: the first time somebody opened the
-     glasshouse. That date survives "put back" -- four years of a magnolia
-     is not the kind of thing anybody should lose by tidying their desk.
+     glasshouse. That date survives "put back" -- thirty-five years of a
+     saguaro is not the kind of thing anybody should lose by tidying.
      ------------------------------------------------------------------- */
 
   var DAY_MS = 86400000;
+  var YEAR = 365;
 
+  /* days: seed (or planting, or inoculation) to the thing it is famous for.
+     cycle: an annual's round, in days -- grow up, hold, die back, begin.  */
   var NURSERY = [
-    { key: 'pear',      name: 'prickly pear',   latin: 'Opuntia ficus-indica',   days: 730,  form: 'cactus', bloom: 'fruit' },
-    { key: 'jasmine',   name: 'jasmine',        latin: 'Jasminum officinale',    days: 730,  form: 'vine',   bloom: 'flower' },
-    { key: 'gardenia',  name: 'gardenia',       latin: 'Gardenia jasminoides',   days: 900,  form: 'shrub',  bloom: 'flower' },
-    { key: 'osmanthus', name: 'osmanthus',      latin: 'Osmanthus fragrans',     days: 1460, form: 'shrub',  bloom: 'flower' },
-    { key: 'sassafras', name: 'sassafras',      latin: 'Sassafras albidum',      days: 1825, form: 'tree',   bloom: 'leaf' },
-    { key: 'cherry',    name: 'cherry blossom', latin: 'Prunus serrulata',       days: 2190, form: 'tree',   bloom: 'blossom' },
-    { key: 'bergamot',  name: 'bergamot',       latin: 'Citrus bergamia',        days: 2555, form: 'tree',   bloom: 'fruit' },
-    { key: 'magnolia',  name: 'magnolia',       latin: 'Magnolia grandiflora',   days: 3650, form: 'tree',   bloom: 'flower' }
+    {
+      key: 'pepper', name: 'pepper', latin: 'Capsicum annuum',
+      form: 'bush', days: 120, cycle: { round: YEAR, grow: 120, hold: 170 },
+      about: 'An annual, and it behaves like one: up from seed in a week, ' +
+        'flowering by midsummer, loaded by August, black and finished by the ' +
+        'first frost. Everything from a padrón to a habanero is this one ' +
+        'species doing different things. The heat is in the pale ribs inside, ' +
+        'not in the seeds, which only taste hot because they are touching them.',
+      smell: 'A broken pepper leaf is the green in tomato-leaf and blackcurrant ' +
+        'bud -- sappy, cold, almost metallic. The fruit itself barely smells ' +
+        'until you cut it, and then it is grass and cut stem. Roast one and the ' +
+        'whole thing turns to smoke and sweet paper.'
+    },
+    {
+      key: 'garlic', name: 'garlic', latin: 'Allium sativum',
+      form: 'bulb', days: 240, cycle: { round: YEAR, grow: 240, hold: 30 },
+      about: 'Goes in as a single clove before the ground freezes, sits out the ' +
+        'winter, and comes up as one plant with a bulb underneath that is the ' +
+        'same clove divided. It has not made viable seed in thousands of years; ' +
+        'every head of garlic is a cutting of a cutting. Hardnecks throw a ' +
+        'curling scape in June, which you snap off so the bulb keeps the sugar.',
+      smell: 'Nothing at all, until it is cut. A whole clove is inert; the ' +
+        'moment the cell walls break, an enzyme meets a sulphur compound and ' +
+        'makes allicin, and allicin is the smell. It is a wound, chemically ' +
+        'speaking. Cooked, that collapses into something sweet and nutty ' +
+        'instead -- which is why a whole roasted head is mild and a raw ' +
+        'crushed one is not.'
+    },
+    {
+      key: 'shiitake', name: 'shiitake', latin: 'Lentinula edodes',
+      form: 'fungus', days: 330, cycle: { round: 120, grow: 22, hold: 16 },
+      about: 'Not a plant. A log of oak or shii, drilled, plugged with spawn, ' +
+        'and then a year of nothing while the mycelium eats its way through ' +
+        'the inside. After that it flushes -- a crop of caps in a week, then ' +
+        'months of rest, then another. A good log will keep doing that for ' +
+        'five or six years and then be too soft to bother with. Soaking it in ' +
+        'cold water shocks it into fruiting.',
+      smell: 'Fresh: damp wood, a cellar, the underside of a fallen branch. ' +
+        'Dried is a completely different animal -- drying makes lenthionine, ' +
+        'which is sulphurous and garlicky and faintly of rubber, and is the ' +
+        'reason dried shiitake tastes of so much more than fresh.'
+    },
+    {
+      key: 'pear', name: 'prickly pear', latin: 'Opuntia ficus-indica',
+      form: 'opuntia', days: 730,
+      about: 'Each flat pad is a stem, not a leaf. It roots wherever a pad ' +
+        'falls over, which is why one plant becomes a thicket and why it went ' +
+        'feral across half the world. The real defence is not the long spines ' +
+        'but the glochids around them -- hair-fine, barbed, and almost ' +
+        'impossible to get out of a thumb. The fruit is the tuna.',
+      smell: 'The flower is faint and sweet, closer to melon rind than to ' +
+        'anything floral. A cut pad smells like a green bean snapped in half. ' +
+        'Ripe tuna smells of watermelon and cucumber with something slightly ' +
+        'soapy behind it.'
+    },
+    {
+      key: 'jasmine', name: 'jasmine', latin: 'Jasminum grandiflorum',
+      form: 'vine', days: 730,
+      about: 'A scrambler, not a climber -- it has no tendrils and no suckers, ' +
+        'it simply grows long and leans on whatever is there. The flowers open ' +
+        'after dark and are picked before dawn, by hand, while they are still ' +
+        'shut. It takes something like eight thousand of them to make a gram ' +
+        'of absolute, which is why the real thing costs what it costs.',
+      smell: 'The most animal of the white flowers. Sweet and narcotic on top, ' +
+        'and underneath it there is indole -- the same molecule that makes ' +
+        'decay smell the way it does. In small amounts it reads as warm skin. ' +
+        'That contradiction is the whole reason jasmine is interesting rather ' +
+        'than merely pretty.'
+    },
+    {
+      key: 'gardenia', name: 'gardenia', latin: 'Gardenia jasminoides',
+      form: 'shrub', days: 900,
+      about: 'Notoriously difficult and worth it. Wants acid soil, humidity, ' +
+        'and to be left alone; sulks yellow at the first sign of lime in the ' +
+        'water. The flowers open pure white, last about three days, and go ' +
+        'apricot-brown at the edges as they die, which somehow makes them ' +
+        'better rather than worse.',
+      smell: 'Creamy and thick enough to feel like a texture. Underneath the ' +
+        'white-flower sweetness there is coconut, a little green banana, and ' +
+        'something faintly mushroomy that stops it from being sugary. In a ' +
+        'closed room one flower is plenty.'
+    },
+    {
+      key: 'osmanthus', name: 'osmanthus', latin: 'Osmanthus fragrans',
+      form: 'shrub', days: 1460,
+      about: 'Sweet olive. A dull evergreen for fifty weeks of the year and ' +
+        'then, in autumn, it covers itself in flowers so small you have to ' +
+        'look for them after you have already smelled them. Picked for tea, ' +
+        'for wine, for a syrup that goes on everything. The city of Guilin is ' +
+        'named after it.',
+      smell: 'Apricot. Unmistakably apricot, from a plant with no relation to ' +
+        'one -- ripe, slightly jammy, with leather and black tea behind it. ' +
+        'It carries a long way on cool air and arrives in patches, so you keep ' +
+        'losing it and finding it again as you walk.'
+    },
+    {
+      key: 'sassafras', name: 'sassafras', latin: 'Sassafras albidum',
+      form: 'broadleaf', days: 1825,
+      about: 'One tree, three leaf shapes on the same branch: a plain oval, a ' +
+        'mitten, and a three-lobed one. Root beer was made from the root bark ' +
+        'until safrole was banned; filé powder, which thickens gumbo, is still ' +
+        'the dried leaf. Goes a spectacular orange in autumn and suckers into ' +
+        'thickets if you let it.',
+      smell: 'Scratch the root and it is root beer, exactly and almost ' +
+        'comically -- sweet, medicinal, a bit of aniseed and a bit of ' +
+        'wintergreen. The crushed leaf is different: citrus-soapy, lemony, ' +
+        'closer to a cleaning cupboard than to a drink.'
+    },
+    {
+      key: 'cherry', name: 'cherry blossom', latin: 'Prunus serrulata',
+      form: 'broadleaf', days: 2190,
+      about: 'Somei Yoshino, the one everybody means, is a single clone ' +
+        'propagated by grafting since the nineteenth century -- every tree in ' +
+        'every avenue is genetically the same tree, which is why they all open ' +
+        'within days of each other. They flower before the leaves come, hold ' +
+        'for about a week, and then drop the lot at once.',
+      smell: 'Almost nothing. Stand under a tree in full flower and you get ' +
+        'the faintest green almond, and most of what people remember is the ' +
+        'cold air it happens in. The salted leaf wrapped around sakuramochi is ' +
+        'where the famous smell actually lives -- that is coumarin, released ' +
+        'by the curing, and it is hay and vanilla and new-mown grass.'
+    },
+    {
+      key: 'bergamot', name: 'bergamot', latin: 'Citrus bergamia',
+      form: 'broadleaf', days: 2555,
+      about: 'A sour hybrid, probably lemon crossed with bitter orange, grown ' +
+        'almost entirely on one strip of the Calabrian coast because it sulks ' +
+        'anywhere else. Nobody eats it. The entire point is the peel, which is ' +
+        'cold-pressed for oil -- for Earl Grey, for eau de cologne, and as the ' +
+        'top note of about half of twentieth-century perfumery.',
+      smell: 'The brightest thing in the citrus family and the least sweet. ' +
+        'Sharp lemon-lime to start, then a cool floral middle from linalyl ' +
+        'acetate that is almost lavender, and a bitter green rind underneath. ' +
+        'It is what makes Earl Grey taste like a perfume rather than a fruit.'
+    },
+    {
+      key: 'magnolia', name: 'magnolia', latin: 'Magnolia grandiflora',
+      form: 'broadleaf', days: 3650,
+      about: 'Older than bees. Magnolias evolved before bees existed, so the ' +
+        'flowers are built to be pollinated by beetles -- tough, thick-petalled, ' +
+        'no nectar, and the carpels are hard enough to survive being chewed on. ' +
+        'The leaves are lacquer-green on top and rust-felted underneath. From ' +
+        'seed it will not flower for a decade.',
+      smell: 'Lemon and vanilla and cold cream. Big, clean, and a little ' +
+        'anaesthetic -- there is a camphor edge that keeps it from being ' +
+        'sweet. One flower on a warm evening will scent a whole garden, and up ' +
+        'close it is almost too much.'
+    },
+    {
+      key: 'hinoki', name: 'hinoki', latin: 'Chamaecyparis obtusa',
+      form: 'conifer', days: 7300,
+      about: 'Japanese cypress. The wood is straight-grained, pale, and so rot ' +
+        'resistant that the oldest surviving wooden buildings in the world are ' +
+        'made of it -- Horyu-ji has been standing on hinoki for thirteen ' +
+        'hundred years. Reserved for temples and for baths. The foliage is in ' +
+        'flat sprays with white Y-marks on the underside.',
+      smell: 'Lemon over cold resin, with something almost soapy-clean. The ' +
+        'compound is hinokitiol, which is also why it does not rot. A hinoki ' +
+        'bath fills with it as soon as hot water goes in, and a freshly cut ' +
+        'board smells of it for years.'
+    },
+    {
+      key: 'saguaro', name: 'saguaro', latin: 'Carnegiea gigantea',
+      form: 'columnar', days: 12775,
+      about: 'Thirty-five years before the first flower. Fifty to seventy ' +
+        'before the first arm, and some never grow one at all. It lives two ' +
+        'hundred years, weighs several tonnes when full of water, and pleats ' +
+        'like an accordion so it can swell after rain. It grows in exactly one ' +
+        'desert and nowhere else on earth. It starts under a nurse tree, in ' +
+        'the shade, and usually outlives it.',
+      smell: 'The flowers open for one night only and shut by the following ' +
+        'afternoon. They smell of overripe melon with a rancid-butter edge -- ' +
+        'unpleasant to us and exactly right for the long-nosed bats they are ' +
+        'waiting for. The plant itself smells of nothing at all.'
+    }
   ];
 
-  var PLANT_W = 15, PLANT_H = 11;
-  var BLOOM_CH = { flower: '*', blossom: 'o', fruit: '@', leaf: '&' };
+  var PLANT_W = 19, PLANT_H = 15;
 
   function blank(w, h) {
     var g = [], r, c;
@@ -4829,94 +5023,334 @@
     g[r][c] = { ch: ch, cls: cls };
   }
 
-  /** An ellipse of leaves, thinned at the edge so it is a bush and not an egg. */
-  function canopy(g, cr, cc, rx, ry, seed, bloomCh, bloomFrom, t) {
-    var r, c, dx, dy, d, n;
+  function pickCh(set, n) { return set.charAt(Math.floor(n * set.length) % set.length); }
+
+  /**
+   * A mass of foliage. `shape` bends the ellipse into something that reads
+   * as a particular tree rather than as a lollipop: wide and layered for a
+   * cherry, tall and tight for a bergamot, low and domed for a shrub.
+   */
+  function foliage(g, cr, cc, rx, ry, seed, opt) {
+    var r, c, dx, dy, d, n, edge;
+    var leaf = opt.leaf || 'o&%e';
+    var dense = opt.dense === undefined ? 0.46 : opt.dense;
+
     for (r = Math.floor(cr - ry); r <= Math.ceil(cr + ry); r++) {
       for (c = Math.floor(cc - rx); c <= Math.ceil(cc + rx); c++) {
         dx = (c - cc) / (rx || 1);
         dy = (r - cr) / (ry || 1);
+        // Weighted so the top of a crown is rounder than the bottom, which
+        // is what a canopy hanging over a trunk actually looks like.
+        if (dy < 0) dy *= 0.88;
         d = dx * dx + dy * dy;
         if (d > 1) continue;
         n = noise(r + 40, c + 40, seed);
-        if (d > 0.62 && n < 0.45) continue;                 // a ragged edge
-        if (t >= bloomFrom && n > 0.78) { put(g, r, c, bloomCh, 'fl'); continue; }
-        put(g, r, c, n < 0.4 ? 'o' : n < 0.7 ? '&' : '%', n < 0.35 ? 'lg' : 'lf');
+        if (d > dense && n < 0.42) continue;                    // a ragged edge
+        edge = d > 0.66;
+        if (opt.flower && n > (opt.flowerAt || 0.80)) {
+          put(g, r, c, opt.flowerCh || '*', 'fl');
+          continue;
+        }
+        put(g, r, c, pickCh(leaf, n), n < 0.34 ? 'lg' : edge ? 'ld' : 'lf');
       }
     }
   }
 
-  /**
-   * `t` is how grown it LOOKS and `real` is how far through its life it
-   * actually is. They are not the same number, because plants are not
-   * linear: a seed is a visible seedling inside a month and then spends
-   * years filling out. Drawn on the flat scale, a magnolia would be a
-   * single full stop for its first seventy days, which is not something
-   * anybody is going to stand and look at.
-   */
+  function trunk(g, fromRow, toRow, mid, wide, seed) {
+    var r, lean = 0;
+    for (r = fromRow; r >= toRow; r--) {
+      if (noise(r, 3, seed) > 0.86) lean += noise(r, 5, seed) > 0.5 ? 1 : -1;
+      lean = Math.max(-1, Math.min(1, lean));
+      put(g, r, mid + lean, '|', 'bk');
+      if (wide) {
+        put(g, r, mid + lean - 1, noise(r, 1, seed) > 0.55 ? '#' : '|', 'bd');
+        put(g, r, mid + lean + 1, noise(r, 2, seed) > 0.55 ? '#' : '|', 'bd');
+      }
+    }
+    return mid + lean;
+  }
+
+  /** Roots flaring where the trunk meets the soil. */
+  function flare(g, row, mid, wide) {
+    put(g, row, mid - 1, '/', 'bd');
+    put(g, row, mid + 1, '\\', 'bd');
+    if (wide) {
+      put(g, row, mid - 2, '_', 'bd');
+      put(g, row, mid + 2, '_', 'bd');
+    }
+  }
+
   function plantGrid(spec, t, real) {
     var g = blank(PLANT_W, PLANT_H);
     var mid = Math.floor(PLANT_W / 2);
     var soil = PLANT_H - 1;
-    var seed = spec.key.charCodeAt(0) + spec.key.length;
-    var c, r;
+    var seed = spec.key.charCodeAt(0) * 7 + spec.key.length;
+    var c, r, k, h, top, x, y;
 
     for (c = 0; c < PLANT_W; c++) {
       put(g, soil, c, noise(9, c, seed) > 0.62 ? '~' : '_', 'so');
     }
 
-    if (t < 0.02) {                                   // still just a seed in soil
-      put(g, soil - 1, mid, '.', 'bk');
+    if (t < 0.015) {
+      put(g, soil - 1, mid, spec.form === 'fungus' ? '=' : '.', 'bk');
       return g;
     }
 
-    var reach = 1 + Math.round(t * (PLANT_H - 3));    // rows of plant above the soil
-    var topRow = soil - reach;
-    var bloomCh = BLOOM_CH[spec.bloom] || '*';
-
-    if (spec.form === 'cactus') {
-      // Pads stacked on each other, each one a squat ellipse.
-      var pads = 1 + Math.floor(t * 3.2);
-      var base = soil - 1, k, off;
+    /* ---------------------------------------------------- prickly pear
+       Pads, each one a stem, each one leaning off the last. Spines along
+       the rim, and the tuna sitting on the top edge when it fruits. */
+    if (spec.form === 'opuntia') {
+      var pads = 1 + Math.floor(t * 3.4);
+      var base = soil - 1, off = 0;
       for (k = 0; k < pads; k++) {
-        off = k === 0 ? 0 : (k % 2 ? -2 : 2);
-        canopy(g, base - 1, mid + off, 2.4, 1.6, seed + k * 5, bloomCh, 0.86, real);
+        off = k === 0 ? 0 : off + (k % 2 ? -3 : 3);
+        off = Math.max(-5, Math.min(5, off));
+        for (r = base - 3; r <= base; r++) {
+          for (c = mid + off - 3; c <= mid + off + 3; c++) {
+            x = (c - (mid + off)) / 3.2;
+            y = (r - (base - 1.5)) / 2.2;
+            if (x * x + y * y > 1) continue;
+            var nn = noise(r, c, seed + k * 9);
+            put(g, r, c, nn > 0.88 ? '*' : nn > 0.5 ? '6' : '%',
+                nn > 0.88 ? 'sp' : nn < 0.3 ? 'lg' : 'lf');
+          }
+        }
+        if (real >= 0.85) {
+          put(g, base - 4, mid + off - 1, '@', 'fl');
+          put(g, base - 4, mid + off + 1, '@', 'fl');
+        }
         base -= 3;
       }
       return g;
     }
 
-    if (spec.form === 'vine') {
-      // A cane that wanders as it climbs, with leaves hung off both sides.
-      var col = mid;
-      for (r = soil - 1; r >= topRow; r--) {
-        put(g, r, col, '|', 'bk');
-        if (noise(r, 3, seed) > 0.62) put(g, r, col - 1, '&', 'lf');
-        if (noise(r, 7, seed) > 0.62) put(g, r, col + 1, '&', 'lf');
-        if (real >= 0.8 && noise(r, 11, seed) > 0.80) put(g, r, col + (noise(r, 13, seed) > 0.5 ? 2 : -2), bloomCh, 'fl');
-        if (noise(r, 17, seed) > 0.72) col += noise(r, 19, seed) > 0.5 ? 1 : -1;
-        col = Math.max(2, Math.min(PLANT_W - 3, col));
+    /* --------------------------------------------------------- saguaro
+       A fluted column that swells with water. Arms only after fifty
+       years, and they come out sideways before they turn and go up. */
+    if (spec.form === 'columnar') {
+      h = 1 + Math.round(t * (PLANT_H - 3));
+      top = soil - h;
+      var wideCol = t > 0.35 ? 2 : t > 0.12 ? 1 : 0;
+      for (r = soil - 1; r >= top; r--) {
+        for (c = mid - wideCol; c <= mid + wideCol; c++) {
+          put(g, r, c, (c - mid) % 2 === 0 ? '|' : ':', 'ca');
+        }
+      }
+      // the crown, rounded over
+      for (c = mid - wideCol; c <= mid + wideCol; c++) put(g, top, c, '_', 'ca');
+      // arms
+      if (t > 0.58) {
+        var armRow = soil - Math.round(h * 0.52);
+        for (k = 1; k <= 3; k++) put(g, armRow, mid - wideCol - k, '_', 'ca');
+        for (k = 0; k < Math.round(h * 0.3); k++) {
+          put(g, armRow - k, mid - wideCol - 3, '|', 'ca');
+          put(g, armRow - k, mid - wideCol - 4, ':', 'ca');
+        }
+        if (t > 0.74) {
+          var armRow2 = soil - Math.round(h * 0.68);
+          for (k = 1; k <= 2; k++) put(g, armRow2, mid + wideCol + k, '_', 'ca');
+          for (k = 0; k < Math.round(h * 0.22); k++) {
+            put(g, armRow2 - k, mid + wideCol + 2, '|', 'ca');
+            put(g, armRow2 - k, mid + wideCol + 3, ':', 'ca');
+          }
+        }
+      }
+      if (real >= 0.999) {
+        for (c = mid - wideCol; c <= mid + wideCol; c++) put(g, top - 1, c, '*', 'fl');
       }
       return g;
     }
 
-    // tree and shrub: a stem with a head on it
-    var head = spec.form === 'shrub' ? 0.55 : 0.42;     // how much is canopy
-    var stemTop = Math.round(soil - 1 - reach * (1 - head));
-    var thick = t > 0.62 ? 1 : 0;                        // trunk goes to three wide
+    /* ---------------------------------------------------------- hinoki
+       A cone of flat sprays, densest low down, with a straight leader
+       going out of the top of it. */
+    if (spec.form === 'conifer') {
+      h = 2 + Math.round(t * (PLANT_H - 4));
+      top = soil - h;
+      for (r = top; r < soil; r++) {
+        var down = r - top;
+        var half = Math.min(6, Math.round(down * 0.55));
+        for (c = mid - half; c <= mid + half; c++) {
+          var m = noise(r, c, seed);
+          if (Math.abs(c - mid) === half && m < 0.4) continue;
+          put(g, r, c, c === mid ? '|' : (c < mid ? '/' : '\\'),
+              m < 0.4 ? 'lg' : 'lf');
+          if (m > 0.86 && Math.abs(c - mid) < half) put(g, r, c, '&', 'ld');
+        }
+      }
+      put(g, top - 1, mid, '^', 'lg');
+      flare(g, soil - 1, mid, h > 7);
+      return g;
+    }
 
-    for (r = soil - 1; r >= stemTop; r--) {
-      put(g, r, mid, '|', 'bk');
-      if (thick && r > stemTop + 1) {
-        put(g, r, mid - 1, noise(r, 1, seed) > 0.5 ? '#' : '|', 'bd');
-        put(g, r, mid + 1, noise(r, 2, seed) > 0.5 ? '#' : '|', 'bd');
+    /* ---------------------------------------------------------- garlic
+       A bulb sitting in the soil line with straps fanning out of it, and
+       a scape curling over the top once it is nearly ready. */
+    if (spec.form === 'bulb') {
+      put(g, soil - 1, mid - 1, '(', 'bu');
+      put(g, soil - 1, mid, t > 0.5 ? '@' : 'o', 'bu');
+      put(g, soil - 1, mid + 1, ')', 'bu');
+      if (t > 0.6) {
+        put(g, soil, mid - 2, '(', 'bu');
+        put(g, soil, mid - 1, '|', 'bu');
+        put(g, soil, mid, '|', 'bu');
+        put(g, soil, mid + 1, '|', 'bu');
+        put(g, soil, mid + 2, ')', 'bu');
+      }
+      /* Straps. Garlic leaves come off the neck alternately and arch over
+         as they lengthen, so each one leans a little further out than the
+         last and the tip of a long one is nearly horizontal. */
+      var straps = 3 + Math.round(t * 4);
+      for (k = 0; k < straps; k++) {
+        var dir = k % 2 ? 1 : -1;
+        var lean = 0.10 + Math.ceil((k + 1) / 2) * 0.30;
+        var len = Math.max(2, Math.round((2 + t * 9) * (1 - k * 0.07)));
+        var drift = 0;
+        for (y = 0; y < len; y++) {
+          // arching: barely leaning at the base, falling away at the tip
+          drift += lean * (y / len) * 1.7;
+          x = mid + dir * Math.round(drift);
+          put(g, soil - 2 - y, x,
+              y > len - 3 ? (dir > 0 ? '\\' : '/') : (drift > 1.2 ? (dir > 0 ? '\\' : '/') : '|'),
+              y > len - 3 ? 'ld' : 'lf');
+        }
+      }
+      if (t >= 0.82) {                       // the scape, curling
+        var sc = soil - 2 - Math.round(2 + t * 8);
+        put(g, sc, mid, '|', 'lg');
+        put(g, sc - 1, mid, ')', 'lg');
+        put(g, sc - 1, mid + 1, '\\', 'lg');
+        put(g, sc, mid + 2, 'o', 'fl');
+      }
+      return g;
+    }
+
+    /* ---------------------------------------------------------- pepper
+       A short woody stem and a mound of leaves, with the fruit hanging
+       DOWN out of the bottom of it, which is how you know it is a
+       pepper and not a tomato. */
+    if (spec.form === 'bush') {
+      var stem = Math.max(1, Math.round(t * 3));
+      for (r = soil - 1; r > soil - 1 - stem; r--) put(g, r, mid, '|', 'bk');
+      var cy = soil - 1 - stem - Math.round(1 + t * 2.5);
+      foliage(g, cy, mid, 2.2 + t * 4.2, 1.4 + t * 2.6, seed,
+              { leaf: 'oe&c', dense: 0.5, flower: real > 0.55 && real < 0.8,
+                flowerCh: '*', flowerAt: 0.88 });
+      if (real >= 0.78) {
+        var hang = [[-3, 1], [2, 2], [0, 3], [-1, 2], [4, 1]];
+        for (k = 0; k < hang.length; k++) {
+          if (k / hang.length > (real - 0.78) / 0.22 + 0.2) break;
+          x = mid + hang[k][0];
+          y = cy + Math.round(1.4 + t * 2.6) - 1 + hang[k][1];
+          put(g, y, x, 'v', 'fr');
+          put(g, y + 1, x, 'V', 'fr');
+        }
+      }
+      return g;
+    }
+
+    /* -------------------------------------------------------- shiitake
+       A log, always. The caps come and go; the log stays for years. */
+    if (spec.form === 'fungus') {
+      // The log: bark on top, a cut end each side, and it is always there.
+      for (c = 2; c < PLANT_W - 2; c++) {
+        put(g, soil - 1, c, noise(0, c, seed) > 0.62 ? '=' : '-', 'bk');
+        put(g, soil - 2, c, noise(1, c, seed) > 0.7 ? '"' : '_', 'bd');
+      }
+      put(g, soil - 1, 1, '(', 'bd');
+      put(g, soil - 2, 1, '/', 'bd');
+      put(g, soil - 1, PLANT_W - 2, ')', 'bd');
+      put(g, soil - 2, PLANT_W - 2, '\\', 'bd');
+
+      /* A flush, on top of the log. Each cap is a dome on a short stipe,
+         and they are spaced far enough apart not to run into one another
+         -- a row of merged brackets reads as a fence, not as mushrooms. */
+      var spots = [4, 9, 14, 6, 12, 16];
+      var caps = Math.min(spots.length, Math.round(t * 6));
+      var big = t > 0.6;
+      for (k = 0; k < caps; k++) {
+        x = spots[k];
+        put(g, soil - 4, x, '_', 'cp');
+        if (big) {
+          put(g, soil - 4, x - 1, '_', 'cp');
+          put(g, soil - 4, x + 1, '_', 'cp');
+          put(g, soil - 3, x - 2, '(', 'cp');
+          put(g, soil - 3, x - 1, '_', 'cp');
+          put(g, soil - 3, x, '_', 'cp');
+          put(g, soil - 3, x + 1, '_', 'cp');
+          put(g, soil - 3, x + 2, ')', 'cp');
+        } else {
+          put(g, soil - 3, x - 1, '(', 'cp');
+          put(g, soil - 3, x, '_', 'cp');
+          put(g, soil - 3, x + 1, ')', 'cp');
+        }
+        put(g, soil - 2, x, '|', 'st');
+      }
+      return g;
+    }
+
+    /* ---------------------------------------------------------- jasmine
+       No tendrils and no suckers -- it simply grows long and leans on
+       whatever is standing there, so it gets something to lean on. */
+    if (spec.form === 'vine') {
+      for (r = soil - 1; r >= soil - 1 - Math.round(t * 11); r--) {
+        put(g, r, mid - 4, ':', 'bd');
+        put(g, r, mid + 4, ':', 'bd');
+        if ((soil - r) % 4 === 0) {
+          for (c = mid - 4; c <= mid + 4; c++) put(g, r, c, '-', 'bd');
+        }
+      }
+      var col = mid;
+      var reach = Math.round(t * 11);
+      for (y = 0; y <= reach; y++) {
+        r = soil - 1 - y;
+        put(g, r, col, y % 3 === 0 ? '/' : '|', 'bk');
+        if (noise(r, 3, seed) > 0.5) put(g, r, col - 1, 'e', 'lf');
+        if (noise(r, 7, seed) > 0.5) put(g, r, col + 1, 'e', 'lf');
+        if (noise(r, 9, seed) > 0.72) put(g, r, col - 2, '&', 'lg');
+        if (noise(r, 11, seed) > 0.72) put(g, r, col + 2, '&', 'lg');
+        if (real >= 0.8 && noise(r, 13, seed) > 0.78) {
+          put(g, r, col + (noise(r, 15, seed) > 0.5 ? 3 : -3), '*', 'fl');
+        }
+        if (noise(r, 17, seed) > 0.68) col += noise(r, 19, seed) > 0.5 ? 1 : -1;
+        col = Math.max(mid - 3, Math.min(mid + 3, col));
+      }
+      return g;
+    }
+
+    /* -------------------------------------------------- shrub and tree */
+    var shrub = spec.form === 'shrub';
+    var reachRows = 1 + Math.round(t * (PLANT_H - 4));
+    var stemTop = Math.round(soil - 1 - reachRows * (shrub ? 0.34 : 0.55));
+    var thick = t > 0.55;
+    var tip = trunk(g, soil - 1, stemTop, mid, thick, seed);
+    if (thick) flare(g, soil - 1, mid, reachRows > 8);
+
+    // Branches, once there is a trunk long enough to hang them off.
+    if (!shrub && reachRows > 7) {
+      for (k = 0; k < 2; k++) {
+        r = stemTop + 1 + k * 2;
+        var dir2 = k % 2 ? 1 : -1;
+        for (c = 1; c <= 2 + k; c++) put(g, r - c, tip + dir2 * c, dir2 > 0 ? '/' : '\\', 'bd');
       }
     }
 
-    var rx = (spec.form === 'shrub' ? 2.2 : 1.6) + t * (spec.form === 'shrub' ? 4.4 : 5.0);
-    var ry = 1.0 + t * (spec.form === 'shrub' ? 2.2 : 2.8);
-    canopy(g, stemTop - Math.round(ry * 0.55), mid, rx, ry, seed,
-           bloomCh, spec.bloom === 'leaf' ? 0.55 : 0.8, real);
+    var shape = {
+      magnolia:  { rx: 1.9 + t * 4.6, ry: 1.2 + t * 3.4, leaf: 'OQ0o', dense: 0.60, fch: '@', fat: 0.86 },
+      cherry:    { rx: 2.4 + t * 6.2, ry: 1.0 + t * 2.0, leaf: 'oe%c', dense: 0.40, fch: 'o', fat: 0.52 },
+      bergamot:  { rx: 1.8 + t * 3.6, ry: 1.4 + t * 3.2, leaf: 'oe&o', dense: 0.58, fch: '@', fat: 0.84 },
+      sassafras: { rx: 2.2 + t * 4.8, ry: 1.2 + t * 2.8, leaf: 'YoeV', dense: 0.34, fch: '&', fat: 0.80 },
+      osmanthus: { rx: 2.6 + t * 4.4, ry: 1.4 + t * 2.4, leaf: 'e&oe', dense: 0.66, fch: '.', fat: 0.55 },
+      gardenia:  { rx: 2.6 + t * 4.0, ry: 1.4 + t * 2.2, leaf: 'OoQe', dense: 0.62, fch: '@', fat: 0.86 }
+    }[spec.key] || { rx: 2 + t * 4, ry: 1.2 + t * 2.6, leaf: 'oe&%', dense: 0.5, fch: '*', fat: 0.8 };
+
+    foliage(g, stemTop - Math.round(shape.ry * 0.55), tip, shape.rx, shape.ry, seed, {
+      leaf: shape.leaf,
+      dense: shape.dense,
+      flower: real >= (spec.key === 'sassafras' ? 0.55 : 0.8),
+      flowerCh: shape.fch,
+      flowerAt: shape.fat
+    });
     return g;
   }
 
@@ -4965,9 +5399,50 @@
   }
 
   /**
+   * Where a plant is today: how grown it looks, and what to say about it.
+   *
+   * A perennial only ever gets older. An annual goes round: up over `grow`
+   * days, held for `hold`, then back down to bare ground and round again
+   * -- so the pepper really is empty every winter and the garlic really is
+   * out of the ground from July until the frost.
+   */
+  function plantState(spec, started, now) {
+    var age = now - started;
+
+    if (!spec.cycle) {
+      var span = spec.days * DAY_MS;
+      var p = Math.max(0, Math.min(1, age / span));
+      return {
+        t: p, ripe: p >= 1, round: 0,
+        say: p >= 1 ? (spec.key === 'pear' || spec.key === 'bergamot' ? 'fruiting' : 'in flower')
+                    : spanWords(span - age) + ' to go'
+      };
+    }
+
+    var cy = spec.cycle;
+    var round = cy.round * DAY_MS;
+    var into = ((age % round) + round) % round;
+    var day = into / DAY_MS;
+    var year = Math.floor(age / round) + 1;
+
+    if (day < cy.grow) {
+      return { t: day / cy.grow, ripe: false, round: year,
+               say: spanWords((cy.grow - day) * DAY_MS) + ' to crop' };
+    }
+    if (day < cy.grow + cy.hold) {
+      return { t: 1, ripe: true, round: year,
+               say: spec.form === 'fungus' ? 'flushing' : 'cropping' };
+    }
+    var fade = (cy.round - cy.grow - cy.hold);
+    var gone = (day - cy.grow - cy.hold) / fade;
+    return { t: Math.max(0, 1 - gone), ripe: false, round: year,
+             say: spanWords((cy.round - day) * DAY_MS) + ' until it starts again' };
+  }
+
+  /**
    * The glasshouse itself, built into whatever is handed to it -- the room
    * above the garden, or the SUN LEVEL folder's own page. Both are the
-   * same eight plants on the same clock.
+   * same plants on the same clock.
    */
   function mountNursery(host) {
     if (!host) return;
@@ -4977,40 +5452,77 @@
     wrap.className = 'nursery';
     host.appendChild(wrap);
 
+    var card = document.createElement('div');
+    card.className = 'plant-card';
+    card.hidden = true;
+    host.appendChild(card);
+
+    var open = null;
+
+    function shut() {
+      open = null;
+      card.hidden = true;
+      beds.forEach(function (b) { b.el.classList.remove('open'); });
+    }
+
+    function show(b) {
+      if (open === b.spec.key) { shut(); return; }
+      open = b.spec.key;
+      beds.forEach(function (x) { x.el.classList.toggle('open', x === b); });
+
+      var st = plantState(b.spec, started, Date.now());
+      var age = spanWords(Date.now() - started);
+      card.className = 'plant-card p-' + b.spec.key;
+      card.innerHTML =
+        '<button class="plant-shut" type="button" aria-label="close">&times;</button>' +
+        '<h3>' + b.spec.name + '</h3>' +
+        '<p class="card-latin">' + b.spec.latin + '</p>' +
+        '<p class="card-about">' + b.spec.about + '</p>' +
+        '<p class="card-smell"><b>what it smells like</b> ' + b.spec.smell + '</p>' +
+        '<p class="card-age">' +
+          (b.spec.cycle ? 'season ' + st.round + ' in this glasshouse'
+                        : 'in the ground ' + age) +
+          '  ·  ' + st.say + '</p>';
+      card.hidden = false;
+      card.querySelector('.plant-shut').addEventListener('click', shut);
+      if (card.scrollIntoView) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      play('tick');
+    }
+
     var beds = NURSERY.map(function (spec) {
-      var bed = document.createElement('div');
+      var bed = document.createElement('button');
+      bed.type = 'button';
       bed.className = 'plant p-' + spec.key;
       bed.innerHTML =
         '<div class="plant-pot">' +
           '<pre class="plant-art" role="img" aria-label="' + spec.name + '"></pre>' +
         '</div>' +
-        '<p class="plant-name">' + spec.name + '</p>' +
-        '<p class="plant-latin">' + spec.latin + '</p>' +
-        '<div class="plant-bar"><i></i></div>' +
-        '<p class="plant-when"></p>';
+        '<span class="plant-name">' + spec.name + '</span>' +
+        '<span class="plant-latin">' + spec.latin + '</span>' +
+        '<span class="plant-bar"><i></i></span>' +
+        '<span class="plant-when"></span>';
       wrap.appendChild(bed);
-      return { spec: spec, el: bed,
-               art: bed.querySelector('.plant-art'),
-               fill: bed.querySelector('.plant-bar i'),
-               when: bed.querySelector('.plant-when') };
+      var b = { spec: spec, el: bed,
+                art: bed.querySelector('.plant-art'),
+                fill: bed.querySelector('.plant-bar i'),
+                when: bed.querySelector('.plant-when') };
+      bed.addEventListener('click', function () { show(b); });
+      return b;
     });
 
     function paint() {
       var now = Date.now();
       var anyBloom = false;
       beds.forEach(function (b) {
-        var span = b.spec.days * DAY_MS;
-        var t = Math.max(0, Math.min(1, (now - started) / span));
-        // The bar and the countdown stay honest; only the drawing is bent.
-        b.art.innerHTML = gridHtml(plantGrid(b.spec, Math.pow(t, 0.42), t));
-        b.fill.style.width = (t * 100).toFixed(2) + '%';
-        b.el.classList.toggle('grown', t >= 1);
-        if (t >= 1) {
-          anyBloom = true;
-          b.when.textContent = b.spec.bloom === 'fruit' ? 'fruiting' : 'in flower';
-        } else {
-          b.when.textContent = spanWords(span - (now - started)) + ' to go';
-        }
+        var st = plantState(b.spec, started, now);
+        // The bar and the words stay honest; only the drawing is bent, so
+        // that a seed is a visible seedling inside a month instead of being
+        // a full stop for its first seventy days.
+        b.art.innerHTML = gridHtml(plantGrid(b.spec, Math.pow(st.t, 0.42), st.t));
+        b.fill.style.width = (st.t * 100).toFixed(2) + '%';
+        b.el.classList.toggle('grown', st.ripe);
+        b.when.textContent = st.say;
+        if (st.ripe) anyBloom = true;
       });
       if (anyBloom) earn('bloom');
     }
@@ -5052,8 +5564,9 @@
     var house = document.createElement('section');
     house.className = 'glasshouse';
     house.innerHTML = '<h2>the glasshouse</h2>' +
-      '<p class="glass-say">eight plants, in the ground, growing at the speed ' +
-      'they really grow at. there is nothing to press. come back in a year.</p>';
+      '<p class="glass-say">thirteen plants, in the ground, growing at the speed ' +
+      'they really grow at. three of them are annuals and go round every year. ' +
+      'press one and it will tell you about itself.</p>';
     var main = document.querySelector('main');
     if (main) main.appendChild(house);
     sceneNodes.push(house);
@@ -5061,6 +5574,7 @@
 
     ambience('nursery');
   }
+
   /* =============================================================== OCEAN
      Found by clicking the photograph of the sea three times, which is what
      anybody does with a photograph of the sea.

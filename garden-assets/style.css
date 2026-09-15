@@ -699,7 +699,9 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
   position: absolute;
   top: 1.4rem;
   right: 1.6rem;
-  z-index: 9996;
+  /* Furniture: over everything lying on the bed (which is capped at 7900),
+     under anything you have actually opened (8100 and up). See bumpZ. */
+  z-index: 8000;
   display: flex;
   align-items: flex-start;
   gap: 1.5rem;
@@ -807,10 +809,11 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
 
 .viewer {
   position: absolute;
-  /* Above the corner (9996), below the taskbar (9999). Opening a picture
-     used to slide it UNDER the clock and the cactus, which read as the
-     picture being broken rather than as the furniture being in front. */
-  z-index: 9997;
+  /* Above the corner (8000), below the taskbar. Opening a picture used to
+     slide it UNDER the clock and the cactus, which read as the picture
+     being broken rather than as the furniture being in front. app.js
+     raises this further every time a panel is brought forward. */
+  z-index: 8100;
   max-width: min(62vw, 46rem);
   background: var(--surface-2);
   border: 1px solid var(--rule);
@@ -2090,7 +2093,8 @@ body[data-scene="moonlight"] .item .meta {
 }
 
 /* =============================================================== NURSERY
-   The glasshouse on the sun level. Eight plants on the real calendar.
+   The glasshouse on the sun level. Thirteen plants on the real calendar,
+   each one a button that tells you about itself.
    ------------------------------------------------------------------------ */
 
 .nursery {
@@ -2098,16 +2102,37 @@ body[data-scene="moonlight"] .item .meta {
   flex-wrap: wrap;
   justify-content: center;
   align-items: flex-end;
-  gap: 1.1rem .6rem;
-  margin: 1.2rem auto 0;
-  max-width: 54rem;
+  gap: 1.8rem 1.1rem;
+  margin: 1.6rem auto 0;
+  max-width: 62rem;
 }
-.plant { width: 6.2rem; text-align: center; }
+
+/* Each plant is a button, so it has to be told not to look like one. */
+.plant {
+  display: block;
+  width: 8.2rem;
+  padding: .3rem .2rem .45rem;
+  border: 1px solid transparent;
+  background: none;
+  text-align: center;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+.plant:hover { border-color: var(--rule-soft); background: rgba(255, 255, 255, .22); }
+.plant.open {
+  border-color: var(--rule);
+  background: rgba(255, 255, 255, .42);
+  transform: translateY(-2px);
+}
+.plant:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+
 /* The box the plant stands in. It is the flex container and the <pre> is
    not: a preformatted block told to be a flex container stops being a
    block of lines and lays its text out as one long row. */
 .plant-pot {
-  min-height: 102px;
+  min-height: 152px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -2117,56 +2142,138 @@ body[data-scene="moonlight"] .item .meta {
   margin: 0;
   white-space: pre;
   font-family: var(--mono);
-  font-size: 10px;
-  line-height: 9px;
+  font-size: 11px;
+  line-height: 10px;
   font-weight: 700;
   color: #4A3220;
 }
+
+/* so: soil.  bk/bd: wood.  lf/lg/ld: foliage, mid, light and shaded.
+   fl: flower.  fr: fruit.  ca: cactus flesh.  sp: spines.  bu: bulb.
+   cp/st: a mushroom's cap and its stipe. */
 .plant-art .so { color: #6B5136; }
 .plant-art .bk { color: #3A2616; }
 .plant-art .bd { color: #241609; }
 .plant-art .lf { color: #2E7D32; }
-.plant-art .lg { color: #5FA85A; }
-.plant-art .fl { color: #E8E3D2; }
+.plant-art .lg { color: #63AE5C; }
+.plant-art .ld { color: #1C5420; }
+.plant-art .fl { color: #F3F0E2; }
+.plant-art .fr { color: #C6402F; }
+.plant-art .ca { color: #4E7F4A; }
+.plant-art .sp { color: #B9AC84; }
+.plant-art .bu { color: #8E7C61; }
+.plant-art .cp { color: #7A5230; }
+.plant-art .st { color: #A8906E; }
 
-/* Each one flowers its own colour. */
+/* Each one flowers and fruits its own colour. */
 .p-cherry    .plant-art .fl { color: #F3AFC4; }
-.p-magnolia  .plant-art .fl { color: #F6EDE3; }
+.p-magnolia  .plant-art .fl { color: #F8F1E6; }
 .p-osmanthus .plant-art .fl { color: #F0A441; }
 .p-jasmine   .plant-art .fl { color: #FFFDF4; }
 .p-gardenia  .plant-art .fl { color: #FBF6E4; }
 .p-bergamot  .plant-art .fl { color: #D8D44A; }
 .p-pear      .plant-art .fl { color: #C6402F; }
 .p-sassafras .plant-art .fl { color: #C98A2E; }
+.p-saguaro   .plant-art .fl { color: #FFF8E8; }
+.p-garlic    .plant-art .fl { color: #E9E4D2; }
+.p-pepper    .plant-art .fr { color: #D83A20; }
+.p-hinoki    .plant-art .lf { color: #2A5E46; }
+.p-hinoki    .plant-art .lg { color: #4A8466; }
+.p-hinoki    .plant-art .ld { color: #16402F; }
+.p-saguaro   .plant-art .ca { color: #55794A; }
 
 .plant-name {
-  margin: .35rem 0 0 !important;
-  font-family: var(--mono) !important;
-  font-size: .64rem !important;
+  display: block;
+  margin-top: .4rem;
+  font-family: var(--mono);
+  font-size: .66rem;
   letter-spacing: .08em;
   font-weight: 700;
 }
 .plant-latin {
-  margin: 0 !important;
-  font-family: var(--serif) !important;
-  font-size: .58rem !important;
+  display: block;
+  font-family: var(--serif);
+  font-size: .58rem;
   font-style: italic;
   opacity: .6;
 }
 .plant-bar {
+  display: block;
   height: 3px;
-  margin: .3rem .4rem 0;
+  margin: .32rem .5rem 0;
   background: rgba(58, 38, 22, .18);
 }
 .plant-bar i { display: block; height: 100%; background: #3E8E41; transition: width 1s linear; }
 .plant.grown .plant-bar i { background: #C98A2E; }
 .plant-when {
-  margin: .25rem 0 0 !important;
-  font-family: var(--mono) !important;
-  font-size: .55rem !important;
+  display: block;
+  margin-top: .26rem;
+  font-family: var(--mono);
+  font-size: .55rem;
   letter-spacing: .04em;
   opacity: .65;
 }
+
+/* What a plant says when you press it. */
+.plant-card {
+  position: relative;
+  max-width: 38rem;
+  margin: 1.8rem auto 0;
+  padding: 1.3rem 1.6rem 1.1rem;
+  border: 1px solid var(--rule);
+  background: rgba(255, 255, 255, .5);
+  text-align: left;
+}
+.plant-card h3 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 1rem;
+  letter-spacing: .16em;
+}
+.card-latin {
+  margin: .1rem 0 .9rem !important;
+  font-family: var(--serif) !important;
+  font-style: italic;
+  font-size: .82rem !important;
+  opacity: .6;
+}
+.card-about, .card-smell {
+  margin: 0 0 .8rem !important;
+  font-family: var(--serif) !important;
+  font-size: .92rem !important;
+  line-height: 1.55;
+}
+.card-smell b {
+  display: block;
+  font-family: var(--mono);
+  font-size: .58rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  opacity: .65;
+  margin-bottom: .2rem;
+}
+.card-age {
+  margin: 0 !important;
+  padding-top: .7rem;
+  border-top: 1px solid var(--rule-soft);
+  font-family: var(--mono) !important;
+  font-size: .6rem !important;
+  letter-spacing: .1em;
+  opacity: .6;
+}
+.plant-shut {
+  position: absolute;
+  top: .5rem;
+  right: .6rem;
+  padding: 0 .3rem;
+  border: 0;
+  background: none;
+  color: var(--ink-faint);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.plant-shut:hover { color: var(--ink); }
 
 .sun-house { margin-top: .4rem; }
 
@@ -2214,7 +2321,7 @@ body[data-scene="nursery"] {
   letter-spacing: .22em;
 }
 .glass-say {
-  max-width: 30rem;
+  max-width: 32rem;
   margin: 0 auto !important;
   font-family: var(--serif) !important;
   font-size: .9rem !important;
