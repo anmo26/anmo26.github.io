@@ -1,12 +1,12 @@
-# 15 september 2026, 16:58
+# 15 september 2026, 17:10
 
 ## what changed
 
-- every note on the wall was read, sorted and built — thirteen of them
-- the clock lands on the second now, and the bin is the door to the crypt
-- the mini fig runs, flies, jumps, and gets stuck head first in notes
-- notes have a colour per person, a signature, replies, and an off switch
-- THE FORUM is open, and every page counts the people who have been in it
+- the menus were being clipped away by the taskbar. they open properly now
+- pressing note makes a note again; resting on it offers idea or chat
+- replies stopped being eaten by older tabs, and mine are back on your notes
+- every note now keeps fields an older copy of the site has never heard of
+- before this: thirteen notes off the wall, built — see the last card
 
 ## you planned
 
@@ -18,8 +18,8 @@
 ## i suggest
 
 - a page that shows the whole wall at once, every note on the site, newest first
+- a reply from me on every note, always, so you can see what i decided
 - the mini fig sleeping where you left him instead of where the page ends
-- a reply from me on every note, so you can see what i decided without asking
 - your own handwriting, traced from a photo, as the heading font
 
 ## open questions
