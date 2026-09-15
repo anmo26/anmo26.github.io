@@ -5977,6 +5977,38 @@
     pollWall();
   }
 
+  /**
+   * Bring the wall up to date without taking it down first.
+   *
+   * The old way was to clear the page and draw every note again, which
+   * cannot be done while somebody has a caret in one -- so it simply did
+   * not happen while you were typing, and a note somebody else had just
+   * written never arrived. Now each note is dealt with on its own: gone
+   * ones go, new ones appear, changed ones are redrawn, and the one you
+   * are actually writing in is left alone until you are finished with it.
+   */
+  function syncStickies(list) {
+    var want = {};
+    list.forEach(function (n) { want[n.id] = n; });
+
+    document.querySelectorAll('.sticky').forEach(function (el) {
+      var id = el.getAttribute('data-note');
+      if (!want[id] && !el.contains(document.activeElement)) {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }
+    });
+
+    list.forEach(function (n) {
+      var el = document.querySelector('.sticky[data-note="' + CSS.escape(n.id) + '"]');
+      var sig = JSON.stringify(n);
+      if (!el) { stickyEl(n, false).noteSig = sig; return; }
+      if (el.noteSig === sig) return;
+      if (el.contains(document.activeElement)) return;   // they are mid-sentence
+      if (el.parentNode) el.parentNode.removeChild(el);
+      stickyEl(n, false).noteSig = sig;
+    });
+  }
+
   /** Somebody typing or moving a note is not to be interrupted by a repaint. */
   function stickyBusy() {
     var live = document.activeElement;
@@ -5989,10 +6021,12 @@
       if (!fresh) return;
       wall = fresh;
       cacheWall(fresh);
-      if (stickyBusy()) return;
+      /* Not while something is being dragged -- moving a note out from
+         under the hand holding it is worse than a late repaint. Typing is
+         no longer a reason to wait: see syncStickies. */
+      if (document.body.classList.contains('dragging')) return;
       if (JSON.stringify(roomNotes()) === wallLast) return;
-      clearStickies();
-      roomNotes().forEach(function (n) { stickyEl(n, false); });
+      syncStickies(roomNotes());
       wallLast = JSON.stringify(roomNotes());
     });
   }

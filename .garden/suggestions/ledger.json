@@ -358,9 +358,11 @@
     },
     "1789506848670b2fy": {
       "id": "1789506848670b2fy",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T22:00:29.313Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:41.911Z new -> done"
+      ],
       "room": "/",
       "text": "ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.",
       "kind": "idea",
@@ -370,13 +372,16 @@
       "at": 1789506848671,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "the nine pixels of gap between the button and the menu were counting as leaving"
     },
     "1789506876038nb4h": {
       "id": "1789506876038nb4h",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:41.979Z new -> done"
+      ],
       "room": "/",
       "text": "For the flying one, make it sorta inspired by sunwukong when he flies on a cloud. combine jump and run because its supposed to just be a guy running and jumping around where the cursor goes.",
       "kind": "idea",
@@ -386,13 +391,16 @@
       "at": 1789506876039,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "he flies on a cloud now, and jump folded into run"
     },
     "17895070087502hnj": {
       "id": "17895070087502hnj",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.048Z new -> parked"
+      ],
       "room": "/",
       "text": "Def need to host on cloudflare or a personal domain soon so i can upload more thigns and also make things run smoother (less lag) and also so that people can't easily find all the files to this project.",
       "kind": "idea",
@@ -402,13 +410,16 @@
       "at": 1789507008751,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "your account, your card — i will not touch either"
     },
     "178950707598022cd": {
       "id": "178950707598022cd",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.118Z new -> done"
+      ],
       "room": "/",
       "text": "upload all the idea sticky notes into gardeners log somehow?? help me work out the complexities and like logic of this. i need all the files into making this sight organized so i can reference or fix things in the future. ",
       "kind": "idea",
@@ -418,13 +429,16 @@
       "at": 1789507075980,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "the whole wall is a page in the gardeners log now"
     },
     "1789507266851shjk": {
       "id": "1789507266851shjk",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.185Z new -> done"
+      ],
       "room": "/",
       "text": "i think only I or claude should be able to delete other peoples notes. and I dont want ranodm users to be able to delete my notes.",
       "kind": "idea",
@@ -434,13 +448,16 @@
       "at": 1789507266852,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "only the author can bin a note; the word gardener gives you the secateurs"
     },
     "1789507297001j52u": {
       "id": "1789507297001j52u",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.261Z new -> parked"
+      ],
       "room": "/",
       "text": "SORRY EVERYONE IF THE TOGGLES AT THE BOTTOM ARENT WORKING PROPERLY!!! I RAN OUT OF USAGE CREDITS. ILL FIX IT SOON!!!!!! as well as all the ui sticky note ideas posted everywhere else on the site. big things coming!",
       "kind": "idea",
@@ -450,13 +467,16 @@
       "at": 1789507297001,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "left up as your announcement, with the fix noted on it"
     },
     "1789507480134r38b": {
       "id": "1789507480134r38b",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.335Z new -> done"
+      ],
       "room": "/",
       "text": "when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!",
       "kind": "idea",
@@ -466,13 +486,16 @@
       "at": 1789507480134,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "the trap is gone, the wobble stays"
     },
     "17895077260956g23": {
       "id": "17895077260956g23",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.402Z new -> done"
+      ],
       "room": "/",
       "text": "god damn the minifigs r ugly. make them better but still the same size!",
       "kind": "idea",
@@ -482,29 +505,41 @@
       "at": 1789507726096,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "all the figures redrawn, same five rows"
     },
     "1789507931694w871": {
       "id": "1789507931694w871",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.469Z new -> parked"
+      ],
       "room": "/",
       "text": "hi",
       "kind": "idea",
       "by": "1cee3n80",
       "name": "",
-      "near": "personal philosophy/",
+      "near": "music/",
       "at": 1789507931695,
-      "replies": [],
+      "replies": [
+        {
+          "name": "Anmo",
+          "text": "whos this?",
+          "at": 1789509942607
+        }
+      ],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "hi"
     },
     "1789509563803pqcg": {
       "id": "1789509563803pqcg",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.536Z new -> done"
+      ],
       "room": "/",
       "text": "i think there is some small issue with the notes. like i think i wasn't able to see someone elses note and for some reason my signature dissapeared from my notes. please troubleshoot this. ",
       "kind": "idea",
@@ -514,13 +549,16 @@
       "at": 1789509563805,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "both were the same bug — an old tab stripping fields it did not know"
     },
     "17895080503948j39": {
       "id": "17895080503948j39",
-      "status": "new",
+      "status": "declined",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.603Z new -> declined"
+      ],
       "room": "/BOTTOM CRYPT/",
       "text": "",
       "kind": "idea",
@@ -530,13 +568,16 @@
       "at": 1789508050394,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "empty note"
     },
     "1789507445293l23a": {
       "id": "1789507445293l23a",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-15T22:00:29.321Z",
-      "history": [],
+      "history": [
+        "2026-09-15T22:06:42.669Z new -> parked"
+      ],
       "room": "/THE FORUM/",
       "text": "is this forum page broken? i just posted something but nobody is responding",
       "kind": "idea",
@@ -546,8 +587,9 @@
       "at": 1789507445293,
       "replies": [],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "not broken, just empty"
     }
   },
-  "updated": "2026-09-15T22:04:40.966Z"
+  "updated": "2026-09-15T22:06:43.298Z"
 }

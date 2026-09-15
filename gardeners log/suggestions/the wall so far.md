@@ -3,93 +3,9 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 15/09/2026, 18:04:40. 30 notes in the ledger.
+Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
-## new (13)
-
-### 1789509563803pqcg
-
-- **idea**, front page · stories/
-- by Anmo (r5u3jewz), today
-
-> i think there is some small issue with the notes. like i think i wasn't able to see someone elses note and for some reason my signature dissapeared from my notes. please troubleshoot this. 
-
-### 17895080503948j39
-
-- **idea**, /BOTTOM CRYPT/
-- by unsigned (1cee3n80), today
-
-> 
-
-### 1789507931694w871
-
-- **idea**, front page · personal philosophy/
-- by unsigned (1cee3n80), today
-
-> hi
-
-### 17895077260956g23
-
-- **idea**, front page
-- by Anmo (r5u3jewz), today
-
-> god damn the minifigs r ugly. make them better but still the same size!
-
-### 1789507480134r38b
-
-- **idea**, front page
-- by Anmo (r5u3jewz), today
-
-> when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!
-
-### 1789507445293l23a
-
-- **idea**, /THE FORUM/
-- by unsigned (r5u3jewz), today
-
-> is this forum page broken? i just posted something but nobody is responding
-
-### 1789507297001j52u
-
-- **idea**, front page · the masthead
-- by Anmo (r5u3jewz), today
-
-> SORRY EVERYONE IF THE TOGGLES AT THE BOTTOM ARENT WORKING PROPERLY!!! I RAN OUT OF USAGE CREDITS. ILL FIX IT SOON!!!!!! as well as all the ui sticky note ideas posted everywhere else on the site. big things coming!
-
-### 1789507266851shjk
-
-- **idea**, front page · the page
-- by Anmo (r5u3jewz), today
-
-> i think only I or claude should be able to delete other peoples notes. and I dont want ranodm users to be able to delete my notes.
-
-### 178950707598022cd
-
-- **idea**, front page
-- by Anmo (r5u3jewz), today
-
-> upload all the idea sticky notes into gardeners log somehow?? help me work out the complexities and like logic of this. i need all the files into making this sight organized so i can reference or fix things in the future. 
-
-### 17895070087502hnj
-
-- **idea**, front page
-- by Anmo (r5u3jewz), today
-
-> Def need to host on cloudflare or a personal domain soon so i can upload more thigns and also make things run smoother (less lag) and also so that people can't easily find all the files to this project.
-
-### 1789506876038nb4h
-
-- **idea**, front page
-- by Anmo (r5u3jewz), today
-
-> For the flying one, make it sorta inspired by sunwukong when he flies on a cloud. combine jump and run because its supposed to just be a guy running and jumping around where the cursor goes.
-
-### 1789506848670b2fy
-
-- **idea**, front page
-- by Anmo (r5u3jewz), today
-
-> ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.
+## new (1)
 
 ### 1789505682452de1g
 
@@ -98,7 +14,45 @@ Read 15/09/2026, 18:04:40. 30 notes in the ledger.
 
 > after fixing the ui in accordance to a sticky note. please delete the sticky note. also check in the garden. i left a note in there that you may have missed. 
 
-## parked (2)
+## parked (6)
+
+### 1789507931694w871
+
+- **idea**, front page · music/
+- by unsigned (1cee3n80), today
+
+> hi
+
+  - *Anmo:* whos this?
+
+**decided:** hi
+
+### 1789507445293l23a
+
+- **idea**, /THE FORUM/
+- by unsigned (r5u3jewz), today
+
+> is this forum page broken? i just posted something but nobody is responding
+
+**decided:** not broken, just empty
+
+### 1789507297001j52u
+
+- **idea**, front page · the masthead
+- by Anmo (r5u3jewz), today
+
+> SORRY EVERYONE IF THE TOGGLES AT THE BOTTOM ARENT WORKING PROPERLY!!! I RAN OUT OF USAGE CREDITS. ILL FIX IT SOON!!!!!! as well as all the ui sticky note ideas posted everywhere else on the site. big things coming!
+
+**decided:** left up as your announcement, with the fix noted on it
+
+### 17895070087502hnj
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> Def need to host on cloudflare or a personal domain soon so i can upload more thigns and also make things run smoother (less lag) and also so that people can't easily find all the files to this project.
+
+**decided:** your account, your card — i will not touch either
 
 ### 17895052380903b28
 
@@ -118,7 +72,70 @@ Read 15/09/2026, 18:04:40. 30 notes in the ledger.
 
 **decided:** not a change to the site — see the answer
 
-## done (13)
+## done (20)
+
+### 1789509563803pqcg
+
+- **idea**, front page · stories/
+- by Anmo (r5u3jewz), today
+
+> i think there is some small issue with the notes. like i think i wasn't able to see someone elses note and for some reason my signature dissapeared from my notes. please troubleshoot this. 
+
+**decided:** both were the same bug — an old tab stripping fields it did not know
+
+### 17895077260956g23
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> god damn the minifigs r ugly. make them better but still the same size!
+
+**decided:** all the figures redrawn, same five rows
+
+### 1789507480134r38b
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!
+
+**decided:** the trap is gone, the wobble stays
+
+### 1789507266851shjk
+
+- **idea**, front page · the page
+- by Anmo (r5u3jewz), today
+
+> i think only I or claude should be able to delete other peoples notes. and I dont want ranodm users to be able to delete my notes.
+
+**decided:** only the author can bin a note; the word gardener gives you the secateurs
+
+### 178950707598022cd
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> upload all the idea sticky notes into gardeners log somehow?? help me work out the complexities and like logic of this. i need all the files into making this sight organized so i can reference or fix things in the future. 
+
+**decided:** the whole wall is a page in the gardeners log now
+
+### 1789506876038nb4h
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> For the flying one, make it sorta inspired by sunwukong when he flies on a cloud. combine jump and run because its supposed to just be a guy running and jumping around where the cursor goes.
+
+**decided:** he flies on a cloud now, and jump folded into run
+
+### 1789506848670b2fy
+
+- **idea**, front page
+- by Anmo (r5u3jewz), today
+
+> ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.
+
+**decided:** the nine pixels of gap between the button and the menu were counting as leaving
 
 ### 1789505514089i5zs
 
@@ -237,7 +254,16 @@ Read 15/09/2026, 18:04:40. 30 notes in the ledger.
 
 **decided:** the clock lands on the second now
 
-## declined (2)
+## declined (3)
+
+### 17895080503948j39
+
+- **idea**, /BOTTOM CRYPT/
+- by unsigned (1cee3n80), today
+
+> 
+
+**decided:** empty note
 
 ### 1789505526180nw8p
 
