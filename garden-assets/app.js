@@ -891,12 +891,102 @@
 
       mountResizable(item);
 
+      /* The to-do is not a file icon, it is a card of writing, and it is
+         the thing on the page most likely to be in the way. The whole card
+         is its own handle -- grab it anywhere -- and it has a corner to
+         pull it bigger or smaller, because a changelog is sometimes
+         something you want to read and sometimes something you want out
+         of the way. */
+      if (item.classList.contains('kind-todo')) {
+        mountScalable(item);
+        makeDraggable(item, item, item.dataset.key);
+        return;
+      }
+
       // Anything that stands for the file is a handle: the icon, the name,
       // the picture. Prose and code are not, so text stays selectable.
       var handles = item.querySelectorAll('h3, .icon, :scope > a > img, :scope > img, :scope > video');
       if (!handles.length) return;
       handles.forEach(function (h) { makeDraggable(item, h, item.dataset.key); });
     });
+  }
+
+  /* ------------------------------------------------------- scaling a card
+     A picture is resized by the browser: pull the corner, the box changes
+     size, the picture fills it. A card of set type cannot be done that way
+     -- widening the box only reflows the same small letters into a wider
+     block, which is not what anybody means by "bigger".
+
+     So the card is SCALED, type and rules and spacing together, the way
+     you would enlarge a photocopy. `transform` and not `zoom`: a transform
+     leaves the layout box exactly where it was, so the card still knows
+     its own position and dragging it keeps working to the pixel.
+     --------------------------------------------------------------------- */
+
+  var SCALE_MIN = 0.65;
+  var SCALE_MAX = 2.6;
+
+  function scaleOf(item) {
+    var all = get('scaled', {});
+    var s = item.dataset.key ? Number(all[item.dataset.key]) : 0;
+    return (s >= SCALE_MIN && s <= SCALE_MAX) ? s : 1;
+  }
+
+  function applyScale(item, s) {
+    item.style.transformOrigin = 'top left';
+    item.style.transform = s === 1 ? '' : 'scale(' + s + ')';
+    item.classList.toggle('scaled', s !== 1);
+  }
+
+  function mountScalable(item) {
+    if (item.querySelector(':scope > .scale-grip')) return;
+
+    var scale = scaleOf(item);
+    applyScale(item, scale);
+
+    var grip = document.createElement('button');
+    grip.type = 'button';
+    grip.className = 'scale-grip';
+    grip.title = 'drag this corner to make the list bigger or smaller';
+    grip.setAttribute('aria-label', 'make the list bigger or smaller');
+    item.appendChild(grip);
+
+    var from = null;
+
+    grip.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      from = { x: e.clientX, y: e.clientY, s: scale, w: item.offsetWidth || 260 };
+      try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    grip.addEventListener('pointermove', function (e) {
+      if (!from) return;
+      // Out from the corner in either direction is bigger; back in is smaller.
+      var travel = ((e.clientX - from.x) + (e.clientY - from.y)) / 2;
+      scale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, from.s * (1 + travel / from.w)));
+      applyScale(item, scale);
+    });
+
+    function letGo() {
+      if (!from) return;
+      from = null;
+      if (item.dataset.key) {
+        var all = get('scaled', {});
+        all[item.dataset.key] = Math.round(scale * 1000) / 1000;
+        set('scaled', all);
+      }
+      growBed(bedOf(item));
+      fitSoon();
+      play('tick');
+    }
+
+    grip.addEventListener('pointerup', letGo);
+    grip.addEventListener('pointercancel', letGo);
+    grip.addEventListener('lostpointercapture', letGo);
+    // A tap with no travel is not a request to resize, and must not open it.
+    grip.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
   }
 
   /**
@@ -1528,8 +1618,20 @@
     var tex = document.getElementById('tex');
     if (!tex) return;
 
-    var rule = document.querySelector('.masthead .rule');
-    var top = rule ? rule.getBoundingClientRect().bottom + window.pageYOffset : 0;
+    /* Below the last thing in the head of the page -- and which thing that
+       is changes with the width. The rule under the masthead is hidden on a
+       wide window, and a hidden element measures zero, which put the top of
+       the texture at the top of the document and ran the pattern straight
+       back under the clock and the name of the site. Measure everything up
+       there and take the lowest one that is actually on screen. */
+    var top = 0;
+    ['.masthead', '.masthead .rule', '.marquee'].forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (!el || !el.getClientRects().length) return;      // hidden measures nothing
+      var b = el.getBoundingClientRect().bottom + window.pageYOffset;
+      if (b > top) top = b;
+    });
+    top += 10;                                             // clear of the line itself
 
     /* Height, not `bottom: 0`. The bed is pinned and absolute, so the body's
        own box stops well short of the bottom of the document -- anchoring to
@@ -1784,9 +1886,14 @@
         return;
       }
       armed = 0;
+      /* The notes hang on a wall everybody shares now, so a reset takes down
+         the ones written here and leaves everybody else's where they are.
+         It gets a moment to finish and the page reloads either way -- a
+         reset is never allowed to hang waiting on a network. */
+      try { noteWipeMine(); } catch (e) {}
       wipe(localStorage);
       wipe(sessionStorage);
-      location.reload();
+      setTimeout(function () { location.reload(); }, 400);
     });
     bar.appendChild(reset);
   }
@@ -5045,7 +5152,12 @@
 
   /** Which page we are on, as the key the notes are filed under. */
   function noteRoom() {
-    try { return decodeURIComponent(location.pathname); } catch (e) { return location.pathname; }
+    var p = location.pathname;
+    try { p = decodeURIComponent(p); } catch (e) {}
+    /* "/index.html" and "/" are the same page to everyone except a string,
+       and a note stuck on one has to be on the wall of the other. */
+    p = p.replace(/index\.html$/, '');
+    return p || '/';
   }
 
   /** A name for this browser, so a full reset knows which notes are its own. */

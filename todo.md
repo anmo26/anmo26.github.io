@@ -1,12 +1,12 @@
-# 15 september 2026, 14:48
+# 15 september 2026, 15:42
 
 ## what changed
 
-- the clock flips through wrong faces and the change rolls right to left
-- four themes instead of five. olive is an actual olive now
-- patterns only live below the rule, and the dots have room to breathe
-- press note in the taskbar to stick a note anywhere. drag it, bin it
-- the crypt shows the real files now, and they open. the shelf is gone
+- the notes are on a shared wall now — everyone sees what anyone sticks up
+- a note written elsewhere turns up on an open page without a reload
+- the to-do can be pulled bigger or smaller by the corner, and stays that way
+- the to-do is grabbed anywhere on it, not only by its name
+- the patterns start below the ticker at every width, never under the clock
 
 ## you planned
 
@@ -18,8 +18,14 @@
 
 ## i suggest
 
-- your own handwriting, traced from a photo, as the heading font
-- a key hidden in one exact spot of one exact photograph
-- notes other people can read, not just you — the same sticky, shared
+- a wall of the notes: every sticky on the site, on one page, newest first
+- a hand you can sign, so a note says who left it
+- the same corner on every card, so anything can be made bigger
+- other people's cursors, moving on the page while they read
 - birds that land on folders and leave when you drag one
-- a folder that only opens on your birthday
+
+## open questions
+
+- the notes live on a free public pastebin. want one you own instead?
+- reclaim about 7gb of old camera dumps from the repository?
+- on a phone: bigger text, or less scrolling?

@@ -1319,6 +1319,45 @@ details[open] > .read-more-summary::after { font-size: .68rem; }
 .item.kind-todo details:not([open]) > .read-more-summary { font-size: .6rem; }
 .item.kind-todo details[open] > .read-more-summary::after { font-size: .6rem; }
 
+/* The whole card is a handle, so it says so under the pointer -- except
+   over the fold, which is a control, and over the writing while you are
+   actually reading it. */
+.item.kind-todo { cursor: grab; }
+.item.kind-todo:active { cursor: grabbing; }
+.item.kind-todo summary { cursor: pointer; }
+/* A scaled card is drawn from its top-left corner, which is where its
+   remembered position is -- so it grows down and to the right, out of the
+   way, instead of creeping up under the masthead. */
+.item.kind-todo { transform-origin: top left; }
+.item.kind-todo.scaled { max-width: 21rem; }
+
+/* the corner you pull to make it bigger */
+.scale-grip {
+  position: absolute;
+  right: -1px; bottom: -1px;
+  width: 15px; height: 15px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity .15s ease;
+  touch-action: none;
+}
+.scale-grip::after {
+  content: "";
+  position: absolute;
+  right: 3px; bottom: 3px;
+  width: 8px; height: 8px;
+  border-right: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+}
+.item:hover > .scale-grip, .scale-grip:focus-visible { opacity: .85; }
+/* A finger cannot hover, so on a touchscreen the corner is simply there. */
+@media (hover: none) {
+  .scale-grip { opacity: .55; width: 20px; height: 20px; }
+}
+
 /* ---------------------------------------------------------- the corner
    Two working things and a clock. The still and the cactus stand together
    on the left of it; when the window is too narrow for a row, they keep
