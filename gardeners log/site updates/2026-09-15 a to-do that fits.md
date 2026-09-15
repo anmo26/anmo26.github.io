@@ -1,18 +1,18 @@
-# 15 september 2026
+# 15 september 2026 — a to-do that fits on the page
 
 ## what changed
 
-- there is a jazz trio playing in the bar, generated rather than recorded
-- the bar quotes fitzgerald, hemingway, orwell and forty more on top of the japanese ones
-- the cat sits, loafs, lies flat, washes, turns its back, or is not there
-- the still stands well clear of the prickly pear now
-- a plan for the conversations folder is written up in gardeners log / plans
+- the bar quotes bashō, sōseki, dazai and nine others
+- it also knows fifty odd facts about whisky, sake, coffee and water
+- every old to-do is kept in gardeners log / site updates
+- plants hold at their peak, then start again from seed
+- put back became full reset, and there is a bin in every corner
 
 ## you planned
 
-- a secret folder for your claude chats — see the plan, it must stay off github
 - fill THE GARDEN with the real plant log
 - fill THE BAR with bars, bottles and recipes
+- put people in FAMILY, and something in MOON and SUN LEVEL
 - a guestbook, so visitors can leave something behind
 - anmo.garden on cloudflare — that one needs your account, not mine
 
