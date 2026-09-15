@@ -121,7 +121,7 @@
           }
 
           if (isSeam) {
-            rows[r].push({ ch: SEAM.charAt(c % SEAM.length), cls: 's' });
+            rows[r].push({ ch: SEAM.charAt(c % SEAM.length), cls: churning ? 's2' : 's' });
             continue;
           }
 
@@ -131,9 +131,14 @@
             if (gc >= 0 && gc < 5) on = glyph[glyphRow].charAt(gc) === '1';
           }
 
-          // A churning card loses its figure and thrashes its ground.
+          /* A card in the middle of a flip keeps a face -- a WRONG face,
+             handed to it by the flip plan -- and thrashes the ground it is
+             standing in. It used to lose the figure altogether, which read
+             as the card going blank rather than as the flap turning over. */
           if (churning) {
-            rows[r].push({ ch: pick(GROUND, seed * 3 + 1), cls: 'g' });
+            rows[r].push(on
+              ? { ch: pick(FIGURE, seed), cls: 'f' }
+              : { ch: pick(GROUND, seed * 3 + 1), cls: 'g' });
           } else {
             rows[r].push(on
               ? { ch: pick(FIGURE, seed), cls: 'f' }
@@ -279,7 +284,8 @@
     var dateLine = '';
     var churn = {};
     var tick = 0;
-    var churnTimer = null;
+    var flipTimer = null;
+    var lastPainted = '';
 
     function timeText() {
       var d = new Date();
@@ -288,7 +294,97 @@
       return pad(h) + ':' + pad(d.getMinutes()) + (state.seconds ? ':' + pad(d.getSeconds()) : '');
     }
 
-    function render(text) { host.innerHTML = paint(field(text, churn, tick)); }
+    function render(text) {
+      // Nothing has changed since the last frame: do not rebuild five
+      // hundred cells to put back exactly what is already on the screen.
+      var sig = text + '|' + Object.keys(churn).join(',') + '|' + tick;
+      if (sig === lastPainted) return;
+      lastPainted = sig;
+      host.innerHTML = paint(field(text, churn, tick));
+    }
+
+    /* ------------------------------------------------------- the flip
+       A split flap never jumps to the answer. It runs forward through the
+       faces on the drum and stops when the right one comes up, and on a
+       real clock the cards do not all go at once either: the seconds turn
+       first, and the minute, and then the hour, so the change travels
+       across the face from the right.
+
+       So each card that has to change is given a little plan -- when it
+       starts, and the four wrong faces it shows on the way -- and a card
+       that has not started yet goes on showing the OLD number. That is
+       what makes the wave: for a fifth of a second the minutes are still
+       reading 59 while the seconds have already gone over to 00. */
+
+    var FLIP_FACES = 4;      // wrong faces before the right one
+    var FLIP_MS = 48;        // how long each face is up
+    var WAVE_MS = 56;        // how much later each card to the LEFT starts
+    var STEP_MS = 24;        // how often the whole face is looked at
+
+    var DIGITS = '0123456789';
+    var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    function flipFaces(to) {
+      var seq = DIGITS.indexOf(to) >= 0 ? DIGITS
+              : LETTERS.indexOf(to) >= 0 ? LETTERS : null;
+      if (!seq) return [to];
+      var end = seq.indexOf(to);
+      var out = [], k;
+      // Forward only, and landing on the right one: the last few faces of
+      // the drum before the answer.
+      for (k = FLIP_FACES; k >= 1; k--) {
+        out.push(seq.charAt((end - k + seq.length * 2) % seq.length));
+      }
+      out.push(to);
+      return out;
+    }
+
+    function runFlip(from, to, changed) {
+      clearInterval(flipTimer);
+
+      var last = to.length - 1;
+      var plan = [];
+      changed.forEach(function (i) {
+        plan.push({ at: i, start: (last - i) * WAVE_MS, faces: flipFaces(to.charAt(i)) });
+      });
+
+      var t0 = performance.now();
+      var chars = to.split('');
+
+      flipTimer = setInterval(function () {
+        var e = performance.now() - t0;
+        var busy = false, n, p, dt, k;
+
+        churn = {};
+        for (n = 0; n < to.length; n++) chars[n] = to.charAt(n);
+
+        for (n = 0; n < plan.length; n++) {
+          p = plan[n];
+          dt = e - p.start;
+          if (dt < 0) {
+            // Its turn has not come round yet. It is still yesterday here.
+            chars[p.at] = from.charAt(p.at);
+            busy = true;
+            continue;
+          }
+          k = Math.floor(dt / FLIP_MS);
+          if (k < p.faces.length) {
+            chars[p.at] = p.faces[k];
+            churn[p.at] = true;
+            busy = true;
+          }
+        }
+
+        tick++;
+        render(chars.join(''));
+
+        if (busy) return;
+        clearInterval(flipTimer);
+        flipTimer = null;
+        churn = {};
+        render(to);
+      }, STEP_MS);
+    }
 
     function draw() {
       var text = timeText();
@@ -305,29 +401,27 @@
       }
 
       // Which cards turned over since last time?
-      churn = {};
+      var changed = [];
       if (previous.length === text.length) {
         for (var i = 0; i < text.length; i++) {
-          if (previous.charAt(i) !== text.charAt(i)) churn[i] = true;
+          if (previous.charAt(i) !== text.charAt(i)) changed.push(i);
         }
       }
+      var was = previous;
       previous = text;
 
-      var flipping = Object.keys(churn).length > 0;
-      render(text);
+      var still = window.matchMedia &&
+                  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      clearTimeout(churnTimer);
-      if (flipping && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        // let the flap tumble for a couple of frames, then settle
-        tick = 0;
-        var churnStep = function () {
-          tick++;
-          if (tick > 2) { churn = {}; render(text); return; }
-          render(text);
-          churnTimer = setTimeout(churnStep, 55);
-        };
-        churnTimer = setTimeout(churnStep, 55);
+      if (!changed.length || still) {
+        clearInterval(flipTimer);
+        flipTimer = null;
+        churn = {};
+        render(text);
+        return;
       }
+
+      runFlip(was, text, changed);
     }
 
     // Click to cycle 12h -> 24h -> 12h without seconds -> 24h without seconds.
@@ -1433,10 +1527,18 @@
   function placeTexture() {
     var tex = document.getElementById('tex');
     if (!tex) return;
+
     var rule = document.querySelector('.masthead .rule');
-    if (!rule) { tex.style.top = '0px'; return; }
-    var top = rule.getBoundingClientRect().bottom + window.pageYOffset;
+    var top = rule ? rule.getBoundingClientRect().bottom + window.pageYOffset : 0;
+
+    /* Height, not `bottom: 0`. The bed is pinned and absolute, so the body's
+       own box stops well short of the bottom of the document -- anchoring to
+       it gave the layer a height of exactly nothing. */
+    var tall = Math.max(document.documentElement.scrollHeight,
+                        document.body.scrollHeight,
+                        window.innerHeight);
     tex.style.top = Math.round(top) + 'px';
+    tex.style.height = Math.max(0, Math.round(tall - top)) + 'px';
   }
 
   function mountTexture() {
@@ -1447,7 +1549,11 @@
     document.body.appendChild(tex);
     placeTexture();
     window.addEventListener('resize', placeTexture);
-    window.addEventListener('load', placeTexture);
+    // Pictures settle after they load and the page gets taller.
+    window.addEventListener('load', function () {
+      placeTexture();
+      setTimeout(placeTexture, 400);
+    });
   }
 
   function mountHint() {
@@ -2262,6 +2368,7 @@
     restorePositions();
     applyTossed();          // anything thrown down the shaft is not drawn
     placeTexture();         // the masthead is a different height on every page
+    setTimeout(placeTexture, 500);   // ...and so is the page, once it settles
     paintStickies();        // whatever anybody stuck to this page
     var theBin = binEl();
     if (theBin) {

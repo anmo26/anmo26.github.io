@@ -745,7 +745,9 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
 /* the character field: warm ochre ground, ink figures */
 #clock .g  { color: var(--ochre); opacity: .32; }   /* ground */
 #clock .f  { color: var(--ink); }                   /* figure */
-#clock .s  { color: var(--olive); opacity: .55; }   /* flap seam */
+#clock .s  { color: var(--olive); opacity: .55; }
+/* the seam of a card that is mid-flip catches the light */
+#clock .s2 { color: var(--ochre); opacity: .9; }   /* flap seam */
 #clock .d  { color: var(--ink-faint); }             /* date / caption */
 
 /* the date and meridiem: the same character field on a tighter cell */
@@ -2932,7 +2934,6 @@ body.dragging { cursor: grabbing; }
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
   z-index: -2;
   pointer-events: none;
   background-image: var(--tex-image-1), var(--tex-image-2);
