@@ -1,4 +1,0 @@
-no build step. no dependencies. no framework.
-node reads a folder, node writes html.
-
-the only clever part is .DS_Store, and apple wrote that.
