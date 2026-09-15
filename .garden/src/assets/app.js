@@ -4818,7 +4818,15 @@
     }
   }
 
-  function plantGrid(spec, t) {
+  /**
+   * `t` is how grown it LOOKS and `real` is how far through its life it
+   * actually is. They are not the same number, because plants are not
+   * linear: a seed is a visible seedling inside a month and then spends
+   * years filling out. Drawn on the flat scale, a magnolia would be a
+   * single full stop for its first seventy days, which is not something
+   * anybody is going to stand and look at.
+   */
+  function plantGrid(spec, t, real) {
     var g = blank(PLANT_W, PLANT_H);
     var mid = Math.floor(PLANT_W / 2);
     var soil = PLANT_H - 1;
@@ -4844,7 +4852,7 @@
       var base = soil - 1, k, off;
       for (k = 0; k < pads; k++) {
         off = k === 0 ? 0 : (k % 2 ? -2 : 2);
-        canopy(g, base - 1, mid + off, 2.4, 1.6, seed + k * 5, bloomCh, 0.86, t);
+        canopy(g, base - 1, mid + off, 2.4, 1.6, seed + k * 5, bloomCh, 0.86, real);
         base -= 3;
       }
       return g;
@@ -4857,7 +4865,7 @@
         put(g, r, col, '|', 'bk');
         if (noise(r, 3, seed) > 0.62) put(g, r, col - 1, '&', 'lf');
         if (noise(r, 7, seed) > 0.62) put(g, r, col + 1, '&', 'lf');
-        if (t >= 0.8 && noise(r, 11, seed) > 0.80) put(g, r, col + (noise(r, 13, seed) > 0.5 ? 2 : -2), bloomCh, 'fl');
+        if (real >= 0.8 && noise(r, 11, seed) > 0.80) put(g, r, col + (noise(r, 13, seed) > 0.5 ? 2 : -2), bloomCh, 'fl');
         if (noise(r, 17, seed) > 0.72) col += noise(r, 19, seed) > 0.5 ? 1 : -1;
         col = Math.max(2, Math.min(PLANT_W - 3, col));
       }
@@ -4880,7 +4888,7 @@
     var rx = (spec.form === 'shrub' ? 2.2 : 1.6) + t * (spec.form === 'shrub' ? 4.4 : 5.0);
     var ry = 1.0 + t * (spec.form === 'shrub' ? 2.2 : 2.8);
     canopy(g, stemTop - Math.round(ry * 0.55), mid, rx, ry, seed,
-           bloomCh, spec.bloom === 'leaf' ? 0.55 : 0.8, t);
+           bloomCh, spec.bloom === 'leaf' ? 0.55 : 0.8, real);
     return g;
   }
 
@@ -4963,7 +4971,8 @@
       beds.forEach(function (b) {
         var span = b.spec.days * DAY_MS;
         var t = Math.max(0, Math.min(1, (now - started) / span));
-        b.art.innerHTML = gridHtml(plantGrid(b.spec, t));
+        // The bar and the countdown stay honest; only the drawing is bent.
+        b.art.innerHTML = gridHtml(plantGrid(b.spec, Math.pow(t, 0.42), t));
         b.fill.style.width = (t * 100).toFixed(2) + '%';
         b.el.classList.toggle('grown', t >= 1);
         if (t >= 1) {
