@@ -2265,7 +2265,8 @@
         fill.style.width = Math.round(Math.max(0, Math.min(1, pc)) * 100) + '%';
         fill.parentNode.setAttribute('title',
           stage + 1 < STAGE_NEED.length
-            ? STAGE_NAME[stage] + ' — ' + (STAGE_NEED[stage + 1] - plant.drops) + ' more waterings to go'
+            ? STAGE_NAME[stage] + ' — ' + (STAGE_NEED[stage + 1] - plant.drops) +
+              (STAGE_NEED[stage + 1] - plant.drops === 1 ? ' more watering to go' : ' more waterings to go')
             : 'fruiting. it does not get better than this.');
       }
 

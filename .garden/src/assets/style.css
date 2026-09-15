@@ -756,7 +756,7 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
        the window rather than a fixed measure: the corner is mostly the
        clock, the clock is a character field, and on a narrow laptop
        reserving its full width in ems would leave the title nowhere to go. */
-    padding-right: min(40rem, 44%);
+    padding-right: min(40rem, 56vw);
     /* and its height, so the ticker rules a line beneath it, not through it */
     min-height: 10.5rem;
   }
@@ -768,7 +768,16 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
 }
 
 @media (max-width: 899px) {
-  #corner { position: static; margin: 0 auto 2rem; justify-content: center; }
+  /* Stacked, not side by side. The clock's character field is already as
+     wide as a narrow window will take, so a row would push the plant clean
+     off the edge of the screen -- which is exactly what it did. */
+  #corner {
+    position: static;
+    margin: 0 auto 2rem;
+    flex-direction: column;
+    align-items: center;
+    gap: .9rem;
+  }
   #clock-shell { text-align: center; }
   #clock { font-size: 8px; }
   #clock-date { font-size: 8px; }
@@ -1178,3 +1187,65 @@ body.secret-open .item[data-secret] {
   #clock-shell.rattling #clock { animation: none; }
   body.secret-open .item[data-secret] { animation: none; }
 }
+
+/* ------------------------------------------------------------- read more
+   A long piece of writing lying open on the front page pushes everything
+   else off the screen. Only its opening stays; the rest is one click away,
+   and opening it never moves the page under the reader's hands. */
+
+.read-more-toggle { display: block; }
+.read-more-toggle > .md,
+.read-more-toggle > pre { margin-top: 0; }
+
+.read-more-summary {
+  display: inline-block;
+  margin-top: .35rem;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  cursor: pointer;
+  list-style: none;
+  border-bottom: 1px solid transparent;
+}
+.read-more-summary::-webkit-details-marker { display: none; }
+.read-more-summary::before { content: '+ '; }
+.read-more-summary:hover { border-bottom-color: var(--ochre); }
+details[open] > .read-more-summary::before { content: '\2212 '; }
+details[open] > .read-more-summary { color: var(--ink-faint); }
+details[open] > .read-more-summary::after { content: ' less'; }
+details[open] > .read-more-summary { font-size: 0; }
+details[open] > .read-more-summary::before,
+details[open] > .read-more-summary::after { font-size: .68rem; }
+
+/* The line on a folder page that owns up to what it cannot show. */
+.folder-note {
+  font-family: var(--mono);
+  font-size: .7rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  border-left: 2px solid var(--rule);
+  padding-left: .6rem;
+}
+
+/* The to-do list: the one note on the front page that is a list of what
+   has just happened here, so it is given the ruled edge of a pad. */
+.item.kind-todo {
+  max-width: 21rem;
+  padding: .55rem .75rem .35rem;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  box-shadow: 2px 3px 0 var(--rule-soft);
+}
+.item.kind-todo .md h2 {
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  margin: .5rem 0 .25rem;
+}
+.item.kind-todo .md h2:first-child { margin-top: 0; }
+.item.kind-todo .md ul { margin: 0; padding-left: 1.05rem; }
+.item.kind-todo .md li { font-size: .8rem; line-height: 1.45; margin-bottom: .15rem; }
