@@ -5719,10 +5719,17 @@
     var item = document.querySelector('.item[data-key="' + CSS.escape(SEA_PHOTO) + '"]');
     if (!item) return;
     item.classList.add('sea-photo');
-    if (secretOpen('ocean')) return;
 
     var hits = 0, timer = 0;
-    item.addEventListener('click', function () {
+
+    /* Capture, and preventDefault on every click. The viewer listens on the
+       document in the bubble phase and bails on a prevented event, so this
+       is the one photograph on the site that never opens -- which is the
+       whole point. A picture that showed you a big version of itself on the
+       first click would never be tried a second time, let alone a third. */
+    item.addEventListener('click', function (e) {
+      e.preventDefault();
+
       hits++;
       clearTimeout(timer);
       timer = setTimeout(function () { hits = 0; item.classList.remove('rippling'); }, 1800);
@@ -5733,8 +5740,10 @@
       }
       hits = 0;
       item.classList.remove('rippling');
-      openSecret('ocean', false);
-      toast('the sea');
+      if (!secretOpen('ocean')) {
+        openSecret('ocean', false);
+        toast('the sea');
+      }
       play('rustle');
       setTimeout(function () { go(new URL('THE OCEAN/', siteRoot()).href, true, 0); }, 420);
     }, true);
