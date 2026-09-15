@@ -1,11 +1,12 @@
 ## recently
-- the adam jewel tree is a mass now — black and brown bark, green leaves, limbs, roots
-- SUN LEVEL is a secret folder at the top level, and the room above the garden holds its files
-- put back resets everything: the still, the prickly pear, the tree, and every door
-- the still and the prickly pear stay out of the garden and the sun level
+- type anmoli anywhere on the site and the FAMILY folder appears
+- MOONLIGHT is its own place now — silver on black, stars, and tonight's real moon phase
+- a model rocket stands in it. fuel it 30 times and it flies you to THE MOON
+- on the moon the pogo guy jumps three times as high and hangs in the air
+- the ipod can be pulled bigger or smaller by its top-right corner. double-click to reset
 
 ## next
 - fill THE GARDEN with the real plant log
 - fill THE BAR with bars, bottles and recipes
-- put something in SUN LEVEL — it shows up in the room above the garden
+- put people in FAMILY, and something in MOON and SUN LEVEL
 - edit this file — drag it wherever

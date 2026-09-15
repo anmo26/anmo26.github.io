@@ -505,6 +505,72 @@
      their own touch scroll, and must never be hijacked into moving the
      whole player. */
 
+  /* ------------------------------------------------------------- SIZE
+     The player can be pulled bigger or smaller by its top-right corner,
+     the same way a photograph on the front page can, and it stays that
+     way. What changes is `zoom` on the player INSIDE the shell rather
+     than a transform on the shell itself: the shell's transform is
+     already spoken for -- it is what docks the thing and what hides it --
+     and two things fighting over one property is how furniture ends up
+     on the ceiling. The corner is top-right because the player lives in
+     the bottom-left of the window, so that is the corner with room.
+     ------------------------------------------------------------------- */
+
+  var IPOD_MIN = 0.55, IPOD_MAX = 2.2;
+
+  function buildGrip(shell, root) {
+    var zoom = +get('ipod.scale', 1) || 1;
+    zoom = Math.max(IPOD_MIN, Math.min(IPOD_MAX, zoom));
+
+    function apply(k) {
+      zoom = Math.max(IPOD_MIN, Math.min(IPOD_MAX, k));
+      root.style.zoom = zoom === 1 ? '' : String(zoom);
+      grip.setAttribute('title', 'drag to resize — ' + Math.round(zoom * 100) + '%');
+    }
+
+    var grip = el('button', 'ipod-grip');
+    grip.type = 'button';
+    grip.setAttribute('aria-label', 'resize the player');
+    shell.appendChild(grip);
+
+    var from = null;
+
+    grip.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      e.stopPropagation();                       // never the shell's drag
+      var w = root.getBoundingClientRect().width || 220;
+      from = { x: e.clientX, y: e.clientY, k: zoom, w: w / zoom };
+      shell.classList.add('is-sizing');
+      try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    grip.addEventListener('pointermove', function (e) {
+      if (!from) return;
+      // out to the right and up is bigger; the two axes add, so a diagonal
+      // pull does what a diagonal pull looks like it should do
+      var d = (e.clientX - from.x) - (e.clientY - from.y);
+      apply(from.k + d / from.w);
+    });
+
+    function done() {
+      if (!from) return;
+      from = null;
+      shell.classList.remove('is-sizing');
+      set('ipod.scale', zoom);
+    }
+    grip.addEventListener('pointerup', done);
+    grip.addEventListener('pointercancel', done);
+
+    // A double-click on the corner puts it back to life size.
+    grip.addEventListener('dblclick', function (e) {
+      e.stopPropagation();
+      apply(1);
+      set('ipod.scale', 1);
+    });
+
+    apply(zoom);
+  }
+
   function buildDrag(shell) {
     var DRAG_SLOP = 4;    // px of travel before a mouse press becomes a drag
     var TOUCH_SLOP = 8;   // a finger resting is never as still as a mouse
@@ -672,6 +738,7 @@
     restorePosition(shell);
     buildDock(shell, root);
     buildDrag(shell);
+    buildGrip(shell, root);
 
     // The "somewhere on the player itself" copy of the now-playing bars,
     // beside the ticker -- buildDock has already wrapped the ticker in

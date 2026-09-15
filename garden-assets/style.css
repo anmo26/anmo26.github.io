@@ -1119,6 +1119,8 @@ body.secret-library .item[data-secret="library"],
 body.secret-garden  .item[data-secret="garden"],
 body.secret-bar     .item[data-secret="bar"],
 body.secret-sun     .item[data-secret="sun"],
+body.secret-moon    .item[data-secret="moon"],
+body.secret-family  .item[data-secret="family"],
 body.secret-night   .item[data-secret="night"] {
   display: block;
   animation: secret-in .7s ease both;
@@ -1626,18 +1628,20 @@ body.roof-broken #roof { opacity: .9; animation: roof-crack .9s ease-out; }
    because there are only two places worth standing, the two of them are
    snap points and the page holds whichever one you arrive at. */
 
-html.sun-open { scroll-snap-type: y proximity; }
+html.sun-open, html.moon-open { scroll-snap-type: y proximity; }
 html.sun-open #sun-level,
-html.sun-open main { scroll-snap-align: start; }
+html.moon-open #moon-level,
+html.sun-open main, html.moon-open main { scroll-snap-align: start; }
 
 /* The clock and the plants are pinned to the top of the DOCUMENT, so a new
    storey above has to push them down with everything else. */
-body[data-scene="garden"].sun-open #corner { top: calc(100vh + 1.4rem); }
+body[data-scene].sun-open #corner,
+body[data-scene].moon-open #corner { top: calc(100vh + 1.4rem); }
 
 /* A floor is a floor. Without this the garden is shorter than the window,
    the page cannot scroll far enough for its own top to reach the top of
    the screen, and the magnet parks it half an inch short. */
-body[data-scene="garden"] main { min-height: 100vh; }
+body[data-scene] main { min-height: 100vh; }
 
 #sun-level {
   position: relative;
@@ -1700,9 +1704,9 @@ body[data-scene="garden"] main { min-height: 100vh; }
 
 /* Up here the garden is somewhere else. Its ground, its weather and its
    tree are pinned to the window, so they have to be told to stay downstairs. */
-body.on-sun #scene,
-body.on-sun #adam,
-body.on-sun #adam-hit {
+body.upstairs #scene,
+body.upstairs #adam,
+body.upstairs #adam-hit {
   opacity: 0;
   pointer-events: none;
   transition: opacity .35s ease;
@@ -1741,7 +1745,7 @@ body.on-sun #adam-hit {
 
 /* The garden and the storey above it are their own weather. The still and
    the prickly pear belong to the front of the site, not in here. */
-body[data-scene="garden"] #plants { display: none; }
+body[data-scene] #plants { display: none; }
 
 /* The tree is meant to loom, and a thing that looms gets in the way of
    reading. Rather than make it politer, the folder's own words carry a
@@ -1763,4 +1767,219 @@ body[data-scene="garden"] .item .meta {
 @media (prefers-reduced-motion: reduce) {
   #cow, #adam-art { transition: none; }
   .sun-art, body.roof-broken #roof { animation: none; }
+}
+
+/* ========================================================= MOONLIGHT
+   Silver on near-black. The moon is drawn at tonight's real phase (see
+   app.js), the stars are a fixed field rather than a twinkle, and a model
+   rocket stands on the ground underneath waiting to be fuelled.
+   ------------------------------------------------------------------------ */
+
+body[data-scene="moonlight"] {
+  --paper:      #0E1014;
+  --paper-deep: #090A0D;
+  --surface:    #171A21;
+  --surface-2:  #1E222B;
+  --ink:        #DFE4EC;
+  --ink-soft:   #A9B2C1;
+  --ink-faint:  #7E8899;
+  --ochre:      #C8CEDA;
+  --olive:      #9FB4C8;
+  --rule:       rgba(223, 228, 236, .18);
+  --rule-soft:  rgba(223, 228, 236, .08);
+
+  --silver:   #E8EDF5;
+  --silver-2: #AEB8C8;
+  --dim:      #2A3140;
+
+  background-image: linear-gradient(to bottom, #05060A 0%, #0E1014 55%, #141821 100%);
+  background-attachment: fixed;
+}
+body[data-scene="moonlight"] .item.kind-directory h3 a { color: #9FB4C8; }
+body[data-scene="moonlight"] .masthead h1,
+body[data-scene="moonlight"] .masthead p,
+body[data-scene="moonlight"] .item h3,
+body[data-scene="moonlight"] .item .meta {
+  text-shadow: 0 0 6px #0E1014, 0 0 14px #0E1014;
+}
+
+#scene.night { z-index: -1; }
+
+#nightsky {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 11px;
+  color: #67718A;
+}
+
+#moondisc {
+  position: absolute;
+  top: 19vh;
+  right: 6vw;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  filter: drop-shadow(0 0 18px rgba(232, 237, 245, .28));
+}
+#moondisc .lt { color: var(--silver); }
+#moondisc .dk { color: var(--dim); }
+
+#moonsays {
+  position: absolute;
+  top: calc(19vh + 16.5rem);
+  right: 6vw;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  color: var(--ink-faint);
+  text-align: right;
+}
+
+#regolith {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 44px;
+  height: 3px;
+  background: linear-gradient(to right,
+    transparent, rgba(174, 184, 200, .5) 20%, rgba(174, 184, 200, .5) 80%, transparent);
+}
+
+/* ------------------------------------------------------------- rocket */
+
+#pad {
+  position: fixed;
+  left: 16%;
+  bottom: 47px;
+  z-index: 3;
+  text-align: center;
+  transition: transform .04s linear;
+}
+#rocket {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+#rocket .me { color: var(--silver-2); }
+#rocket .fl { color: #FF9A3C; text-shadow: 0 0 8px rgba(255, 154, 60, .8); }
+
+#rocket-hit {
+  display: block;
+  margin: .35rem auto 0;
+  padding: .2rem .5rem;
+  border: 1px solid var(--rule);
+  background: rgba(255, 255, 255, .04);
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  cursor: pointer;
+}
+#rocket-hit:hover { color: var(--silver); border-color: var(--silver-2); }
+#rocket-hit:focus-visible { outline: 2px solid var(--silver-2); outline-offset: 2px; }
+#pad.fuelled #rocket-hit {
+  color: #FFB65C;
+  border-color: #FF9A3C;
+  animation: rocket-ready 1.3s ease-in-out infinite;
+}
+#pad.pumping #rocket { transform: translateY(1px); }
+#pad.flying { transition: none; }
+#pad.flying #rocket-hit { visibility: hidden; }
+
+@keyframes rocket-ready {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .45; }
+}
+
+/* ----------------------------------------------------------- the moon
+   The floor above the moonlight folder. Black sky, the earth hanging in
+   it, grey ground, and the MOON folder's own files standing on it. */
+
+#moon-level {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-image: linear-gradient(to bottom, #04050A 0%, #080A11 70%, #14161D 100%);
+  color: #DFE4EC;
+  overflow: hidden;
+}
+
+.moon-stars, .moon-ground, .moon-earth {
+  position: absolute;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.moon-stars {
+  top: 0; left: 0; right: 0;
+  font-size: 11px; line-height: 11px;
+  color: #6E7996;
+  overflow: hidden;
+}
+.moon-earth {
+  top: 12vh; right: 10vw;
+  font-size: 13px; line-height: 12px;
+  color: #6FA8DC;
+  filter: drop-shadow(0 0 14px rgba(111, 168, 220, .45));
+}
+.moon-ground {
+  left: 0; right: 0; bottom: 44px;
+  font-size: 12px; line-height: 12px;
+  color: #9AA3B2;
+  overflow: hidden;
+}
+
+.moon-inner { position: relative; z-index: 1; max-width: 34rem; padding: 0 1.5rem; }
+#moon-level h2 {
+  margin: 0 0 .8rem;
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  letter-spacing: .28em;
+  font-weight: 700;
+  color: #E8EDF5;
+}
+#moon-level .sun-wait { color: #8E98AA; }
+#moon-level .sun-down { color: #8E98AA; }
+
+.moon-bed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.6rem 2.2rem;
+  margin-top: 1.2rem;
+}
+.moon-bed .item { position: static !important; margin: 0; max-width: 11rem; }
+.moon-bed .item h3 { margin: 0; }
+.moon-bed .item h3 a { color: #CBD5E6; }
+.moon-bed .item .meta { color: #8E98AA; }
+.moon-bed .item .icon { height: 72px; }
+.moon-bed .item .md, .moon-bed .item pre, .moon-bed .item .read-more { display: none; }
+
+@media (max-width: 559px) {
+  #moondisc { top: 14vh; right: 3vw; font-size: 10px; line-height: 9px; }
+  #moonsays { top: calc(14vh + 9rem); right: 3vw; }
+  #pad { left: 8%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #pad, #pad.fuelled #rocket-hit { transition: none; animation: none; }
 }

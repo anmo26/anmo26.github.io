@@ -915,3 +915,48 @@ body.music-playing .ipod-eq-bar:nth-child(3) { animation-duration: .86s; animati
     transform: scaleY(1);   /* static and filled, not stuck bouncing */
   }
 }
+
+/* ------------------------------------------------------------- the grip
+   The corner you pull to resize the player. Top-right, because the player
+   sits in the bottom-left of the window and that is the corner with room
+   to grow into. See buildGrip in ipod.js. */
+
+.ipod-grip {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: nesw-resize;
+  touch-action: none;
+  z-index: 5;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.ipod-grip::before {
+  content: '';
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-top: 2px solid currentColor;
+  color: var(--ink-faint);
+  opacity: .45;
+  transition: opacity .15s ease, color .15s ease;
+}
+.ipod-shell:hover .ipod-grip::before { opacity: .9; }
+.ipod-grip:hover::before,
+.ipod-shell.is-sizing .ipod-grip::before { color: var(--ochre); opacity: 1; }
+.ipod-grip:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+
+.ipod-shell.is-sizing { transition: none; }
+
+/* A phone has no corner to catch and no room to spare. */
+@media (max-width: 559px) {
+  .ipod-grip { display: none; }
+}

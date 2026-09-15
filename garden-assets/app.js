@@ -1474,8 +1474,10 @@
        touch is preference -- the theme, the texture, the switches, the
        clock's format and the player are how this visitor likes the place,
        not something they have done to it. */
-    var WORLD = ['moved', 'sized', 'cactus', 'still', 'adam', 'sun',
-                 'secret.garden', 'secret.bar', 'secret.sun', 'secret.night'];
+    var WORLD = ['moved', 'sized', 'cactus', 'still', 'adam', 'sun', 'rocket',
+                 'ipod.scale',
+                 'secret.garden', 'secret.bar', 'secret.sun', 'secret.moon',
+                 'secret.family', 'secret.night'];
 
     reset.addEventListener('click', function () {
       WORLD.forEach(function (k) {
@@ -2195,6 +2197,8 @@
     garden:  'forever',
     bar:     'forever',
     sun:     'forever',
+    moon:    'forever',
+    family:  'forever',
     night:   'hour'
   };
 
@@ -2252,7 +2256,11 @@
 
   var SECRET_CLICKS = 20;
   var SECRET_WINDOW_MS = 9000;
-  var TYPED = 'anmoli';
+  // Typed on the keyboard, anywhere on the site. One opens a folder that
+  // cannot be stumbled on by any amount of clicking; the other brings the
+  // night round early, for showing somebody MOONLIGHT in the afternoon.
+  var CODES = { anmoli: 'family', moonrise: 'night' };
+  var CODE_LEN = 8;
 
   function mountSecrets() {
     applySecrets();
@@ -2277,7 +2285,7 @@
       }
     });
 
-    /* --- the keyboard: type the name and the moon comes out --- */
+    /* --- the keyboard: a word typed anywhere on the page --- */
     var typed = '';
     document.addEventListener('keydown', function (e) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2285,16 +2293,30 @@
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
       if (!/^[a-z]$/i.test(e.key)) return;
 
-      typed = (typed + e.key.toLowerCase()).slice(-TYPED.length);
-      if (typed !== TYPED) return;
-      typed = '';
-      // It answers even when it is already dark. A code that types back
-      // nothing is indistinguishable from a code that does not work.
-      var already = isNight();
-      sessionSet('secret.night', true);
-      applySecrets();
-      toast(already ? 'it is already night' : 'the moon is out');
-      play('rustle');
+      typed = (typed + e.key.toLowerCase()).slice(-CODE_LEN);
+
+      var word, key;
+      for (word in CODES) {
+        if (!CODES.hasOwnProperty(word)) continue;
+        if (typed.slice(-word.length) !== word) continue;
+        key = CODES[word];
+        typed = '';
+
+        if (key === 'night') {
+          // It answers even when it is already dark. A code that types back
+          // nothing is indistinguishable from a code that does not work.
+          var already = isNight();
+          sessionSet('secret.night', true);
+          applySecrets();
+          toast(already ? 'it is already night' : 'the moon is out');
+          play('rustle');
+          return;
+        }
+
+        if (secretOpen(key)) { toast('already open'); return; }
+        openSecret(key, true);
+        return;
+      }
     });
   }
 
@@ -2755,6 +2777,136 @@
     }, 520);
   }
 
+  /* ========================================================== MOONLIGHT
+     The other scene. Silver on near-black, a field of stars, and the moon
+     itself -- drawn at whatever phase it is actually at tonight, worked
+     out from the date rather than picked. Standing on the ground under it
+     is a model rocket, and the rocket is the way up: it is fuelled a click
+     at a time and then it goes, through the top of the page, and what is
+     above is the moon.
+     ------------------------------------------------------------------- */
+
+  var MOON_CH = 'anmoli.oO0@';
+
+  /**
+   * How far through the cycle the moon is tonight: 0 is new, 0.5 is full.
+   *
+   * Counted in synodic months from a new moon nobody disputes -- the one on
+   * the 6th of January 2000. Good to a couple of hours, which is a great
+   * deal better than a drawing that is simply always full.
+   */
+  function moonPhase(when) {
+    var SYNODIC = 29.530588853;
+    var KNOWN = Date.UTC(2000, 0, 6, 18, 14);
+    var days = ((when || new Date()).getTime() - KNOWN) / 86400000;
+    var age = days % SYNODIC;
+    if (age < 0) age += SYNODIC;
+    return age / SYNODIC;
+  }
+
+  function phaseName(p) {
+    if (p < 0.03 || p > 0.97) return 'new moon';
+    if (p < 0.22) return 'waxing crescent';
+    if (p < 0.28) return 'first quarter';
+    if (p < 0.47) return 'waxing gibbous';
+    if (p < 0.53) return 'full moon';
+    if (p < 0.72) return 'waning gibbous';
+    if (p < 0.78) return 'last quarter';
+    return 'waning crescent';
+  }
+
+  /**
+   * The disc, lit according to the phase.
+   *
+   * The terminator is an ellipse across the face: at a quarter it is a
+   * straight edge down the middle, and it bows out to the rim as the moon
+   * fills. cos(2*pi*phase) IS that ellipse's width, signed -- which is the
+   * whole trick, and why this is four lines rather than forty.
+   */
+  function moonDisc(phase, R) {
+    var k = Math.cos(2 * Math.PI * phase);
+    var waxing = phase < 0.5;
+    var rows = [], r, c, dy, span, nx, lit, ch, row;
+
+    for (r = -R; r <= R; r++) {
+      row = [];
+      dy = r / R;
+      span = Math.sqrt(Math.max(0, 1 - dy * dy));
+      for (c = -Math.round(R * 2); c <= Math.round(R * 2); c++) {
+        // twice as wide as tall: a character cell is about half as wide
+        nx = (c / 2) / R;
+        if (Math.abs(nx) > span || span < 0.02) { row.push(null); continue; }
+        lit = waxing ? (nx > k * span) : (nx < -k * span);
+        ch = MOON_CH.charAt(Math.floor(noise(r + R, c + R * 2, 41) * MOON_CH.length));
+        row.push({ ch: ch, lit: lit });
+      }
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function mountMoonlight() {
+    sceneOn = 'moonlight';
+
+    var scene = document.createElement('div');
+    scene.id = 'scene';
+    scene.className = 'night';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML =
+      '<pre id="nightsky"></pre>' +
+      '<pre id="moondisc"></pre>' +
+      '<p id="moonsays"></p>' +
+      '<div id="regolith"></div>';
+    document.body.appendChild(scene);
+
+    var sky = document.getElementById('nightsky');
+    var disc = document.getElementById('moondisc');
+    var says = document.getElementById('moonsays');
+
+    function paintSky() {
+      sky.textContent = starField(Math.ceil(window.innerWidth / 6.7),
+                                  Math.ceil(window.innerHeight / 11), 17);
+    }
+
+    function paintMoon() {
+      var p = moonPhase();
+      var R = window.innerWidth < 560 ? 7 : 11;
+      var rows = moonDisc(p, R);
+      var html = '', r, c, cell, run = '', runCls = null;
+
+      function flush() {
+        if (!run) return;
+        html += runCls ? '<span class="' + runCls + '">' + run + '</span>' : run;
+        run = '';
+      }
+      for (r = 0; r < rows.length; r++) {
+        for (c = 0; c < rows[r].length; c++) {
+          cell = rows[r][c];
+          var cls = !cell ? null : cell.lit ? 'lt' : 'dk';
+          if (cls !== runCls) { flush(); runCls = cls; }
+          run += cell ? cell.ch : ' ';
+        }
+        flush(); runCls = null;
+        if (r !== rows.length - 1) html += '\n';
+      }
+      disc.innerHTML = html;
+      disc.setAttribute('aria-label', phaseName(p));
+      says.textContent = phaseName(p) + '  ·  ' + Math.round(
+        (1 - Math.cos(2 * Math.PI * p)) / 2 * 100) + '% lit';
+    }
+
+    // the rocket, standing on the ground under all that
+    mountRocket(scene);
+
+    paintSky();
+    paintMoon();
+    window.addEventListener('resize', paintSky);
+    window.addEventListener('resize', paintMoon);
+    sceneTimers.push(setInterval(function () {
+      if (!document.hidden) paintMoon();          // the phase does move
+    }, 600000));
+  }
+
   /* ================================================================ POGO
      A man on a pogo stick who goes where you point. He is drawn in the
      same characters as everything else, he is never clickable (the page
@@ -2773,8 +2925,10 @@
   // Stood still, pouring something out of a can.
   var POGO_WATER = ['     ', '  o  ', ' /|\\_', ' [T]:', '  v  '];
 
-  // Set by mountPogo. The garden scene asks him to go and water the tree.
+  // Set by mountPogo. The garden scene asks him to go and water the tree,
+  // and tells him where he is standing -- the moon pulls a sixth as hard.
   var pogoErrand = function () {};
+  var pogoGravity = function () {};
 
   var GRAVITY = 2100;        // px per second per second
   var POGO_H = 56;           // how tall he is, near enough
@@ -2817,6 +2971,7 @@
     var energy = 0.25;
     var lastLand = null;       // how high the last landing was
     var errand = null;         // somewhere he has been asked to go
+    var grav = 1;              // 1 on earth, a sixth of that on the moon
     var ledges = [];
     var last = 0;
     var drawn = '';
@@ -2927,7 +3082,7 @@
       energy = Math.max(0, Math.min(1, energy));
 
       var prevY = y;
-      vy += GRAVITY * dt;
+      vy += GRAVITY * grav * dt;
       x += vx * dt;
       y += vy * dt;
 
@@ -3018,6 +3173,14 @@
       errand = { x: pageX, until: 0, ms: ms || 1200 };
     };
 
+    /* Same push off the stick, a sixth of the pull back down: he goes about
+       six times as high and hangs there on the way. Nothing else changes --
+       the ceiling clamp still keeps him on the screen, so the moon reads as
+       a slow enormous bound rather than a man vanishing upwards. */
+    pogoGravity = function (mult) {
+      grav = mult || 1;
+    };
+
     y = floor();
     targetY = y;
     lastLand = y;
@@ -3044,6 +3207,37 @@
   var TUFTS = 56;
   var TUFT_CHARS = ['.', ',', 'v', 'w', 'W'];
   var GROUND_H = 62;
+
+  /* A model rocket, the kind you build on a kitchen table. It is fuelled a
+     click at a time, it counts itself down, and then it goes -- and what it
+     does on the way is punch a hole in the sky the same way the tree went
+     through the ceiling. There is a floor above the sun. */
+  var ROCKET_FUEL = 30;
+
+  var ROCKET = [
+    '    /\\     ',
+    '   /  \\    ',
+    '   | an |  ',
+    '   | mo |  ',
+    '   | li |  ',
+    '   |____|  ',
+    '  /|    |\\ ',
+    ' / |____| \\'
+  ];
+  var EXHAUST = [
+    ['    \\/     ', '    ||     '],
+    ['    ||     ', '   \\||/    '],
+    ['   \\||/    ', '   //\\\\    ']
+  ];
+
+  // The earth, seen from up there.
+  var EARTH = [
+    '  .o0O0o.  ',
+    ' oO@anmo@O ',
+    'O@li26@0o@O',
+    ' O@0o@anmo ',
+    '  `o0O0o\'  '
+  ];
 
   var SUN_ART = [
     '   \\    |    /   ',
@@ -3073,14 +3267,263 @@
     return x - Math.floor(x);
   }
 
-  var sceneOn = false;
+  /** Where the site's root is, whatever path it is served from. */
+  function siteRoot() {
+    var back = document.querySelector('.masthead a[href]');
+    try { return new URL(back ? back.getAttribute('href') : '/', location.href); }
+    catch (e) { return new URL('/', location.href); }
+  }
+
+  /**
+   * The storey above is a ROOM, not a poster of a room.
+   *
+   * It was a panel with a link on it, which is a strange thing to climb a
+   * tree for. It holds the SUN LEVEL folder's own contents now -- the
+   * same files, the same icons, opening the same way -- fetched once and
+   * laid out in a row up here. The ids are dropped on the way in: they
+   * are this OTHER page's Finder coordinates, and the stylesheet in force
+   * is the garden's, which would scatter them by somebody else's map.
+   */
+  function fillRoom(bed, folder) {
+    if (!bed) return;
+    var url;
+    try { url = new URL(folder, siteRoot()).href; } catch (e) { return; }
+
+    fetch(url, { credentials: 'same-origin', headers: { accept: 'text/html' } })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (html) {
+        if (!html) throw new Error('no room');
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var incoming = doc.querySelector('main');
+        if (!incoming) throw new Error('no main');
+        absolutise(incoming, url);
+
+        var items = incoming.querySelectorAll('.plantbed > .item');
+        bed.innerHTML = '';
+        if (!items.length) {
+          bed.innerHTML = '<p class="sun-wait">nothing up here yet. ' +
+            'put something in the ' + folder.replace(/\/$/, '') + ' folder.</p>';
+          return;
+        }
+        var i, node;
+        for (i = 0; i < items.length; i++) {
+          node = document.importNode(items[i], true);
+          node.removeAttribute('id');
+          node.style.position = 'static';
+          bed.appendChild(node);
+        }
+      })
+      .catch(function () {
+        bed.innerHTML = '<p class="sun-wait">the room is up here, but the ' +
+          'site could not read it just now.</p>';
+      });
+  }
+
+  function starField(cols, rows, seed) {
+    var out = '', r, c, n;
+    for (r = 0; r < rows; r++) {
+      for (c = 0; c < cols; c++) {
+        n = noise(r, c, seed);
+        out += n > 0.988 ? '*' : n > 0.962 ? '.' : n > 0.955 ? '+' : ' ';
+      }
+      if (r !== rows - 1) out += '\n';
+    }
+    return out;
+  }
+
+  function openMoon(scrollUp) {
+    if (!document.getElementById('moon-level')) {
+      var moon = document.createElement('section');
+      moon.id = 'moon-level';
+      moon.innerHTML =
+        '<pre class="moon-stars" aria-hidden="true"></pre>' +
+        '<pre class="moon-earth" aria-hidden="true">' + EARTH.join('\n') + '</pre>' +
+        '<div class="moon-inner">' +
+          '<h2>THE MOON</h2>' +
+          '<div class="moon-bed"><p class="sun-wait">unpacking…</p></div>' +
+          '<p class="sun-down">&darr; moonlight is below</p>' +
+        '</div>' +
+        '<pre class="moon-ground" aria-hidden="true"></pre>';
+      document.body.insertBefore(moon, document.body.firstChild);
+
+      var added = moon.getBoundingClientRect().height;
+      window.scrollBy(0, added);
+
+      moon.querySelector('.moon-stars').textContent =
+        starField(Math.ceil(window.innerWidth / 6.7), 26, 21);
+
+      var g = moon.querySelector('.moon-ground');
+      var w = Math.ceil(window.innerWidth / 6.7), line = '', c;
+      for (c = 0; c < w; c++) {
+        line += noise(0, c, 31) > 0.9 ? 'o' : noise(0, c, 32) > 0.82 ? '.' : '_';
+      }
+      g.textContent = line + '\n' + '    \\  ' + new Array(w - 8).join(' ');
+      fillRoom(moon.querySelector('.moon-bed'), 'MOON/');
+    }
+
+    document.documentElement.classList.add('moon-open');
+    document.body.classList.add('moon-open');
+    openSecret('moon', false);
+    watchFloor();
+
+    if (!scrollUp) return;
+    setTimeout(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 300);
+  }
+
+  function mountRocket(host) {
+    if (!host) return;
+    var pad = document.createElement('div');
+    pad.id = 'pad';
+    pad.innerHTML = '<pre id="rocket" role="img" aria-label="a model rocket"></pre>' +
+      '<button id="rocket-hit" type="button"><span id="rocket-fuel"></span></button>';
+    host.appendChild(pad);
+
+    var art = pad.querySelector('#rocket');
+    var hit = pad.querySelector('#rocket-hit');
+    var gauge = pad.querySelector('#rocket-fuel');
+
+    var ship = get('rocket', null);
+    if (!ship || typeof ship.fuel !== 'number') ship = { fuel: 0, flown: false };
+
+    var frame = 0, flying = false, burning = false;
+
+    function draw(showFlame) {
+      var rows = ROCKET.slice();
+      if (showFlame) rows = rows.concat(EXHAUST[frame % EXHAUST.length]);
+      var html = '', r, c, ch, cls, run = '', runCls = null;
+
+      function flush() {
+        if (!run) return;
+        html += runCls ? '<span class="' + runCls + '">' + run + '</span>' : run;
+        run = '';
+      }
+      for (r = 0; r < rows.length; r++) {
+        for (c = 0; c < rows[r].length; c++) {
+          ch = rows[r].charAt(c);
+          cls = ch === ' ' ? null : (r >= ROCKET.length ? 'fl' : 'me');
+          if (cls !== runCls) { flush(); runCls = cls; }
+          run += ch;
+        }
+        flush(); runCls = null;
+        if (r !== rows.length - 1) html += '\n';
+      }
+      art.innerHTML = html;
+    }
+
+    function paint() {
+      draw(burning);
+      var left = ROCKET_FUEL - ship.fuel;
+      if (ship.flown) {
+        gauge.textContent = 'flown';
+        hit.setAttribute('title', 'it has been. the moon is above you.');
+      } else if (left > 0) {
+        var bars = Math.round(ship.fuel / ROCKET_FUEL * 10);
+        gauge.textContent = '[' + new Array(bars + 1).join('=') +
+                            new Array(10 - bars + 1).join('.') + ']';
+        hit.setAttribute('title', 'fuel the rocket — ' + left + ' to go');
+      } else {
+        gauge.textContent = 'LAUNCH';
+        hit.setAttribute('title', 'press to launch');
+      }
+      hit.setAttribute('aria-label', ship.flown ? 'the rocket has flown'
+        : left > 0 ? 'fuel the rocket, ' + ship.fuel + ' of ' + ROCKET_FUEL
+        : 'launch the rocket');
+      pad.classList.toggle('fuelled', left <= 0 && !ship.flown);
+    }
+
+    function press() {
+      if (flying) return;
+      if (ship.flown) { openMoon(true); return; }
+
+      if (ship.fuel < ROCKET_FUEL) {
+        ship.fuel++;
+        set('rocket', ship);
+        play('tick');
+        pad.classList.add('pumping');
+        setTimeout(function () { pad.classList.remove('pumping'); }, 180);
+        paint();
+        return;
+      }
+      launch();
+    }
+
+    function launch() {
+      flying = true;
+      burning = true;
+      var n = 5;
+
+      var count = setInterval(function () {
+        gauge.textContent = n > 0 ? String(n) : 'GO';
+        play('tick');
+        frame++;
+        draw(true);
+        if (n-- > 0) return;
+        clearInterval(count);
+        go();
+      }, 620);
+
+      function go() {
+        play('rustle');
+        pad.classList.add('flying');
+        var rise = 0;
+        var fly = setInterval(function () {
+          frame++;
+          rise += 26;
+          pad.style.transform = 'translateY(' + (-rise) + 'px)';
+          draw(true);
+          if (rise < window.innerHeight + 220) return;
+          clearInterval(fly);
+
+          ship.flown = true;
+          set('rocket', ship);
+          burning = false;
+          pad.classList.remove('flying');
+          pad.style.transform = '';
+          paint();
+          toast('the moon');
+          openMoon(true);
+        }, 40);
+      }
+    }
+
+    hit.addEventListener('click', press);
+    paint();
+    if (ship.flown) openMoon(false);
+  }
+
+  /* Which storey the visitor is standing on. A scene's ground, weather and
+     scenery are fixed to the window, so without this they ride upstairs
+     with you -- and the whole point of having broken through is that up
+     here is somewhere else. */
+  var floorWatch = null;
+
+  function watchFloor() {
+    if (floorWatch) return;
+    floorWatch = sceneScroll = function () {
+      var up = document.getElementById('moon-level') || document.getElementById('sun-level');
+      if (!up) return;
+      var h = up.getBoundingClientRect().height || window.innerHeight;
+      var upstairs = window.pageYOffset < h * 0.5;
+      document.body.classList.toggle('upstairs', upstairs);
+      document.body.classList.toggle('on-sun', upstairs && up.id === 'sun-level');
+      document.body.classList.toggle('on-moon', upstairs && up.id === 'moon-level');
+      // A sixth of a gee. He goes about six times as high and hangs there.
+      pogoGravity(upstairs && up.id === 'moon-level' ? 0.17 : 1);
+    };
+    window.addEventListener('scroll', floorWatch, { passive: true });
+    window.addEventListener('resize', floorWatch);
+    floorWatch();
+  }
+
+
+  var sceneOn = '';
   var sceneTimers = [];
   var sceneNodes = [];
   var sceneScroll = null;
 
   function unmountScene() {
     if (!sceneOn) return;
-    sceneOn = false;
+    sceneOn = '';
     sceneTimers.forEach(clearInterval);
     sceneTimers = [];
     sceneNodes.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
@@ -3091,7 +3534,13 @@
       sceneScroll = null;
     }
     document.body.classList.remove('on-sun');
-    ['scene', 'adam', 'adam-hit', 'sun-level'].forEach(function (id) {
+    document.body.classList.remove('on-moon');
+    document.body.classList.remove('upstairs');
+    document.documentElement.classList.remove('moon-open');
+    document.body.classList.remove('moon-open');
+    floorWatch = null;
+    pogoGravity(1);
+    ['scene', 'adam', 'adam-hit', 'sun-level', 'moon-level'].forEach(function (id) {
       var n = document.getElementById(id);
       if (n && n.parentNode) n.parentNode.removeChild(n);
     });
@@ -3100,14 +3549,15 @@
   }
 
   function syncScene() {
-    var want = document.body.getAttribute('data-scene') === 'garden';
-    if (want && !sceneOn) mountScene();
-    else if (!want && sceneOn) unmountScene();
+    var want = document.body.getAttribute('data-scene') || '';
+    if (want === sceneOn) return;
+    if (sceneOn) unmountScene();
+    if (want === 'garden') mountGarden();
+    else if (want === 'moonlight') mountMoonlight();
   }
 
-  function mountScene() {
-    if (sceneOn) return;
-    sceneOn = true;
+  function mountGarden() {
+    sceneOn = 'garden';
 
     var tree = get('adam', null);
     if (!tree || typeof tree.clicks !== 'number') tree = { clicks: 0 };
@@ -3404,58 +3854,6 @@
 
     /* ---------------------------------------------------- the sun level */
 
-    /** Where the site's root is, whatever path it is served from. */
-    function siteRoot() {
-      var back = document.querySelector('.masthead a[href]');
-      try { return new URL(back ? back.getAttribute('href') : '/', location.href); }
-      catch (e) { return new URL('/', location.href); }
-    }
-
-    /**
-     * The storey above is a ROOM, not a poster of a room.
-     *
-     * It was a panel with a link on it, which is a strange thing to climb a
-     * tree for. It holds the SUN LEVEL folder's own contents now -- the
-     * same files, the same icons, opening the same way -- fetched once and
-     * laid out in a row up here. The ids are dropped on the way in: they
-     * are this OTHER page's Finder coordinates, and the stylesheet in force
-     * is the garden's, which would scatter them by somebody else's map.
-     */
-    function fillSunRoom(bed) {
-      if (!bed) return;
-      var url;
-      try { url = new URL('SUN LEVEL/', siteRoot()).href; } catch (e) { return; }
-
-      fetch(url, { credentials: 'same-origin', headers: { accept: 'text/html' } })
-        .then(function (r) { return r.ok ? r.text() : null; })
-        .then(function (html) {
-          if (!html) throw new Error('no room');
-          var doc = new DOMParser().parseFromString(html, 'text/html');
-          var incoming = doc.querySelector('main');
-          if (!incoming) throw new Error('no main');
-          absolutise(incoming, url);
-
-          var items = incoming.querySelectorAll('.plantbed > .item');
-          bed.innerHTML = '';
-          if (!items.length) {
-            bed.innerHTML = '<p class="sun-wait">nothing up here yet. ' +
-              'put something in the SUN LEVEL folder.</p>';
-            return;
-          }
-          var i, node;
-          for (i = 0; i < items.length; i++) {
-            node = document.importNode(items[i], true);
-            node.removeAttribute('id');
-            node.style.position = 'static';
-            bed.appendChild(node);
-          }
-        })
-        .catch(function () {
-          bed.innerHTML = '<p class="sun-wait">the room is up here, but the ' +
-            'site could not read it just now.</p>';
-        });
-    }
-
     function openSun(scrollUp) {
       if (!document.getElementById('sun-level')) {
         var sun = document.createElement('section');
@@ -3470,7 +3868,7 @@
           '</div>' +
           '<pre class="sun-floor" aria-hidden="true"></pre>';
         document.body.insertBefore(sun, document.body.firstChild);
-        fillSunRoom(sun.querySelector('.sun-bed'));
+        fillRoom(sun.querySelector('.sun-bed'), 'SUN LEVEL/');
 
         // Inserting a whole storey above the page would otherwise yank
         // whatever is being read upwards by exactly that much.
@@ -3498,24 +3896,18 @@
       }, 300);
     }
 
-    /* Which storey the visitor is standing on. The garden's ground, its
-       tree and its weather are all fixed to the window, so without this
-       they ride up into the sun room with you -- and the whole point of
-       the tree having gone through the roof is that up here is somewhere
-       else. */
-    var floorWatch = null;
-    function watchFloor() {
-      if (floorWatch) return;
-      floorWatch = sceneScroll = function () {
-        var sun = document.getElementById('sun-level');
-        if (!sun) return;
-        var h = sun.getBoundingClientRect().height || window.innerHeight;
-        document.body.classList.toggle('on-sun', window.pageYOffset < h * 0.5);
-      };
-      window.addEventListener('scroll', floorWatch, { passive: true });
-      window.addEventListener('resize', floorWatch);
-      floorWatch();
-    }
+    /* ============================================================ ROCKET
+       A model rocket on a pad in the corner of the sun level. Fuel it a
+       click at a time, it counts itself down out loud, and then it goes --
+       up through the top of the storey the same way the tree came up
+       through the garden's ceiling. What is above the sun is the moon.
+       --------------------------------------------------------------- */
+
+    /* ============================================================== MOON
+       A third floor. Black sky, a field of stars that is the same field
+       every time, the earth hanging in it, grey ground, a flag, and the
+       MOON folder's own files standing on it. The man on the pogo stick
+       finds the gravity up here very agreeable. */
 
     /* ------------------------------------------------------------ start */
 
