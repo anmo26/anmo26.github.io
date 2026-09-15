@@ -5160,6 +5160,8 @@
     var r, c, dx, dy, d, n, edge;
     var leaf = opt.leaf || 'o&%e';
     var dense = opt.dense === undefined ? 0.46 : opt.dense;
+    // At its peak it does not merely flower, it is smothered.
+    var at = (opt.flowerAt || 0.80) - (opt.peak ? 0.22 : 0);
 
     for (r = Math.floor(cr - ry); r <= Math.ceil(cr + ry); r++) {
       for (c = Math.floor(cc - rx); c <= Math.ceil(cc + rx); c++) {
@@ -5173,7 +5175,7 @@
         n = noise(r + 40, c + 40, seed);
         if (d > dense && n < 0.42) continue;                    // a ragged edge
         edge = d > 0.66;
-        if (opt.flower && n > (opt.flowerAt || 0.80)) {
+        if (opt.flower && n > at) {
           put(g, r, c, opt.flowerCh || '*', 'fl');
           continue;
         }
@@ -5206,7 +5208,7 @@
     }
   }
 
-  function plantGrid(spec, t, real) {
+  function plantGrid(spec, t, real, peak) {
     var g = blank(PLANT_W, PLANT_H);
     var mid = Math.floor(PLANT_W / 2);
     var soil = PLANT_H - 1;
@@ -5244,6 +5246,13 @@
         if (real >= 0.85) {
           put(g, base - 4, mid + off - 1, '@', 'fl');
           put(g, base - 4, mid + off + 1, '@', 'fl');
+          if (peak) {
+            put(g, base - 4, mid + off, '@', 'fl');
+            put(g, base - 4, mid + off - 3, '@', 'fl');
+            put(g, base - 4, mid + off + 3, '@', 'fl');
+            put(g, base - 2, mid + off - 4, '@', 'fl');
+            put(g, base - 2, mid + off + 4, '@', 'fl');
+          }
         }
         base -= 3;
       }
@@ -5283,6 +5292,25 @@
       }
       if (real >= 0.999) {
         for (c = mid - wideCol; c <= mid + wideCol; c++) put(g, top - 1, c, '*', 'fl');
+        /* A saguaro in flower wears a ring of them right round the rim,
+           and every arm gets its own. It waited thirty-five years. */
+        if (peak) {
+          put(g, top - 1, mid - wideCol - 1, '*', 'fl');
+          put(g, top - 1, mid + wideCol + 1, '*', 'fl');
+          put(g, top - 2, mid, '*', 'fl');
+          put(g, top, mid - wideCol - 1, '*', 'fl');
+          put(g, top, mid + wideCol + 1, '*', 'fl');
+          if (t > 0.58) {
+            var aTop = soil - Math.round(h * 0.52) - Math.round(h * 0.3);
+            put(g, aTop - 1, mid - wideCol - 4, '*', 'fl');
+            put(g, aTop - 1, mid - wideCol - 3, '*', 'fl');
+          }
+          if (t > 0.74) {
+            var aTop2 = soil - Math.round(h * 0.68) - Math.round(h * 0.22);
+            put(g, aTop2 - 1, mid + wideCol + 2, '*', 'fl');
+            put(g, aTop2 - 1, mid + wideCol + 3, '*', 'fl');
+          }
+        }
       }
       return g;
     }
@@ -5305,6 +5333,15 @@
         }
       }
       put(g, top - 1, mid, '^', 'lg');
+      if (peak) {
+        // Cones. A cypress does not flower; this is what it has instead.
+        for (r = top + 2; r < soil - 1; r++) {
+          var dn = r - top;
+          var hf = Math.min(6, Math.round(dn * 0.55));
+          if (noise(r, 21, seed) > 0.52) put(g, r, mid - hf, 'o', 'fl');
+          if (noise(r, 23, seed) > 0.52) put(g, r, mid + hf, 'o', 'fl');
+        }
+      }
       flare(g, soil - 1, mid, h > 7);
       return g;
     }
@@ -5347,6 +5384,11 @@
         put(g, sc - 1, mid, ')', 'lg');
         put(g, sc - 1, mid + 1, '\\', 'lg');
         put(g, sc, mid + 2, 'o', 'fl');
+        if (peak) {
+          put(g, sc - 1, mid + 2, '*', 'fl');
+          put(g, sc, mid + 3, '*', 'fl');
+          put(g, sc + 1, mid + 2, '*', 'fl');
+        }
       }
       return g;
     }
@@ -5361,11 +5403,12 @@
       var cy = soil - 1 - stem - Math.round(1 + t * 2.5);
       foliage(g, cy, mid, 2.2 + t * 4.2, 1.4 + t * 2.6, seed,
               { leaf: 'oe&c', dense: 0.5, flower: real > 0.55 && real < 0.8,
-                flowerCh: '*', flowerAt: 0.88 });
+                flowerCh: '*', flowerAt: 0.88, peak: peak });
       if (real >= 0.78) {
-        var hang = [[-3, 1], [2, 2], [0, 3], [-1, 2], [4, 1]];
+        var hang = peak ? [[-3, 1], [2, 2], [0, 3], [-1, 2], [4, 1], [-5, 2], [3, 3], [1, 1]]
+                        : [[-3, 1], [2, 2], [0, 3], [-1, 2], [4, 1]];
         for (k = 0; k < hang.length; k++) {
-          if (k / hang.length > (real - 0.78) / 0.22 + 0.2) break;
+          if (!peak && k / hang.length > (real - 0.78) / 0.22 + 0.2) break;
           x = mid + hang[k][0];
           y = cy + Math.round(1.4 + t * 2.6) - 1 + hang[k][1];
           put(g, y, x, 'v', 'fr');
@@ -5392,8 +5435,8 @@
          and they are spaced far enough apart not to run into one another
          -- a row of merged brackets reads as a fence, not as mushrooms. */
       var spots = [4, 9, 14, 6, 12, 16];
-      var caps = Math.min(spots.length, Math.round(t * 6));
-      var big = t > 0.6;
+      var caps = peak ? spots.length : Math.min(spots.length, Math.round(t * 6));
+      var big = peak || t > 0.6;
       for (k = 0; k < caps; k++) {
         x = spots[k];
         put(g, soil - 4, x, '_', 'cp');
@@ -5435,7 +5478,7 @@
         if (noise(r, 7, seed) > 0.5) put(g, r, col + 1, 'e', 'lf');
         if (noise(r, 9, seed) > 0.72) put(g, r, col - 2, '&', 'lg');
         if (noise(r, 11, seed) > 0.72) put(g, r, col + 2, '&', 'lg');
-        if (real >= 0.8 && noise(r, 13, seed) > 0.78) {
+        if (real >= 0.8 && noise(r, 13, seed) > (peak ? 0.48 : 0.78)) {
           put(g, r, col + (noise(r, 15, seed) > 0.5 ? 3 : -3), '*', 'fl');
         }
         if (noise(r, 17, seed) > 0.68) col += noise(r, 19, seed) > 0.5 ? 1 : -1;
@@ -5475,7 +5518,8 @@
       dense: shape.dense,
       flower: real >= (spec.key === 'sassafras' ? 0.55 : 0.8),
       flowerCh: shape.fch,
-      flowerAt: shape.fat
+      flowerAt: shape.fat,
+      peak: peak
     });
     return g;
   }
@@ -5536,36 +5580,75 @@
    * -- so the pepper really is empty every winter and the garlic really is
    * out of the ground from July until the frost.
    */
+  /* What a plant does when it arrives.
+
+     Nothing here stands at its peak forever. Once it is fully grown it
+     holds -- in full flower, in fruit, at its very best and drawn that way
+     -- for a twentieth of however long it took to get there, and then it
+     goes back to being a seed and does the whole thing again. A pepper
+     stands for six days, a magnolia for six months, a saguaro for nearly
+     two years. The ratio is the same for all of them, which is why it
+     reads as one rule and not as thirteen exceptions.
+
+     Annuals keep their own seasons, which are already a round: the pepper
+     dies back for the winter, the garlic comes out of the ground in July,
+     the log rests between flushes. */
+  var PEAK_SHARE = 20;              // it holds for a twentieth of its growing
+
+  /* What each one is actually doing when it gets there. A cypress does not
+     flower, and what anybody goes to look at a sassafras for is October. */
+  var PEAK_WORD = {
+    pear: 'in fruit', bergamot: 'in fruit',
+    hinoki: 'in cone', sassafras: 'in autumn colour'
+  };
+
+  function ordinal(n) {
+    var tens = n % 100, ones = n % 10;
+    var suffix = (tens >= 11 && tens <= 13) ? 'th'
+               : ones === 1 ? 'st' : ones === 2 ? 'nd' : ones === 3 ? 'rd' : 'th';
+    return n + suffix;
+  }
+
   function plantState(spec, started, now, push) {
-    var age = now - started + (push || 0);
+    var age = Math.max(0, now - started + (push || 0));
 
     if (!spec.cycle) {
       var span = spec.days * DAY_MS;
-      var p = Math.max(0, Math.min(1, age / span));
+      var hold = span / PEAK_SHARE;
+      var round = span + hold;
+      var into = age % round;
+      var lap = Math.floor(age / round) + 1;
+      if (into < span) {
+        return {
+          t: into / span, ripe: false, glory: false, round: lap,
+          say: spanWords(span - into) + ' to go'
+        };
+      }
       return {
-        t: p, ripe: p >= 1, round: 0,
-        say: p >= 1 ? (spec.key === 'pear' || spec.key === 'bergamot' ? 'fruiting' : 'in flower')
-                    : spanWords(span - age) + ' to go'
+        t: 1, ripe: true, glory: true, round: lap,
+        say: (PEAK_WORD[spec.key] || 'in full flower') +
+             ' — ' + spanWords(round - into) + ' left'
       };
     }
 
     var cy = spec.cycle;
-    var round = cy.round * DAY_MS;
-    var into = ((age % round) + round) % round;
-    var day = into / DAY_MS;
-    var year = Math.floor(age / round) + 1;
+    var cround = cy.round * DAY_MS;
+    var cinto = ((age % cround) + cround) % cround;
+    var day = cinto / DAY_MS;
+    var year = Math.floor(age / cround) + 1;
 
     if (day < cy.grow) {
-      return { t: day / cy.grow, ripe: false, round: year,
+      return { t: day / cy.grow, ripe: false, glory: false, round: year,
                say: spanWords((cy.grow - day) * DAY_MS) + ' to crop' };
     }
     if (day < cy.grow + cy.hold) {
-      return { t: 1, ripe: true, round: year,
-               say: spec.form === 'fungus' ? 'flushing' : 'cropping' };
+      return { t: 1, ripe: true, glory: true, round: year,
+               say: (spec.form === 'fungus' ? 'flushing' : 'cropping') +
+                    ' — ' + spanWords((cy.grow + cy.hold - day) * DAY_MS) + ' left' };
     }
     var fade = (cy.round - cy.grow - cy.hold);
     var gone = (day - cy.grow - cy.hold) / fade;
-    return { t: Math.max(0, 1 - gone), ripe: false, round: year,
+    return { t: Math.max(0, 1 - gone), ripe: false, glory: false, round: year,
              say: spanWords((cy.round - day) * DAY_MS) + ' until it starts again' };
   }
 
@@ -5608,16 +5691,18 @@
       var st = plantState(b.spec, started, Date.now(), pushOf(b.spec.key));
       var age = spanWords(Date.now() - started + pushOf(b.spec.key));
       var pushed = pushOf(b.spec.key);
-      card.className = 'plant-card p-' + b.spec.key;
+      card.className = 'plant-card p-' + b.spec.key + (st.glory ? ' at-peak' : '');
       card.innerHTML =
         '<button class="plant-shut" type="button" aria-label="close">&times;</button>' +
         '<h3>' + b.spec.name + '</h3>' +
         '<p class="card-latin">' + b.spec.latin + '</p>' +
+        (st.glory ? '<p class="card-peak">at its peak — ' + st.say + '</p>' : '') +
         '<p class="card-about">' + b.spec.about + '</p>' +
         '<p class="card-smell"><b>what it smells like</b> ' + b.spec.smell + '</p>' +
         '<p class="card-age">' +
           (b.spec.cycle ? 'season ' + st.round + ' in this glasshouse'
-                        : 'in the ground ' + age) +
+                        : 'in the ground ' + age +
+                          (st.round > 1 ? '  ·  its ' + ordinal(st.round) + ' time round' : '')) +
           '  ·  ' + st.say +
           (pushed ? '  ·  hurried along by ' + spanWords(pushed) : '') + '</p>';
       card.hidden = false;
@@ -5677,9 +5762,10 @@
         // The bar and the words stay honest; only the drawing is bent, so
         // that a seed is a visible seedling inside a month instead of being
         // a full stop for its first seventy days.
-        b.art.innerHTML = gridHtml(plantGrid(b.spec, Math.pow(st.t, 0.42), st.t));
+        b.art.innerHTML = gridHtml(plantGrid(b.spec, Math.pow(st.t, 0.42), st.t, st.glory));
         b.fill.style.width = (st.t * 100).toFixed(2) + '%';
         b.el.classList.toggle('grown', st.ripe);
+        b.el.classList.toggle('glory', !!st.glory);
         b.when.textContent = st.say;
         if (st.ripe) anyBloom = true;
       });
@@ -5724,8 +5810,9 @@
     house.className = 'glasshouse';
     house.innerHTML = '<h2>the glasshouse</h2>' +
       '<p class="glass-say">thirteen plants, in the ground, growing at the speed ' +
-      'they really grow at. three of them are annuals and go round every year. ' +
-      'press one and it will tell you about itself.</p>';
+      'they really grow at. every one of them holds at its peak for a twentieth ' +
+      'of the time it took to get there, and then starts again. press one and ' +
+      'it will tell you about itself.</p>';
     var main = document.querySelector('main');
     if (main) main.appendChild(house);
     sceneNodes.push(house);

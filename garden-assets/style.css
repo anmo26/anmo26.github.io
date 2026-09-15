@@ -2211,8 +2211,11 @@ body[data-scene="moonlight"] .item .meta {
 .p-bergamot  .plant-art .fl { color: #D8D44A; }
 .p-pear      .plant-art .fl { color: #C6402F; }
 .p-sassafras .plant-art .fl { color: #C98A2E; }
-.p-saguaro   .plant-art .fl { color: #FFF8E8; }
-.p-garlic    .plant-art .fl { color: #E9E4D2; }
+/* These two flower against the pale sky of the glasshouse rather than
+   against their own leaves, so a white flower would simply not be there. */
+.p-saguaro   .plant-art .fl { color: #C08A24; }
+.p-garlic    .plant-art .fl { color: #9C8F63; }
+.p-hinoki    .plant-art .fl { color: #7A5A2A; }
 .p-pepper    .plant-art .fr { color: #D83A20; }
 .p-hinoki    .plant-art .lf { color: #2A5E46; }
 .p-hinoki    .plant-art .lg { color: #4A8466; }
@@ -2840,3 +2843,52 @@ body.music-docked #bin { right: 16px; }
   animation: arming 1s ease-in-out infinite;
 }
 @keyframes arming { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+
+/* A plant at its peak. It only stands like this for a twentieth of the
+   time it took to get here, so it is worth making it look like something
+   that is happening rather than something that simply is. */
+.plant.glory {
+  border-color: rgba(154, 107, 18, .35);
+  background: rgba(255, 250, 232, .55);
+  box-shadow: 0 0 0 1px rgba(255, 226, 140, .35), 0 6px 26px -10px rgba(154, 107, 18, .5);
+}
+.plant.glory .plant-art .fl,
+.plant.glory .plant-art .fr {
+  animation: in-flower 3.4s ease-in-out infinite;
+  text-shadow: 0 0 7px currentColor;
+}
+.plant.glory .plant-art .fr { animation-duration: 4.6s; }
+@keyframes in-flower {
+  0%, 100% { opacity: .82; }
+  50%      { opacity: 1; }
+}
+.plant.glory .plant-name { letter-spacing: .12em; }
+.plant.glory .plant-when { opacity: .95; font-weight: 700; }
+.plant.glory .plant-bar i { background: #D9A441; }
+
+/* A ring of light behind it, very faint, breathing. */
+.plant.glory .plant-pot {
+  background: radial-gradient(ellipse at 50% 62%,
+              rgba(255, 233, 168, .55) 0%, rgba(255, 233, 168, 0) 68%);
+  animation: peak-glow 6s ease-in-out infinite;
+}
+@keyframes peak-glow {
+  0%, 100% { opacity: .75; }
+  50%      { opacity: 1; }
+}
+
+.plant-card.at-peak { border-color: rgba(154, 107, 18, .45); }
+.card-peak {
+  margin: 0 0 .8rem !important;
+  font-family: var(--mono) !important;
+  font-size: .6rem !important;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ochre) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plant.glory .plant-art .fl, .plant.glory .plant-art .fr,
+  .plant.glory .plant-pot { animation: none !important; }
+}

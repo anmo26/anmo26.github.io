@@ -1,10 +1,8 @@
 ## recently
-- there is a bin in the corner of every page. drag anything in and it goes to the bottom crypt
-- in the garden you can still shove things off the side of the screen. neither needs the crypt found first
-- put back is now FULL RESET — it forgets everything, shelf and glasshouse included. it asks twice
-- tidy up stays the gentle one: this page, back where finder has it
-- the plant and the still are one switch now. the fit switch is gone
-- a shelf switch in the taskbar hides the shelf altogether
+- nothing in the glasshouse stands at its peak forever. it holds for a twentieth of however long it took to grow, then starts again from seed
+- at its peak a plant is smothered — the prickly pear covered in tuna, the saguaro wearing a ring of flowers, the hinoki in cone — and the whole card lights up
+- a pepper holds for six days, a magnolia for six months, a saguaro for nearly two years
+- the card tells you how long it has left up there, and how many times it has been round
 
 ## next
 - fill THE GARDEN with the real plant log
