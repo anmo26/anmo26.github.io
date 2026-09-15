@@ -1474,7 +1474,7 @@
        touch is preference -- the theme, the texture, the switches, the
        clock's format and the player are how this visitor likes the place,
        not something they have done to it. */
-    var WORLD = ['moved', 'sized', 'cactus', 'still', 'adam',
+    var WORLD = ['moved', 'sized', 'cactus', 'still', 'adam', 'sun',
                  'secret.garden', 'secret.bar', 'secret.sun', 'secret.night'];
 
     reset.addEventListener('click', function () {
@@ -3076,6 +3076,7 @@
   var sceneOn = false;
   var sceneTimers = [];
   var sceneNodes = [];
+  var sceneScroll = null;
 
   function unmountScene() {
     if (!sceneOn) return;
@@ -3084,6 +3085,12 @@
     sceneTimers = [];
     sceneNodes.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
     sceneNodes = [];
+    if (sceneScroll) {
+      window.removeEventListener('scroll', sceneScroll);
+      window.removeEventListener('resize', sceneScroll);
+      sceneScroll = null;
+    }
+    document.body.classList.remove('on-sun');
     ['scene', 'adam', 'adam-hit', 'sun-level'].forEach(function (id) {
       var n = document.getElementById(id);
       if (n && n.parentNode) n.parentNode.removeChild(n);
@@ -3459,6 +3466,7 @@
               SUN_ART.join('\n') + '</pre>' +
             '<h2>SUN LEVEL</h2>' +
             '<div class="sun-bed"><p class="sun-wait">opening the room…</p></div>' +
+            '<p class="sun-down">&darr; the garden is below</p>' +
           '</div>' +
           '<pre class="sun-floor" aria-hidden="true"></pre>';
         document.body.insertBefore(sun, document.body.firstChild);
@@ -3482,11 +3490,31 @@
       document.documentElement.classList.add('sun-open');
       document.body.classList.add('sun-open');
       openSecret('sun', false);
+      watchFloor();
 
       if (!scrollUp) return;
       setTimeout(function () {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 300);
+    }
+
+    /* Which storey the visitor is standing on. The garden's ground, its
+       tree and its weather are all fixed to the window, so without this
+       they ride up into the sun room with you -- and the whole point of
+       the tree having gone through the roof is that up here is somewhere
+       else. */
+    var floorWatch = null;
+    function watchFloor() {
+      if (floorWatch) return;
+      floorWatch = sceneScroll = function () {
+        var sun = document.getElementById('sun-level');
+        if (!sun) return;
+        var h = sun.getBoundingClientRect().height || window.innerHeight;
+        document.body.classList.toggle('on-sun', window.pageYOffset < h * 0.5);
+      };
+      window.addEventListener('scroll', floorWatch, { passive: true });
+      window.addEventListener('resize', floorWatch);
+      floorWatch();
     }
 
     /* ------------------------------------------------------------ start */

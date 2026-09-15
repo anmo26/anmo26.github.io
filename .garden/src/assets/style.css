@@ -1603,6 +1603,7 @@ body.roof-broken #roof { opacity: .9; animation: roof-crack .9s ease-out; }
 }
 #adam-art {
   margin: 0;
+  opacity: .82;
   white-space: pre;
   font-family: var(--mono);
   font-size: 11px;
@@ -1697,6 +1698,24 @@ body[data-scene="garden"] main { min-height: 100vh; }
 .sun-bed .item .icon { height: 72px; }
 .sun-bed .item .md, .sun-bed .item pre, .sun-bed .item .read-more { display: none; }
 
+/* Up here the garden is somewhere else. Its ground, its weather and its
+   tree are pinned to the window, so they have to be told to stay downstairs. */
+body.on-sun #scene,
+body.on-sun #adam,
+body.on-sun #adam-hit {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+}
+
+.sun-down {
+  margin-top: 1.6rem !important;
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .1em;
+  color: #8A6A2A;
+}
+
 .sun-wait {
   font-family: var(--mono);
   font-size: .72rem;
@@ -1723,6 +1742,16 @@ body[data-scene="garden"] main { min-height: 100vh; }
 /* The garden and the storey above it are their own weather. The still and
    the prickly pear belong to the front of the site, not in here. */
 body[data-scene="garden"] #plants { display: none; }
+
+/* The tree is meant to loom, and a thing that looms gets in the way of
+   reading. Rather than make it politer, the folder's own words carry a
+   little of the sky with them. */
+body[data-scene="garden"] .masthead h1,
+body[data-scene="garden"] .masthead p,
+body[data-scene="garden"] .item h3,
+body[data-scene="garden"] .item .meta {
+  text-shadow: 0 0 5px var(--paper), 0 0 10px var(--paper), 0 0 16px var(--paper);
+}
 
 /* A phone has no room for a cow and a tree beside the folder. The ground
    and the sky stay; the livestock does not. */
