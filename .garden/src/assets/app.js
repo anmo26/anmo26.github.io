@@ -1752,6 +1752,11 @@
 
         if (doc.title) document.title = doc.title;
 
+        // The scene lives on <body>, which a page swap does not replace.
+        var scene = doc.body && doc.body.getAttribute('data-scene');
+        if (scene) document.body.setAttribute('data-scene', scene);
+        else document.body.removeAttribute('data-scene');
+
         bootPage();
         window.scrollTo(0, scrollY || 0);
         document.body.classList.remove('is-navigating');
@@ -2040,6 +2045,7 @@
      ------------------------------------------------------------------- */
 
   function bootPage() {
+    syncScene();            // a folder can be a place; see GARDEN SCENE
     cactusVisit();          // a new page is a new chance to water the plant
     mountItems();
     mountGuestbook();
@@ -2564,6 +2570,10 @@
     '  =====   |_|'
   ];
 
+  // What the still pours, and the empty glass it leaves once it is drunk.
+  var DRINK      = ['\\~~~/', ' \\~/ ', '  |  ', ' _|_ '];
+  var DRINK_GONE = ['\\   /', ' \\ / ', '  |  ', ' _|_ '];
+
   var BOIL  = ['~~~', '-~-', '~-~', '-~~'];
   var FLAME = ['|||', ')|(', '(|)', '|)|'];
   var JAR   = [' ', '.', ':', '='];
@@ -2580,6 +2590,7 @@
     set('still', run);
 
     var bellows = document.getElementById('bellows');
+    var drink = document.getElementById('drink');
     var frame = 0;
     var squeezed = 0;
 
@@ -2622,6 +2633,7 @@
       host.innerHTML = html;
 
       paintBellows(done);
+      paintDrink(done);
       if (fill) fill.style.width = Math.round(p * 100) + '%';
       shell.classList.toggle('done', done);
       if (say) say.textContent = done ? 'ready' : 'distilling';
@@ -2630,8 +2642,41 @@
         ? 'the run is finished'
         : 'running — ' + Math.round(p * 100) + '% through');
 
-      if (done && !secretOpen('bar')) openSecret('bar', true);
       return done;
+    }
+
+    /* A finished run pours a drink. The drink is the door -- it is not
+       poured and drunk in the same motion, because the whole point of
+       having waited is getting to pick the glass up yourself. */
+    function paintDrink(done) {
+      if (!drink) return;
+      drink.hidden = !done;
+      if (!done) return;
+      if (drink.innerHTML) return;               // already poured
+
+      var rows = secretOpen('bar') ? DRINK_GONE : DRINK;
+      var html = '', r, c, ch;
+      for (r = 0; r < rows.length; r++) {
+        for (c = 0; c < rows[r].length; c++) {
+          ch = rows[r].charAt(c);
+          if (ch === ' ') { html += ' '; continue; }
+          html += '<span class="' + (ch === '~' ? 'fr' : 'me') + '">' + ch + '</span>';
+        }
+        html += r === rows.length - 1 ? '' : '\n';
+      }
+      drink.innerHTML = html;
+      drink.setAttribute('title', secretOpen('bar')
+        ? 'the bar is open'
+        : 'a finished drink. pick it up.');
+      drink.classList.toggle('ready', !secretOpen('bar'));
+    }
+
+    function takeDrink() {
+      if (progress() < 1 || secretOpen('bar')) return;
+      openSecret('bar', true);
+      drink.innerHTML = '';
+      paintDrink(true);
+      if (say) say.textContent = 'cheers';
     }
 
     function paintBellows(done) {
@@ -2673,6 +2718,15 @@
       }, 220);
     }
 
+    if (drink) {
+      drink.setAttribute('role', 'button');
+      drink.setAttribute('tabindex', '0');
+      drink.addEventListener('click', function (e) { e.stopPropagation(); takeDrink(); });
+      drink.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); takeDrink(); }
+      });
+    }
+
     if (bellows) {
       bellows.setAttribute('title', 'squeeze the bellows — it speeds the run up');
       bellows.setAttribute('role', 'button');
@@ -2708,6 +2762,11 @@
   var POGO_UP = [' \\o/ ', '  |  ', ' [T] ', '  |  ', '  v  '];
   var POGO_DOWN = ['     ', '  o  ', ' /|\\ ', ' [T] ', '  v  '];
   var POGO_SLEEP = ['  z  ', ' z   ', '  o  ', ' /|\\ ', ' [=] '];
+  // Stood still, pouring something out of a can.
+  var POGO_WATER = ['     ', '  o  ', ' /|\\_', ' [T]:', '  v  '];
+
+  // Set by mountPogo. The garden scene asks him to go and water the tree.
+  var pogoErrand = function () {};
 
   var GRAVITY = 2100;        // px per second per second
   var POGO_H = 56;           // how tall he is, near enough
@@ -2722,8 +2781,8 @@
      and winds down when nothing has moved. So he builds to full height over
      a few seconds rather than springing to it, and settles lower and lower
      into sleep rather than stopping mid-air. */
-  var HOP_MIN = Math.sqrt(2 * GRAVITY * 14);           // a tick over on the spot
-  var HOP_MAX = Math.sqrt(2 * GRAVITY * POGO_H * 6);   // the ceiling: six of him
+  var HOP_MIN = Math.sqrt(2 * GRAVITY * 12);           // a tick over on the spot
+  var HOP_MAX = Math.sqrt(2 * GRAVITY * POGO_H * 3);   // the ceiling: three of him
   var ENERGY_UP = 0.28;      // per second, winding up
   var ENERGY_DOWN = 0.24;    // per second, winding down
   var RUN = 300;             // top speed along the ground
@@ -2748,6 +2807,8 @@
     var lastPointed = 0;
     var asleep = false;
     var energy = 0.25;
+    var lastLand = null;       // how high the last landing was
+    var errand = null;         // somewhere he has been asked to go
     var ledges = [];
     var last = 0;
     var drawn = '';
@@ -2802,14 +2863,30 @@
     function sprite(name) {
       if (drawn === name) return;
       drawn = name;
-      var rows = name === 'sleep' ? POGO_SLEEP : name === 'down' ? POGO_DOWN : POGO_UP;
+      var rows = name === 'sleep' ? POGO_SLEEP : name === 'water' ? POGO_WATER
+               : name === 'down' ? POGO_DOWN : POGO_UP;
       art.textContent = rows.join('\n');
       man.classList.toggle('asleep', name === 'sleep');
     }
 
     function step(dt) {
-      var wantX = targetX;
+      /* An errand overrides the cursor: somebody has asked him to go and
+         stand somewhere and do something. He walks over, stops bouncing,
+         does it, and then goes back to following the pointer. */
+      if (errand && errand.until && performance.now() > errand.until) {
+        errand = null;
+        lastPointed = performance.now();
+        energy = 0.2;
+      }
+
+      var wantX = errand ? errand.x : targetX;
       var reach = wantX - x;
+
+      if (errand) {
+        // no wind-down while he is working
+        lastPointed = performance.now();
+        asleep = false;
+      }
 
       if (asleep) {
         vx = 0;
@@ -2828,7 +2905,14 @@
 
       /* Somewhere to be means wind up; nothing moving means wind down. */
       var idle = performance.now() - lastPointed > IDLE_AFTER;
-      var wantsHeight = (y - targetY) > POGO_H || Math.abs(reach) > 160;
+      /* Measured from the ground he took off from, not from wherever he
+         happens to be in the arc. Read off his live height, this said "yes,
+         climb" near the floor and "no, settle" at the top of every single
+         hop, and the two cancelled each other out at about a third of his
+         full height -- which is why he could never quite get up onto a
+         ledge he was plainly aiming at. */
+      var base = lastLand === null ? y : lastLand;
+      var wantsHeight = (base - targetY) > POGO_H * 0.5 || Math.abs(reach) > 160;
       var goal = idle ? 0 : (wantsHeight ? 1 : 0.2);
       var rate = goal > energy ? ENERGY_UP : ENERGY_DOWN;
       energy += Math.max(-rate * dt, Math.min(rate * dt, goal - energy));
@@ -2854,7 +2938,27 @@
         var l = standingOn(x, y, prevY);
         if (l) {
           y = l.top;
-          if (asleep) { vy = 0; }
+          /* A pogo stick does not get something for nothing. Landing higher
+             than he took off from means the spring gave up its height to
+             the climb, so the next few bounces are short and he has to work
+             back up -- which is why he now steps up a stack of folders
+             instead of arriving at the top in one impossible leap. Coming
+             down off something is the opposite: he arrives with all that
+             height as speed, and the stick gives it straight back. */
+          if (lastLand !== null) {
+            var rise = lastLand - y;                       // + went up, - came down
+            if (rise > 6) energy = Math.max(0.04, energy - Math.min(0.75, rise / (POGO_H * 2.2)));
+            else if (rise < -POGO_H * 0.75) energy = Math.min(1, energy + Math.min(0.6, -rise / (POGO_H * 3)));
+          }
+          lastLand = y;
+
+          if (errand && Math.abs(x - errand.x) < 26) {
+            // Arrived at the thing he was asked to go and do. He stands.
+            if (!errand.until) errand.until = performance.now() + errand.ms;
+            vy = 0;
+            vx = 0;
+          }
+          else if (asleep) { vy = 0; }
           else if (energy < 0.05 && Math.abs(reach) < 48) {
             // Nothing left in him and nowhere to be: this is where he stops,
             // on the ground, mid-stride -- not frozen in the air.
@@ -2869,7 +2973,8 @@
       // Fallen off the bottom of everything: put him back on the floor.
       if (y > floor() + 400) { y = floor(); vy = 0; x = targetX; }
 
-      if (asleep) sprite('sleep');
+      if (errand && errand.until) sprite('water');
+      else if (asleep) sprite('sleep');
       else sprite(vy < -40 ? 'up' : 'down');
 
       man.style.transform = 'translate3d(' + Math.round(x - W / 2) + 'px,' +
@@ -2901,9 +3006,365 @@
     setInterval(readLedges, 400);
     window.addEventListener('resize', readLedges);
 
+    pogoErrand = function (pageX, ms) {
+      errand = { x: pageX, until: 0, ms: ms || 1200 };
+    };
+
     y = floor();
     targetY = y;
+    lastLand = y;
     requestAnimationFrame(frame);
+  }
+
+
+  /* ========================================================= GARDEN SCENE
+     A folder can be a place instead of a listing. Put the word "garden" in
+     a scene.txt and the page it sits in gets ground under it, weather over
+     it, a cow, and a seedling.
+
+     The seedling is the Adam Jewel Tree. Two hundred and fifty waterings
+     and it goes through the roof -- literally: the ceiling of the page
+     cracks and there is another floor above this one, the SUN LEVEL, which
+     you can scroll up into and which holds you there until you ask to come
+     back down.
+
+     None of this is the folder's contents. The folder's contents are still
+     the folder's contents, sitting on the grass.
+     ------------------------------------------------------------------- */
+
+  var TREE_CLICKS = 250;
+  var TUFTS = 56;
+  var TUFT_CHARS = ['.', ',', 'v', 'w', 'W'];
+  var GROUND_H = 62;
+
+  var SUN_ART = [
+    '   \\    |    /   ',
+    '    \\ .----. /   ',
+    ' -- ( anmo ) --  ',
+    '    / \'----\' \\   ',
+    '   /    |    \\   '
+  ];
+
+  // The canopy, by how tall the trunk under it has got.
+  var CANOPY = [
+    ['i'],
+    ['\\|/'],
+    ['ooo', '\\|/'],
+    ['ooooo', ' ooo ', ' \\|/ '],
+    ['  ooooo  ', ' ooooooo ', 'ooooooooo', '  \\|/  '],
+    ['   ooooooo   ', ' ooooooooooo ', 'ooooooooooooo', ' ooooooooooo ', '    \\|/    ']
+  ];
+  var CANOPY_AT = [0, 2, 5, 12, 28, 46];
+
+  var TREE_W = 17;
+
+  function centre(str, w) {
+    var pad = Math.max(0, Math.floor((w - str.length) / 2));
+    var out = new Array(pad + 1).join(' ') + str;
+    while (out.length < w) out += ' ';
+    return out;
+  }
+
+  var sceneOn = false;
+  var sceneTimers = [];
+  var sceneNodes = [];
+
+  function unmountScene() {
+    if (!sceneOn) return;
+    sceneOn = false;
+    sceneTimers.forEach(clearInterval);
+    sceneTimers = [];
+    sceneNodes.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+    sceneNodes = [];
+    ['scene', 'adam', 'adam-hit', 'sun-level'].forEach(function (id) {
+      var n = document.getElementById(id);
+      if (n && n.parentNode) n.parentNode.removeChild(n);
+    });
+    document.documentElement.classList.remove('sun-open');
+    document.body.classList.remove('sun-open', 'roof-broken');
+  }
+
+  function syncScene() {
+    var want = document.body.getAttribute('data-scene') === 'garden';
+    if (want && !sceneOn) mountScene();
+    else if (!want && sceneOn) unmountScene();
+  }
+
+  function mountScene() {
+    if (sceneOn) return;
+    sceneOn = true;
+
+    var tree = get('adam', null);
+    if (!tree || typeof tree.clicks !== 'number') tree = { clicks: 0 };
+
+    /* ------------------------------------------------------------ build */
+
+    var scene = document.createElement('div');
+    scene.id = 'scene';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML =
+      '<pre id="roof"></pre>' +
+      '<div id="ground"><div id="grass"></div><pre id="cow"></pre></div>';
+    document.body.appendChild(scene);
+
+    /* The tree and the thing you press are two elements, not one.
+       A grown beanstalk is a column the whole height of the window, and a
+       column that swallows clicks would put a dead stripe down the middle
+       of the folder. So the drawing takes no pointer events at all and the
+       watering is a button at the foot of it, which is where anybody would
+       reach for a watering can anyway. */
+    var adam = document.createElement('div');
+    adam.id = 'adam';
+    adam.setAttribute('aria-hidden', 'true');
+    adam.innerHTML = '<pre id="adam-art"></pre>';
+    document.body.appendChild(adam);
+
+    var hit = document.createElement('button');
+    hit.id = 'adam-hit';
+    hit.type = 'button';
+    hit.innerHTML = '<span id="adam-count"></span>';
+    document.body.appendChild(hit);
+    sceneNodes.push(hit);
+
+    var art = document.getElementById('adam-art');
+    var count = document.getElementById('adam-count');
+    var grass = document.getElementById('grass');
+    var cow = document.getElementById('cow');
+    var roof = document.getElementById('roof');
+
+    /* ------------------------------------------------------------ grass
+       Tufts on a line, each one growing on its own. The cow eats them and
+       they come back, which is the whole of the arrangement. */
+
+    var tufts = [];
+    var i;
+    for (i = 0; i < TUFTS; i++) {
+      var t = document.createElement('i');
+      t.style.left = (i / (TUFTS - 1) * 100) + '%';
+      t.textContent = TUFT_CHARS[0];
+      grass.appendChild(t);
+      tufts.push({ el: t, h: Math.floor(Math.random() * 3) });
+    }
+
+    function paintTuft(t) { t.el.textContent = TUFT_CHARS[t.h]; }
+    tufts.forEach(paintTuft);
+
+    sceneTimers.push(setInterval(function () {
+      if (document.hidden) return;
+      // A few blades at a time, so it is never obviously a timer.
+      for (var n = 0; n < 3; n++) {
+        var t = tufts[Math.floor(Math.random() * tufts.length)];
+        if (t.h < TUFT_CHARS.length - 1) { t.h++; paintTuft(t); }
+      }
+    }, 2600));
+
+    /* -------------------------------------------------------------- cow
+       Walks, stops, puts her head down, eats whatever is in front of her,
+       and wanders off again. She is never in a hurry and she never leaves. */
+
+    var COW = {
+      right: ['  ^__^      ', '  (oo)\\_____', '  (__)\\    |', '      ||  ||'],
+      rightEat: ['            ', '      \\_____', '  ^__^\\    |', '  (oo)||  ||'],
+      left: ['      ^__^  ', '_____/(oo)  ', '|    /(__)  ', '||  ||      '],
+      leftEat: ['            ', '_____/      ', '|    /^__^  ', '||  ||(oo)  ']
+    };
+
+    // Starting clear of the corner the music player docks into.
+    var cowX = 470, cowDir = 1, cowEating = 0, cowRest = 0;
+
+    function paintCow() {
+      var key = (cowDir > 0 ? 'right' : 'left') + (cowEating > 0 ? 'Eat' : '');
+      cow.textContent = COW[key].join('\n');
+      cow.style.transform = 'translateX(' + Math.round(cowX) + 'px)';
+    }
+
+    sceneTimers.push(setInterval(function () {
+      if (document.hidden) return;
+      var w = scene.clientWidth - 90;
+
+      if (cowEating > 0) {
+        cowEating--;
+        if (cowEating === 6) {
+          // Whatever is under her nose is gone.
+          var near = null, best = 1e9, r;
+          for (var k = 0; k < tufts.length; k++) {
+            r = Math.abs(tufts[k].el.offsetLeft - (cowX + 40));
+            if (r < best) { best = r; near = tufts[k]; }
+          }
+          if (near && near.h > 0) { near.h = 0; paintTuft(near); }
+        }
+        paintCow();
+        return;
+      }
+
+      if (cowRest > 0) { cowRest--; if (!cowRest) cowEating = 24; paintCow(); return; }
+
+      cowX += cowDir * 2.2;
+      if (cowX < 0) { cowX = 0; cowDir = 1; }
+      if (cowX > w) { cowX = w; cowDir = -1; }
+      if (Math.random() < 0.012) cowRest = 4;
+      if (Math.random() < 0.006) cowDir = -cowDir;
+      paintCow();
+    }, 120));
+
+    paintCow();
+
+    /* ------------------------------------------------------------- tree */
+
+    function maxRows() {
+      var room = window.innerHeight - GROUND_H - taskbarHeight() - 40;
+      return Math.max(8, Math.floor(room / 11));
+    }
+
+    function trunkRows(clicks) {
+      var t = Math.min(1, clicks / TREE_CLICKS);
+      // Bent so the first few waterings visibly do something. A straight
+      // line would be a third of a character per click, which reads as
+      // nothing happening at all.
+      return Math.round(Math.pow(t, 0.7) * maxRows());
+    }
+
+    function canopyFor(h) {
+      var c = 0, k;
+      for (k = 0; k < CANOPY_AT.length; k++) if (h >= CANOPY_AT[k]) c = k;
+      return CANOPY[c];
+    }
+
+    function paintTree() {
+      var h = trunkRows(tree.clicks);
+      var rows = canopyFor(h).map(function (r) { return centre(r, TREE_W); });
+      var k, row;
+      for (k = 0; k < h; k++) {
+        row = centre('|', TREE_W).split('');
+        // a leaf every few feet, alternating sides, the way a beanstalk goes
+        if (k % 5 === 2) row[k % 10 === 2 ? 5 : 11] = 'o';
+        rows.push(row.join(''));
+      }
+      rows.push(centre('\\_|_/', TREE_W));
+
+      var html = '', r, c, ch, cls;
+      for (r = 0; r < rows.length; r++) {
+        for (c = 0; c < rows[r].length; c++) {
+          ch = rows[r].charAt(c);
+          if (ch === ' ') { html += ' '; continue; }
+          cls = ch === 'o' ? 'lf' : ch === '|' || ch === '\\' || ch === '/' || ch === '_' ? 'bk' : 'lf';
+          html += '<span class="' + cls + '">' + ch + '</span>';
+        }
+        html += r === rows.length - 1 ? '' : '\n';
+      }
+      art.innerHTML = html;
+
+      var left = TREE_CLICKS - tree.clicks;
+      count.textContent = left > 0
+        ? tree.clicks + ' / ' + TREE_CLICKS
+        : 'the adam jewel tree';
+      hit.setAttribute('title', left > 0
+        ? 'the adam jewel tree — ' + left + ' more waterings'
+        : 'the adam jewel tree, grown');
+      hit.setAttribute('aria-label', 'water the adam jewel tree, ' +
+        tree.clicks + ' of ' + TREE_CLICKS);
+    }
+
+    function water() {
+      if (tree.clicks >= TREE_CLICKS) { openSun(true); return; }
+
+      tree.clicks++;
+      set('adam', tree);
+      paintTree();
+      play('rustle');
+
+      adam.classList.add('drinking');
+      setTimeout(function () { adam.classList.remove('drinking'); }, 320);
+
+      // He comes over and does the actual watering. It is his garden too.
+      var box = hit.getBoundingClientRect();
+      pogoErrand(box.left + box.width / 2 + window.pageXOffset, 1100);
+
+      if (tree.clicks >= TREE_CLICKS) setTimeout(function () { breakRoof(); }, 500);
+    }
+
+    hit.addEventListener('click', water);
+
+    /* -------------------------------------------------------- the roof */
+
+    function paintRoof() {
+      var w = Math.ceil(scene.clientWidth / 6.7);
+      var mid = Math.floor(w / 2);
+      var line = '', k, d;
+      for (k = 0; k < w; k++) {
+        d = Math.abs(k - mid);
+        if (d > 16) line += '_';
+        else if (d > 12) line += '/';
+        else if (d > 8) line += '\\';
+        else if (d > 4) line += '/';
+        else if (d === 0) line += ' ';
+        else line += d % 2 ? '\\' : '/';
+      }
+      roof.textContent = line;
+    }
+
+    function breakRoof() {
+      document.body.classList.add('roof-broken');
+      paintRoof();
+      play('rustle');
+      toast('the roof gave way');
+      setTimeout(function () { openSun(true); }, 1400);
+    }
+
+    /* ---------------------------------------------------- the sun level */
+
+    function openSun(scrollUp) {
+      if (!document.getElementById('sun-level')) {
+        var sun = document.createElement('section');
+        sun.id = 'sun-level';
+        sun.innerHTML =
+          '<div class="sun-inner">' +
+            '<pre class="sun-art" aria-hidden="true">' +
+              SUN_ART.join('\n') + '</pre>' +
+            '<h2>SUN LEVEL</h2>' +
+            '<p>the adam jewel tree came through the floor. this is the ' +
+            'storey above the garden.</p>' +
+            '<p class="sun-link"><a href="SUN LEVEL/">open the folder &rarr;</a></p>' +
+          '</div>' +
+          '<pre class="sun-floor" aria-hidden="true"></pre>';
+        document.body.insertBefore(sun, document.body.firstChild);
+
+        // Inserting a whole storey above the page would otherwise yank
+        // whatever is being read upwards by exactly that much.
+        var added = sun.getBoundingClientRect().height;
+        window.scrollBy(0, added);
+
+        var floorPre = sun.querySelector('.sun-floor');
+        var w = Math.ceil(window.innerWidth / 6.7), line = '', k, d;
+        var mid = Math.floor(w / 2);
+        for (k = 0; k < w; k++) {
+          d = Math.abs(k - mid);
+          line += d < 2 ? ' ' : d < 6 ? '/' : d < 10 ? '\\' : '=';
+        }
+        floorPre.textContent = line;
+      }
+
+      document.documentElement.classList.add('sun-open');
+      document.body.classList.add('sun-open');
+      set('sun', true);
+
+      if (!scrollUp) return;
+      setTimeout(function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 300);
+    }
+
+    /* ------------------------------------------------------------ start */
+
+    paintTree();
+    paintRoof();
+    window.addEventListener('resize', paintTree);
+    window.addEventListener('resize', paintRoof);
+
+    if (tree.clicks >= TREE_CLICKS) {
+      document.body.classList.add('roof-broken');
+      openSun(false);
+    }
   }
 
   function boot() {

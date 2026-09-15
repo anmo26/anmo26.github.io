@@ -84,6 +84,15 @@ const DESCRIPTION_RE = /^description\.(txt|md|markdown|mdown)$/i;
 // the folder can be renamed in Finder without the door moving.
 const SECRET_RE = /^secret\.(txt|md)$/i;
 
+// The plain-text convention for a folder that is a PLACE rather than a
+// listing. A file called scene.txt naming a scene -- there is one, "garden"
+// -- and the page it sits in is built with that scene's weather, ground and
+// inhabitants around the folder's own contents. Same shape as description.txt
+// and secret.txt: one word in one file, editable in TextEdit, moves with the
+// folder if it is renamed.
+const SCENE_RE = /^scene\.(txt|md)$/i;
+const SCENES = ['garden'];
+
 function folderSecret(full) {
   let entries;
   try { entries = fs.readdirSync(full, { withFileTypes: true }); } catch { return null; }
@@ -198,6 +207,7 @@ function isIgnored(name, isDir, rules) {
   // or anyone else's. See readFolderDescription.
   if (!isDir && DESCRIPTION_RE.test(name)) return true;
   if (!isDir && SECRET_RE.test(name)) return true;
+  if (!isDir && SCENE_RE.test(name)) return true;
 
   if (rules.deny.some(r => (!r.dirOnly || isDir) && r.re.test(name))) return true;
 
@@ -1144,7 +1154,7 @@ function guestbookWindow() {
 
 function renderPage({ siteName, title, files, positioned, description, folderDescription,
                       socialImage, assetPrefix, isRoot, tagline, marquee, guestbook, music,
-                      assetStamps, recent }) {
+                      assetStamps, recent, scene }) {
   const items = files.map((f, i) => renderItem(f, i, assetPrefix, isRoot)).join('\n');
   const unrendered = unrenderedNote(files);
 
@@ -1281,13 +1291,14 @@ ${showMusic ? `  <link rel="stylesheet" href="${assetUrl(assetPrefix, assetStamp
   </style>
 </head>
 
-<body>
+<body${scene ? ` data-scene="${escapeHtml(scene)}"` : ''}>
   <div id="corner">
     <div id="plants">
       <div id="still-shell" title="a pot still, running">
         <div class="still-row">
           <pre id="bellows"></pre>
           <pre id="still" role="img" aria-label="a pot still"></pre>
+          <pre id="drink" hidden></pre>
         </div>
         <div id="still-bar" aria-hidden="true"><i id="still-fill"></i></div>
         <p id="still-say">distilling</p>
@@ -1367,6 +1378,17 @@ function grow(dir, ctx) {
     catch { /* unreadable -- fall back to the site default below */ }
   }
 
+  let scene;
+  const sceneEntry = entries.find(e => e.isFile() && SCENE_RE.test(e.name));
+  if (sceneEntry) {
+    try {
+      const word = fs.readFileSync(path.join(dir, sceneEntry.name), 'utf8')
+        .split('\n')[0].trim().toLowerCase();
+      if (SCENES.includes(word)) scene = word;
+      else if (word && !ctx.quiet) console.warn(`  ! ${dir}: no scene called "${word}"`);
+    } catch { /* unreadable; the folder is just a folder */ }
+  }
+
   entries = resolveEntries(dir, entries)
     .filter(e => !isIgnored(e.name, e.isDirectory(), rules))
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
@@ -1420,6 +1442,7 @@ function grow(dir, ctx) {
     positioned,
     description: description ?? ctx.description,
     folderDescription: description,
+    scene,
     // The converted copy when there is one -- a link preview cannot show HEIC.
     socialImage: rel ? null : (firstImage?.previewHref ?? firstImage?.href),
     assetStamps: ctx.assetStamps,

@@ -1424,3 +1424,276 @@ body.theme-pocari {
 @media (prefers-reduced-motion: reduce) {
   #bellows { transition: none; }
 }
+
+/* ----------------------------------------------------------- the drink
+   What a finished run pours. It is the door to the bar, and it has to be
+   picked up by hand -- the waiting is only worth something if there is a
+   moment at the end of it that belongs to the visitor. */
+
+#drink {
+  margin: 0 0 .1rem;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0.95;
+  letter-spacing: .06em;
+  font-weight: 700;
+  cursor: pointer;
+}
+#drink .me { color: var(--still-metal); }
+#drink .fr { color: var(--cactus-fruit); }
+#drink.ready { animation: drink-ready 2.2s ease-in-out infinite; }
+#drink.ready:hover { transform: translateY(-2px); }
+#drink:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+
+@keyframes drink-ready {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #drink.ready { animation: none; }
+}
+
+/* ========================================================== GARDEN SCENE
+   A folder that is a place. See app.js — the ground, the cow, the grass
+   and the tree are drawn there; this is the weather and the furniture.
+   ------------------------------------------------------------------------ */
+
+body[data-scene="garden"] {
+  --paper:      #DCE7CE;
+  --paper-deep: #CCDCBA;
+  --surface:    #EAF1E1;
+  --surface-2:  #F2F7EC;
+  --ink:        #1F2A1B;
+  --ink-soft:   #42513B;
+  --ink-faint:  #5A6B52;
+  --ochre:      #6B5A16;
+  --olive:      #33612F;
+  --rule:       rgba(31, 42, 27, .18);
+  --rule-soft:  rgba(31, 42, 27, .08);
+
+  --leaf:  #2E7D32;
+  --bark:  #6B4A2B;
+  --grass: #3E8E41;
+  --sky-1: #BFD9E8;
+  --sky-2: #DCE7CE;
+
+  background-image: linear-gradient(to bottom, var(--sky-1) 0%, var(--sky-2) 46%);
+  background-attachment: fixed;
+}
+
+/* Nothing in the scene is ever in the way of the folder itself. The one
+   exception is the button at the foot of the tree, below. */
+#scene, #adam { pointer-events: none; }
+
+/* Behind the page, not over it. A beanstalk drawn across the folder's own
+   words would make them unreadable, and the folder is still the point. */
+#scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+/* the grass line, and whatever is standing on it */
+#ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 44px;              /* the taskbar */
+  height: 62px;
+  border-bottom: 2px solid var(--grass);
+}
+
+#grass { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; }
+#grass i {
+  position: absolute;
+  bottom: -2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--grass);
+  opacity: .85;
+  transition: color .4s ease;
+}
+
+#cow {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 0.95;
+  font-weight: 700;
+  color: var(--ink-soft);
+  transition: transform .13s linear;
+}
+
+/* the ceiling, which is only there once it has been broken */
+#roof {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--bark);
+  opacity: 0;
+}
+body.roof-broken #roof { opacity: .9; animation: roof-crack .9s ease-out; }
+
+@keyframes roof-crack {
+  0%   { opacity: 0; transform: translateY(-8px) scaleX(.2); }
+  40%  { opacity: 1; transform: translateY(2px) scaleX(1.04); }
+  100% { opacity: .9; transform: none; }
+}
+
+/* ------------------------------------------------------ the adam tree */
+
+#adam {
+  position: fixed;
+  left: 32%;                 /* clear of the corner the iPod docks into */
+  bottom: calc(44px + 56px);
+  z-index: -1;
+  text-align: center;
+  user-select: none;
+}
+
+/* The watering can. A real button at the foot of the trunk, so the drawing
+   above it can be as tall as it likes without eating anybody's clicks. */
+#adam-hit {
+  position: fixed;
+  left: 32%;
+  bottom: 44px;
+  z-index: 3;
+  width: 120px;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink-faint);
+  -webkit-appearance: none;
+  appearance: none;
+}
+#adam-hit:hover { color: var(--olive); }
+#adam-hit:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
+
+#adam-count {
+  display: block;
+  margin-top: 2.4rem;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .06em;
+}
+#adam-art {
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  transform-origin: 50% 100%;
+  transition: transform .18s ease;
+}
+#adam-art .lf { color: var(--leaf); }
+#adam-art .bk { color: var(--bark); }
+#adam.drinking #adam-art { transform: scaleY(1.04); }
+#adam-hit:hover ~ #adam #adam-art { filter: brightness(1.12); }
+
+/* ---------------------------------------------------- the storey above
+   Inserted at the very top of the document once the tree is through the
+   floor. It is a real part of the page, so scrolling reaches it -- and
+   because there are only two places worth standing, the two of them are
+   snap points and the page holds whichever one you arrive at. */
+
+html.sun-open { scroll-snap-type: y proximity; }
+html.sun-open #sun-level,
+html.sun-open main { scroll-snap-align: start; }
+
+/* The clock and the plants are pinned to the top of the DOCUMENT, so a new
+   storey above has to push them down with everything else. */
+body[data-scene="garden"].sun-open #corner { top: calc(100vh + 1.4rem); }
+
+/* A floor is a floor. Without this the garden is shorter than the window,
+   the page cannot scroll far enough for its own top to reach the top of
+   the screen, and the magnet parks it half an inch short. */
+body[data-scene="garden"] main { min-height: 100vh; }
+
+#sun-level {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-image: linear-gradient(to bottom, #F6D98A 0%, #F2E7BE 55%, #BFD9E8 100%);
+  color: #3A2E10;
+}
+
+.sun-inner { max-width: 32rem; padding: 0 1.5rem; }
+
+.sun-art {
+  margin: 0 0 1.2rem;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.05;
+  font-weight: 700;
+  color: #B8791A;
+  animation: sun-turn 9s ease-in-out infinite;
+}
+@keyframes sun-turn {
+  0%, 100% { opacity: .85; }
+  50%      { opacity: 1; }
+}
+
+#sun-level h2 {
+  margin: 0 0 .6rem;
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  letter-spacing: .22em;
+  font-weight: 700;
+}
+#sun-level p { margin: 0 0 .5rem; font-family: var(--serif); font-size: 1rem; }
+#sun-level .sun-link a { color: #8A5A1F; }
+
+.sun-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  color: #6B4A2B;
+  opacity: .8;
+}
+
+/* A phone has no room for a cow and a tree beside the folder. The ground
+   and the sky stay; the livestock does not. */
+@media (max-width: 559px) {
+  #cow { display: none; }
+  #adam, #adam-hit { left: 26%; }
+  #adam-art { font-size: 9px; line-height: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #cow, #adam-art { transition: none; }
+  .sun-art, body.roof-broken #roof { animation: none; }
+}
