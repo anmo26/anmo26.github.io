@@ -3,16 +3,9 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 16/09/2026, 05:33:45. 37 notes in the ledger.
+Read 16/09/2026, 05:38:49. 37 notes in the ledger.
 
-## new (8)
-
-### 1789538121072ktcp
-
-- **chat**, /pogo/ · 0N7A2311.JPG
-- by Anmo (r5u3jewz), today
-
-> thumbnail photos shouldnt be scaleable. its broken. fix this. 
+## new (6)
 
 ### 1789537732329pxw9
 
@@ -45,17 +38,11 @@ Read 16/09/2026, 05:33:45. 37 notes in the ledger.
 > hi! i like this site a lot. please dont delete this note!
 
   - *Anmo:* hi!
-
-### 1789534519578dyh6
-
-- **idea**, front page · todo.md
-- by Anmo (r5u3jewz), today
-
-> when i rescale image and to-do list, it makes it way too big than the amount i am scaling it. 
+  - *claude:* it stays. only whoever wrote a note can take it down now.
 
 ### 17895162076872dhe
 
-- **idea**, front page · IMG_3265.jpeg
+- **idea**, front page · IMG_3265.jpeg — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > hi
@@ -101,7 +88,7 @@ Read 16/09/2026, 05:33:45. 37 notes in the ledger.
 
 ### 1789507297001j52u
 
-- **idea**, front page · stories/
+- **idea**, front page · stories/ — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > SORRY EVERYONE IF THE TOGGLES AT THE BOTTOM ARENT WORKING PROPERLY!!! I RAN OUT OF USAGE CREDITS. ILL FIX IT SOON!!!!!! as well as all the ui sticky note ideas posted everywhere else on the site. big things coming!
@@ -143,7 +130,25 @@ Read 16/09/2026, 05:33:45. 37 notes in the ledger.
 
 **decided:** not a change to the site — see the answer
 
-## done (20)
+## done (22)
+
+### 1789538121072ktcp
+
+- **chat**, /pogo/ · 0N7A2311.JPG — *taken off the wall*
+- by Anmo (r5u3jewz), today
+
+> thumbnail photos shouldnt be scaleable. its broken. fix this. 
+
+**decided:** thumbnails have no corner
+
+### 1789534519578dyh6
+
+- **idea**, front page · todo.md — *taken off the wall*
+- by Anmo (r5u3jewz), today
+
+> when i rescale image and to-do list, it makes it way too big than the amount i am scaling it. 
+
+**decided:** the corner stays under your hand, photos and the to-do
 
 ### 1789509563803pqcg
 
@@ -170,7 +175,7 @@ Read 16/09/2026, 05:33:45. 37 notes in the ledger.
 
 > when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!
 
-**decided:** the trap is gone, the wobble stays
+**decided:** photos and notes have sides now; he can be penned in
 
 ### 1789507266851shjk
 

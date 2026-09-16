@@ -972,55 +972,108 @@
     item.classList.toggle('scaled', s !== 1);
   }
 
+  /* ------------------------------------------------------ the corner grip
+     One engine for every corner on the page, and one rule: THE CORNER STAYS
+     UNDER YOUR HAND. Pull it a centimetre and the thing is a centimetre
+     bigger on the screen, not two, and not half of one.
+
+     That rule was being broken in two separate ways. The front page is
+     drawn scaled down to fit the window, so a pixel of pointer travel is
+     not a pixel of the thing being resized -- it is more than one. The old
+     grip ignored that and grew things faster than the hand moved. And the
+     old picture corner was the browser's own resize handle, which in
+     Safari takes no account of that scaling at all.
+
+     So every move is converted into the thing's own pixels first, and the
+     axis the hand is really pulling along is the one that decides:
+     straight down a tall card counts, straight across a wide photo counts.
+     --------------------------------------------------------------------- */
+
+  function cornerGrip(host, label, cb) {
+    var grip = document.createElement('button');
+    grip.type = 'button';
+    grip.className = 'scale-grip';
+    grip.title = label;
+    grip.setAttribute('aria-label', label);
+    host.appendChild(grip);
+
+    var from = null;
+
+    function move(e) {
+      if (!from) return;
+      e.preventDefault();
+      // screen pixels into the thing's own pixels
+      var dx = (e.clientX - from.x) / from.k;
+      var dy = (e.clientY - from.y) / from.k;
+      // whichever way the hand is really pulling
+      var grow = Math.abs(dx) >= Math.abs(dy) * from.a ? dx : dy * from.a;
+      cb.move(grow);
+    }
+
+    function up() {
+      if (!from) return;
+      from = null;
+      document.body.classList.remove('dragging');
+      window.removeEventListener('pointermove', move, true);
+      window.removeEventListener('pointerup', up, true);
+      window.removeEventListener('pointercancel', up, true);
+      cb.done();
+    }
+
+    grip.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      /* How much the page is drawn scaled down, MEASURED off the page
+         rather than taken from a variable -- the variable was the wrong
+         number (it answered "not scaled" for a picture inside a link, and
+         something much smaller than the truth for the to-do), and a wrong
+         number here is exactly "it grows far more than I pulled it". */
+      var bed = host.closest ? host.closest('.plantbed') : null;
+      var k = bed && bed.offsetWidth
+        ? bed.getBoundingClientRect().width / bed.offsetWidth : 1;
+      if (!(k > 0.05)) k = 1;
+      from = { x: e.clientX, y: e.clientY, k: k, a: cb.start() || 1 };
+      document.body.classList.add('dragging');
+      window.addEventListener('pointermove', move, true);
+      window.addEventListener('pointerup', up, true);
+      window.addEventListener('pointercancel', up, true);
+    });
+
+    // Letting go of a corner is not a request to open whatever it is on.
+    grip.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+    return grip;
+  }
+
   function mountScalable(item) {
     if (item.querySelector(':scope > .scale-grip')) return;
 
     var scale = scaleOf(item);
     applyScale(item, scale);
 
-    var grip = document.createElement('button');
-    grip.type = 'button';
-    grip.className = 'scale-grip';
-    grip.title = 'drag this corner to make the list bigger or smaller';
-    grip.setAttribute('aria-label', 'make the list bigger or smaller');
-    item.appendChild(grip);
-
-    var from = null;
-
-    grip.addEventListener('pointerdown', function (e) {
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      from = { x: e.clientX, y: e.clientY, s: scale, w: item.offsetWidth || 260 };
-      try { grip.setPointerCapture(e.pointerId); } catch (err) {}
-    });
-
-    grip.addEventListener('pointermove', function (e) {
-      if (!from) return;
-      // Out from the corner in either direction is bigger; back in is smaller.
-      var travel = ((e.clientX - from.x) + (e.clientY - from.y)) / 2;
-      scale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, from.s * (1 + travel / from.w)));
-      applyScale(item, scale);
-    });
-
-    function letGo() {
-      if (!from) return;
-      from = null;
-      if (item.dataset.key) {
-        var all = get('scaled', {});
-        all[item.dataset.key] = Math.round(scale * 1000) / 1000;
-        set('scaled', all);
+    var w0 = 0, s0 = 1;
+    cornerGrip(item, 'drag this corner to make the list bigger or smaller', {
+      start: function () {
+        w0 = item.offsetWidth || 260;
+        s0 = scale;
+        return (item.offsetWidth || 1) / (item.offsetHeight || 1);
+      },
+      move: function (grow) {
+        // its drawn width is w0 * s0; the corner wants it `grow` wider
+        scale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, (w0 * s0 + grow) / w0));
+        applyScale(item, scale);
+      },
+      done: function () {
+        if (item.dataset.key) {
+          var all = get('scaled', {});
+          all[item.dataset.key] = Math.round(scale * 1000) / 1000;
+          set('scaled', all);
+        }
+        growBed(bedOf(item));
+        fitSoon();
+        play('tick');
       }
-      growBed(bedOf(item));
-      fitSoon();
-      play('tick');
-    }
-
-    grip.addEventListener('pointerup', letGo);
-    grip.addEventListener('pointercancel', letGo);
-    grip.addEventListener('lostpointercapture', letGo);
-    // A tap with no travel is not a request to resize, and must not open it.
-    grip.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+    });
   }
 
   /**
@@ -1032,12 +1085,15 @@
   function mountResizable(item) {
     if (!item.classList.contains('kind-image') && !item.classList.contains('kind-video')) return;
 
-    /* The grip is a pointer affordance. A finger has no corner to catch, and
-       the browser draws nothing there to catch -- but mounting it anyway had
-       two costs on a phone. The press guard below swallows any click in the
-       bottom-right 18px of a resizable box, so that corner of every picture
-       went dead; and a resizable box drops its max-width, which let a 1872px
-       video push the whole page sideways and leave the site panning. */
+    /* A thumbnail is an icon: a picture standing in for a file, the same
+       size as every folder beside it. Handing it a corner let somebody
+       stretch one icon out of a row of identical ones -- which is broken,
+       not a feature. Only pictures lying open at their own size get one. */
+    if (item.classList.contains('as-icon')) return;
+
+    /* The grip is a pointer affordance. A finger has no corner to catch --
+       and a resizable box on a phone let a 1872px video push the whole page
+       sideways and leave the site panning. */
     if (!wide()) return;
 
     var media = item.querySelector('img, video');
@@ -1052,65 +1108,57 @@
       return w && h ? w / h : 0;
     }
 
-    /**
-     * Put the corner back on the corner.
-     *
-     * `resize: both` hands the visitor a free rectangle, and a picture set
-     * to fit inside one letterboxes: pull down and you get a tall grey box
-     * with a small photo floating in it, the grip stranded in empty space
-     * far below the image. Nobody is asking for a box. They are asking for
-     * a bigger picture -- so the height is taken back off the drag and
-     * derived from the width, which leaves the grip sitting exactly on the
-     * bottom-right corner of what is actually on screen.
-     */
+    /** The height is always the picture's own shape, never a free box. */
     function snap(box) {
       var a = aspect();
       if (!a) return;
-      box.style.height = Math.round(box.clientWidth / a) + 'px';
+      box.style.height = Math.round(box.offsetWidth / a) + 'px';
     }
+
     var box = media.parentNode;
     if (!box || box === item) box = media;      // no wrapping link: resize the media
     if (box.hasAttribute('data-resizable')) return;
 
     box.setAttribute('data-resizable', '');
-    box.title = 'drag the bottom-right corner to resize';
 
     var key = item.dataset.key;
     var sizes = get('sized', {});
-    if (key && sizes[key]) {
+    if (key && sizes[key] && sizes[key].w >= 40) {
       box.style.width = sizes[key].w + 'px';
     } else {
-      // Measuring the rendered width here would read back the "fill the box"
-      // rule and lock in whatever the item happened to be. Size from the
-      // picture's own dimensions instead, capped the way the page caps them.
+      // Size from the picture's own dimensions, capped the way the page caps
+      // them -- measuring the rendered width here would lock in whatever the
+      // item happened to be.
       var nat = media.naturalWidth ||
                 parseInt(media.getAttribute('width'), 10) || 0;
       box.style.width = (nat ? Math.min(nat, MEDIA_START_PX) : MEDIA_START_PX) + 'px';
     }
 
-    // The shape is only knowable once the picture has arrived, and the very
-    // first sizing happens long before that.
     if (media.complete || media.videoWidth) snap(box);
     else media.addEventListener('load', function () { snap(box); }, { once: true });
     media.addEventListener('loadedmetadata', function () { snap(box); }, { once: true });
 
-    if (!key || !window.ResizeObserver) return;
-
-    // Only record once the pointer is up: an observer firing mid-drag would
-    // write to storage on every frame.
-    var pendingW = 0;
-    var ro = new ResizeObserver(function (entries) {
-      pendingW = Math.round(entries[0].contentRect.width);
-    });
-    ro.observe(box);
-
-    window.addEventListener('pointerup', function () {
-      if (!pendingW) return;
-      snap(box);
-      var all = get('sized', {});
-      all[key] = { w: pendingW };
-      set('sized', all);
-      pendingW = 0;
+    var w0 = 0;
+    cornerGrip(box === media ? item : box, 'drag this corner to resize', {
+      start: function () {
+        w0 = box.offsetWidth;
+        return aspect() || (box.offsetWidth / (box.offsetHeight || 1));
+      },
+      move: function (grow) {
+        var w = Math.max(60, Math.min(2400, Math.round(w0 + grow)));
+        box.style.width = w + 'px';
+        snap(box);
+      },
+      done: function () {
+        if (key) {
+          var all = get('sized', {});
+          all[key] = { w: box.offsetWidth };
+          set('sized', all);
+        }
+        growBed(bedOf(item));
+        fitSoon();
+        play('tick');
+      }
     });
   }
 
@@ -3991,6 +4039,7 @@
         if (r.width < 24 || r.height < 12) continue;
         out.push({ x1: r.left + window.pageXOffset, x2: r.right + window.pageXOffset,
                    top: r.top + window.pageYOffset,
+                   bottom: r.bottom + window.pageYOffset,
                    note: n.classList.contains('sticky') ? n : null });
       }
       ledges = out;
@@ -4176,9 +4225,27 @@
       energy = Math.max(0, Math.min(1, energy));
 
       var prevY = y;
+      var prevX = x;
       vy += GRAVITY * grav * dt;
       x += vx * dt;
       y += vy * dt;
+
+      /* Things have sides now, not just tops. Walk into a photograph or a
+         note from beside it and it stops you -- which means he can be
+         penned in: put things either side of him and he stays between
+         them, unless one of them is short enough to jump. Only a wall he
+         arrives at from outside counts, so something dropped on top of him
+         never traps him inside it. */
+      var head = y - H + 8, half = W / 2 - 6, i, w;
+      for (i = 0; i < ledges.length; i++) {
+        w = ledges[i];
+        if (y <= w.top + 3 || head >= w.bottom) continue;     // over it or under it
+        if (prevX + half <= w.x1 && x + half > w.x1) {
+          x = w.x1 - half; vx = -Math.abs(vx) * 0.25;
+        } else if (prevX - half >= w.x2 && x - half < w.x2) {
+          x = w.x2 + half; vx = Math.abs(vx) * 0.25;
+        }
+      }
 
       // Never off the top of the screen either: a companion who has gone
       // somewhere you cannot see him is not company.

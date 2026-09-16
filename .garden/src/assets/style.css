@@ -1029,11 +1029,13 @@ body .plantbed.mobile-freeform > .item pre { max-width: 22rem; }
 }
 
 /* Pictures on the front page can be pulled bigger or smaller by the corner.
-   The browser draws the grip and does the work; it only needs a box that
-   clips, and media that fills whatever size it is given. */
+   Not the browser's own resize handle any more: Safari's takes no account
+   of the front page being drawn scaled down, so a picture grew by more than
+   the hand moved. app.js does the resizing (see cornerGrip) and this box
+   only has to clip, and hold media that fills whatever size it is given. */
 .plantbed [data-resizable] {
   display: block;
-  resize: both;
+  position: relative;
   overflow: hidden;
   max-width: none;
   min-width: 4rem;
@@ -1238,7 +1240,7 @@ body.secret-night   .item[data-secret="night"] {
     border-right: 2px solid var(--ink);
     border-bottom: 2px solid var(--ink);
     opacity: .3;
-    pointer-events: none;      /* the browser's own grip lives under this */
+    pointer-events: none;      /* the real grip is the button under this */
     transition: opacity .15s ease, border-color .15s ease;
   }
 
@@ -1368,7 +1370,6 @@ details[open] > .read-more-summary::after { font-size: .68rem; }
    remembered position is -- so it grows down and to the right, out of the
    way, instead of creeping up under the masthead. */
 .item.kind-todo { transform-origin: top left; }
-.item.kind-todo.scaled { max-width: 21rem; }
 
 /* the corner you pull to make it bigger */
 .scale-grip {
@@ -1392,6 +1393,15 @@ details[open] > .read-more-summary::after { font-size: .68rem; }
   border-bottom: 1px solid var(--ink-faint);
 }
 .item:hover > .scale-grip, .scale-grip:focus-visible { opacity: .85; }
+/* On a picture the corner is already drawn (see "the pull corner"), so its
+   grip is there to be caught, not seen -- and a little larger to catch. */
+.plantbed [data-resizable] > .scale-grip,
+.plantbed [data-resizable] > .scale-grip:focus-visible {
+  width: 22px; height: 22px;
+  right: 0; bottom: 0;
+  opacity: 0;
+  z-index: 2;
+}
 /* A finger cannot hover, so on a touchscreen the corner is simply there. */
 @media (hover: none) {
   .scale-grip { opacity: .55; width: 20px; height: 20px; }
