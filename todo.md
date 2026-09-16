@@ -1,12 +1,12 @@
-# 15 september 2026, 19:41
+# 16 september 2026, 05:38
 
 ## what changed
 
-- the menu options can actually be clicked now. the gap was eating them
-- he flies on a cloud, and running is jumping. the figures are redrawn
-- he no longer gets held inside a note. the wobble when he lands stays
-- only you can take down your own notes — type gardener for the secateurs
-- every note is a page in the gardeners log now, with what was decided
+- resizing follows your hand now: pull a photo or the to-do 80, it grows 80
+- the to-do no longer shoots downward the moment you start scaling it
+- thumbnails in folders have no corner. only open pictures can be resized
+- photos and notes have sides: the mini fig can be penned in between them
+- three notes answered on the wall, two built ones taken down
 
 ## you planned
 
@@ -17,8 +17,8 @@
 
 ## i suggest
 
-- the mini fig penned in by a ring of notes, which is what you actually meant
-- a reply from me on every note, always — that is now how this works
+- a pen that is actually a pen: notes tall enough that he cannot jump them
+- double-click a resized photo to put it back to its own size
 - the mini fig sleeping where you left him instead of where the page ends
 - your own handwriting, traced from a photo, as the heading font
 
