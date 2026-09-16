@@ -172,9 +172,15 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "",
+      "near": "IMG_3427.JPG",
       "at": 1789504711825,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "parked until you say go. it is not a change to the site — the site is a folder on your mac, and nothing on the web can put a photo into it. the two real answers are icloud drive (move the garden folder into it, save straight to it from the phone) or a shortcut that drops photos into a synced folder. say which and i will set it up.",
+          "at": 1789515654393
+        }
+      ],
       "gone": false,
       "flags": [],
       "why": "not a change to the site — see the answer"
@@ -231,9 +237,15 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "",
+      "near": "IMG_3427.JPG",
       "at": 1789505238090,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "understood — not now, and not a corner of another update. when you do want it: tell me what you actually do on the site from your phone and i will build the phone layout around that rather than shrinking the desktop one.",
+          "at": 1789515654393
+        }
+      ],
       "gone": false,
       "flags": [],
       "why": "needs a session of its own and your eye on it"
@@ -361,7 +373,8 @@
       "status": "done",
       "firstSeen": "2026-09-15T22:00:29.313Z",
       "history": [
-        "2026-09-15T22:06:41.911Z new -> done"
+        "2026-09-15T22:06:41.911Z new -> done",
+        "2026-09-16T09:33:45.309Z taken off the wall"
       ],
       "room": "/",
       "text": "ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.",
@@ -371,7 +384,7 @@
       "near": "",
       "at": 1789506848671,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "the nine pixels of gap between the button and the menu were counting as leaving"
     },
@@ -380,7 +393,8 @@
       "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:41.979Z new -> done"
+        "2026-09-15T22:06:41.979Z new -> done",
+        "2026-09-16T09:33:45.309Z taken off the wall"
       ],
       "room": "/",
       "text": "For the flying one, make it sorta inspired by sunwukong when he flies on a cloud. combine jump and run because its supposed to just be a guy running and jumping around where the cursor goes.",
@@ -390,7 +404,7 @@
       "near": "",
       "at": 1789506876039,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "he flies on a cloud now, and jump folded into run"
     },
@@ -406,9 +420,15 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "",
+      "near": "IMG_3265.jpeg",
       "at": 1789507008751,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "agreed on all three, and this one is yours to do — it needs your account and your card, and i will not touch either. point a domain at it and tell me, and i will do the site side.",
+          "at": 1789515654393
+        }
+      ],
       "gone": false,
       "flags": [],
       "why": "your account, your card — i will not touch either"
@@ -418,7 +438,8 @@
       "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.118Z new -> done"
+        "2026-09-15T22:06:42.118Z new -> done",
+        "2026-09-16T09:33:45.309Z taken off the wall"
       ],
       "room": "/",
       "text": "upload all the idea sticky notes into gardeners log somehow?? help me work out the complexities and like logic of this. i need all the files into making this sight organized so i can reference or fix things in the future. ",
@@ -428,7 +449,7 @@
       "near": "",
       "at": 1789507075980,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "the whole wall is a page in the gardeners log now"
     },
@@ -437,7 +458,8 @@
       "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.185Z new -> done"
+        "2026-09-15T22:06:42.185Z new -> done",
+        "2026-09-16T09:33:45.309Z taken off the wall"
       ],
       "room": "/",
       "text": "i think only I or claude should be able to delete other peoples notes. and I dont want ranodm users to be able to delete my notes.",
@@ -447,7 +469,7 @@
       "near": "the page",
       "at": 1789507266852,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "only the author can bin a note; the word gardener gives you the secateurs"
     },
@@ -463,9 +485,15 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "the masthead",
+      "near": "stories/",
       "at": 1789507297001,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "the toggles are fixed. there were nine pixels of empty space between each button and its menu, and crossing them counted as leaving, so the menu shut before your pointer arrived. leaving this note up as yours to take down.",
+          "at": 1789515654393
+        }
+      ],
       "gone": false,
       "flags": [],
       "why": "left up as your announcement, with the fix noted on it"
@@ -475,7 +503,8 @@
       "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.335Z new -> done"
+        "2026-09-15T22:06:42.335Z new -> done",
+        "2026-09-16T09:33:45.309Z taken off the wall"
       ],
       "room": "/",
       "text": "when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!",
@@ -485,7 +514,7 @@
       "near": "",
       "at": 1789507480134,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "the trap is gone, the wobble stays"
     },
@@ -494,7 +523,8 @@
       "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.402Z new -> done"
+        "2026-09-15T22:06:42.402Z new -> done",
+        "2026-09-16T09:33:45.309Z taken off the wall"
       ],
       "room": "/",
       "text": "god damn the minifigs r ugly. make them better but still the same size!",
@@ -504,7 +534,7 @@
       "near": "",
       "at": 1789507726096,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "all the figures redrawn, same five rows"
     },
@@ -520,13 +550,28 @@
       "kind": "idea",
       "by": "1cee3n80",
       "name": "",
-      "near": "music/",
+      "near": "IMG_3427.JPG",
       "at": 1789507931695,
       "replies": [
         {
           "name": "Anmo",
           "text": "whos this?",
           "at": 1789509942607
+        },
+        {
+          "name": "claude",
+          "text": "hi. whoever you are, you are the first person other than anmo to write on this wall.",
+          "at": 1789515654393
+        },
+        {
+          "name": "",
+          "text": "I’m a different user here",
+          "at": 1789537405009
+        },
+        {
+          "name": "master yoda!",
+          "text": "me too!",
+          "at": 1789537639614
         }
       ],
       "gone": false,
@@ -538,7 +583,8 @@
       "status": "done",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.536Z new -> done"
+        "2026-09-15T22:06:42.536Z new -> done",
+        "2026-09-16T09:33:45.309Z taken off the wall"
       ],
       "room": "/",
       "text": "i think there is some small issue with the notes. like i think i wasn't able to see someone elses note and for some reason my signature dissapeared from my notes. please troubleshoot this. ",
@@ -548,7 +594,7 @@
       "near": "stories/",
       "at": 1789509563805,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "both were the same bug — an old tab stripping fields it did not know"
     },
@@ -585,11 +631,162 @@
       "name": "",
       "near": "",
       "at": 1789507445293,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "not broken — empty. you are the first person on it. i started a thread and replied to it before it went live and both worked; it will look like this until somebody else turns up.",
+          "at": 1789515654393
+        }
+      ],
       "gone": false,
       "flags": [],
       "why": "not broken, just empty"
+    },
+    "17895162076872dhe": {
+      "id": "17895162076872dhe",
+      "status": "new",
+      "firstSeen": "2026-09-16T09:33:45.304Z",
+      "history": [],
+      "room": "/",
+      "text": "hi",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "IMG_3265.jpeg",
+      "at": 1789516207688,
+      "replies": [
+        {
+          "name": "",
+          "text": "Hi there!",
+          "at": 1789537381127
+        },
+        {
+          "name": "",
+          "text": "!",
+          "at": 1789537420842
+        },
+        {
+          "name": "master yoda!",
+          "text": "hi everyone!",
+          "at": 1789537530025
+        },
+        {
+          "name": "master yoda!",
+          "text": "hihihih!",
+          "at": 1789537554083
+        }
+      ],
+      "gone": false,
+      "flags": []
+    },
+    "1789534519578dyh6": {
+      "id": "1789534519578dyh6",
+      "status": "new",
+      "firstSeen": "2026-09-16T09:33:45.309Z",
+      "history": [],
+      "room": "/",
+      "text": "when i rescale image and to-do list, it makes it way too big than the amount i am scaling it. ",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "todo.md",
+      "at": 1789534519579,
+      "replies": [],
+      "gone": false,
+      "flags": []
+    },
+    "1789537496650fyua": {
+      "id": "1789537496650fyua",
+      "status": "new",
+      "firstSeen": "2026-09-16T09:33:45.309Z",
+      "history": [],
+      "room": "/",
+      "text": "hi! i like this site a lot. please dont delete this note!",
+      "kind": "chat",
+      "by": "8nmirhlz",
+      "name": "master yoda!",
+      "near": "the mini fig",
+      "at": 1789537496651,
+      "replies": [
+        {
+          "name": "Anmo",
+          "text": "hi!",
+          "at": 1789537565325
+        }
+      ],
+      "gone": false,
+      "flags": []
+    },
+    "17895376834560i0m": {
+      "id": "17895376834560i0m",
+      "status": "new",
+      "firstSeen": "2026-09-16T09:33:45.309Z",
+      "history": [],
+      "room": "/MOONLIGHT/",
+      "text": "am i the only one who has found this place? leave a comment if u found it too!!",
+      "kind": "chat",
+      "by": "8nmirhlz",
+      "name": "master yoda!",
+      "near": "the page",
+      "at": 1789537683456,
+      "replies": [
+        {
+          "name": "Anmo",
+          "text": "welcome!!! u found the moon!!!! more to come soon...",
+          "at": 1789537823496
+        }
+      ],
+      "gone": false,
+      "flags": []
+    },
+    "1789537712080fu9j": {
+      "id": "1789537712080fu9j",
+      "status": "new",
+      "firstSeen": "2026-09-16T09:33:45.309Z",
+      "history": [],
+      "room": "/MOONLIGHT/",
+      "text": "i made the rocket fly by clicking the button below it!",
+      "kind": "chat",
+      "by": "8nmirhlz",
+      "name": "master yoda!",
+      "near": "the music player",
+      "at": 1789537712081,
+      "replies": [],
+      "gone": false,
+      "flags": []
+    },
+    "1789537732329pxw9": {
+      "id": "1789537732329pxw9",
+      "status": "new",
+      "firstSeen": "2026-09-16T09:33:45.309Z",
+      "history": [],
+      "room": "/THE GARDEN/",
+      "text": "who else found this garden? its kinda cool! try growing the tree!!!!! click it multiple times at the base.",
+      "kind": "chat",
+      "by": "8nmirhlz",
+      "name": "master yoda!",
+      "near": "Screenshot 2026-09-04 at 2.38.29 AM.png",
+      "at": 1789537732329,
+      "replies": [],
+      "gone": false,
+      "flags": []
+    },
+    "1789538121072ktcp": {
+      "id": "1789538121072ktcp",
+      "status": "new",
+      "firstSeen": "2026-09-16T09:33:45.309Z",
+      "history": [],
+      "room": "/pogo/",
+      "text": "thumbnail photos shouldnt be scaleable. its broken. fix this. ",
+      "kind": "chat",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "0N7A2311.JPG",
+      "at": 1789538121072,
+      "replies": [],
+      "gone": false,
+      "flags": []
     }
   },
-  "updated": "2026-09-15T22:06:43.298Z"
+  "updated": "2026-09-16T09:33:45.309Z"
 }

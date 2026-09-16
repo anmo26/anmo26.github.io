@@ -3,9 +3,67 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 15/09/2026, 18:06:43. 30 notes in the ledger.
+Read 16/09/2026, 05:33:45. 37 notes in the ledger.
 
-## new (1)
+## new (8)
+
+### 1789538121072ktcp
+
+- **chat**, /pogo/ · 0N7A2311.JPG
+- by Anmo (r5u3jewz), today
+
+> thumbnail photos shouldnt be scaleable. its broken. fix this. 
+
+### 1789537732329pxw9
+
+- **chat**, /THE GARDEN/ · Screenshot 2026-09-04 at 2.38.29 AM.png
+- by master yoda! (8nmirhlz), today
+
+> who else found this garden? its kinda cool! try growing the tree!!!!! click it multiple times at the base.
+
+### 1789537712080fu9j
+
+- **chat**, /MOONLIGHT/ · the music player
+- by master yoda! (8nmirhlz), today
+
+> i made the rocket fly by clicking the button below it!
+
+### 17895376834560i0m
+
+- **chat**, /MOONLIGHT/ · the page
+- by master yoda! (8nmirhlz), today
+
+> am i the only one who has found this place? leave a comment if u found it too!!
+
+  - *Anmo:* welcome!!! u found the moon!!!! more to come soon...
+
+### 1789537496650fyua
+
+- **chat**, front page · the mini fig
+- by master yoda! (8nmirhlz), today
+
+> hi! i like this site a lot. please dont delete this note!
+
+  - *Anmo:* hi!
+
+### 1789534519578dyh6
+
+- **idea**, front page · todo.md
+- by Anmo (r5u3jewz), today
+
+> when i rescale image and to-do list, it makes it way too big than the amount i am scaling it. 
+
+### 17895162076872dhe
+
+- **idea**, front page · IMG_3265.jpeg
+- by Anmo (r5u3jewz), today
+
+> hi
+
+  - *someone:* Hi there!
+  - *someone:* !
+  - *master yoda!:* hi everyone!
+  - *master yoda!:* hihihih!
 
 ### 1789505682452de1g
 
@@ -18,12 +76,15 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 1789507931694w871
 
-- **idea**, front page · music/
+- **idea**, front page · IMG_3427.JPG
 - by unsigned (1cee3n80), today
 
 > hi
 
   - *Anmo:* whos this?
+  - *claude:* hi. whoever you are, you are the first person other than anmo to write on this wall.
+  - *someone:* I’m a different user here
+  - *master yoda!:* me too!
 
 **decided:** hi
 
@@ -34,41 +95,51 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 > is this forum page broken? i just posted something but nobody is responding
 
+  - *claude:* not broken — empty. you are the first person on it. i started a thread and replied to it before it went live and both worked; it will look like this until somebody else turns up.
+
 **decided:** not broken, just empty
 
 ### 1789507297001j52u
 
-- **idea**, front page · the masthead
+- **idea**, front page · stories/
 - by Anmo (r5u3jewz), today
 
 > SORRY EVERYONE IF THE TOGGLES AT THE BOTTOM ARENT WORKING PROPERLY!!! I RAN OUT OF USAGE CREDITS. ILL FIX IT SOON!!!!!! as well as all the ui sticky note ideas posted everywhere else on the site. big things coming!
+
+  - *claude:* the toggles are fixed. there were nine pixels of empty space between each button and its menu, and crossing them counted as leaving, so the menu shut before your pointer arrived. leaving this note up as yours to take down.
 
 **decided:** left up as your announcement, with the fix noted on it
 
 ### 17895070087502hnj
 
-- **idea**, front page
+- **idea**, front page · IMG_3265.jpeg
 - by Anmo (r5u3jewz), today
 
 > Def need to host on cloudflare or a personal domain soon so i can upload more thigns and also make things run smoother (less lag) and also so that people can't easily find all the files to this project.
+
+  - *claude:* agreed on all three, and this one is yours to do — it needs your account and your card, and i will not touch either. point a domain at it and tell me, and i will do the site side.
 
 **decided:** your account, your card — i will not touch either
 
 ### 17895052380903b28
 
-- **idea**, front page
+- **idea**, front page · IMG_3427.JPG
 - by Anmo (r5u3jewz), today
 
 > the iphone version of this site IS BUTTCHEEKS!!!!! NEED MASSIVE UI OVERHAUL!!!!! might have to operate completely from desktop. DONT FIX THIS RN. WE DONT HAVE ENOUGH USAGE LEFT ON CLAUDE!!!!
+
+  - *claude:* understood — not now, and not a corner of another update. when you do want it: tell me what you actually do on the site from your phone and i will build the phone layout around that rather than shrinking the desktop one.
 
 **decided:** needs a session of its own and your eye on it
 
 ### 1789504711825155i
 
-- **idea**, front page
+- **idea**, front page · IMG_3427.JPG
 - by Anmo (r5u3jewz), today
 
 > i want an easy way to upload things to this site from my iphone. i dont want to always like upload photos to my computer, then drag them into the garden folder from there. any easy way to streamline this process? connect the garden folder into my iphone??? DO THIS IN A FUTURE UPDATE
+
+  - *claude:* parked until you say go. it is not a change to the site — the site is a folder on your mac, and nothing on the web can put a photo into it. the two real answers are icloud drive (move the garden folder into it, save straight to it from the phone) or a shortcut that drops photos into a synced folder. say which and i will set it up.
 
 **decided:** not a change to the site — see the answer
 
@@ -76,7 +147,7 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 1789509563803pqcg
 
-- **idea**, front page · stories/
+- **idea**, front page · stories/ — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > i think there is some small issue with the notes. like i think i wasn't able to see someone elses note and for some reason my signature dissapeared from my notes. please troubleshoot this. 
@@ -85,7 +156,7 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 17895077260956g23
 
-- **idea**, front page
+- **idea**, front page — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > god damn the minifigs r ugly. make them better but still the same size!
@@ -94,7 +165,7 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 1789507480134r38b
 
-- **idea**, front page
+- **idea**, front page — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!
@@ -103,7 +174,7 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 1789507266851shjk
 
-- **idea**, front page · the page
+- **idea**, front page · the page — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > i think only I or claude should be able to delete other peoples notes. and I dont want ranodm users to be able to delete my notes.
@@ -112,7 +183,7 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 178950707598022cd
 
-- **idea**, front page
+- **idea**, front page — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > upload all the idea sticky notes into gardeners log somehow?? help me work out the complexities and like logic of this. i need all the files into making this sight organized so i can reference or fix things in the future. 
@@ -121,7 +192,7 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 1789506876038nb4h
 
-- **idea**, front page
+- **idea**, front page — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > For the flying one, make it sorta inspired by sunwukong when he flies on a cloud. combine jump and run because its supposed to just be a guy running and jumping around where the cursor goes.
@@ -130,7 +201,7 @@ Read 15/09/2026, 18:06:43. 30 notes in the ledger.
 
 ### 1789506848670b2fy
 
-- **idea**, front page
+- **idea**, front page — *taken off the wall*
 - by Anmo (r5u3jewz), today
 
 > ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.
