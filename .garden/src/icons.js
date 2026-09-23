@@ -25,10 +25,10 @@ const SRC = {
 };
 
 const ICON_PX = 256;          // 128pt at 2x -- sharp on retina, ~9 KB each
-// Files are drawn at 96px like folders, so 2x is 192. Flat folder icons stay
+// Files are drawn at 84px like folders, so 2x is 168. Flat folder icons stay
 // cheap at any size, but a thumbnail is a photograph: every extra pixel is
 // real weight in a public repo, so this one is sized to exactly what's drawn.
-const THUMB_PX = 144;
+const THUMB_PX = 168;
 // A full-size derivative, not a thumbnail: this one stands in for the photo
 // itself on the front page, so it has to survive being looked at.
 const PREVIEW_PX = 1600;

@@ -383,9 +383,13 @@
       if (select) select.focus();
     });
 
-    // A narrow window has no room for a 292px device sitting over the page,
-    // so it starts pushed aside. A wide one starts open.
-    apply(get('ipod.docked', !window.matchMedia('(min-width: 900px)').matches), false);
+    /* It starts docked, and on every size. A 292px device parked over the
+       page covered the left-hand column of folders and most of the to-do
+       on a 1440px window -- the first thing anybody saw was a music player
+       standing on the site. The tab against the left edge brings it back in
+       one click, it is remembered from then on, and the music itself is
+       untouched either way: docking is a transform, not a stop. */
+    apply(get('ipod.docked', true), false);
   }
 
   /* ------------------------------------------------------- free position

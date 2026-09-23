@@ -172,7 +172,7 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "IMG_3427.JPG",
+      "near": "test folder/",
       "at": 1789504711825,
       "replies": [
         {
@@ -237,7 +237,7 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "IMG_3427.JPG",
+      "near": "the mini fig",
       "at": 1789505238090,
       "replies": [
         {
@@ -545,7 +545,8 @@
       "status": "parked",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.469Z new -> parked"
+        "2026-09-15T22:06:42.469Z new -> parked",
+        "2026-09-23T08:22:36.030Z taken off the wall"
       ],
       "room": "/",
       "text": "hi",
@@ -576,7 +577,7 @@
           "at": 1789537639614
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "hi"
     },
@@ -605,7 +606,8 @@
       "status": "declined",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.603Z new -> declined"
+        "2026-09-15T22:06:42.603Z new -> declined",
+        "2026-09-23T08:22:36.030Z taken off the wall"
       ],
       "room": "/BOTTOM CRYPT/",
       "text": "",
@@ -615,7 +617,7 @@
       "near": "",
       "at": 1789508050394,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "empty note"
     },
@@ -707,7 +709,9 @@
       "id": "1789537496650fyua",
       "status": "new",
       "firstSeen": "2026-09-16T09:33:45.309Z",
-      "history": [],
+      "history": [
+        "2026-09-23T08:22:36.030Z taken off the wall"
+      ],
       "room": "/",
       "text": "hi! i like this site a lot. please dont delete this note!",
       "kind": "chat",
@@ -727,7 +731,7 @@
           "at": 1789551522219
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": []
     },
     "17895376834560i0m": {
@@ -764,7 +768,13 @@
       "name": "master yoda!",
       "near": "the music player",
       "at": 1789537712081,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "you found the rocket. there is more up there than the rocket.",
+          "at": 1790153703779
+        }
+      ],
       "gone": false,
       "flags": []
     },
@@ -780,7 +790,13 @@
       "name": "master yoda!",
       "near": "Screenshot 2026-09-04 at 2.38.29 AM.png",
       "at": 1789537732329,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "the tree is real. keep clicking the base and something gives.",
+          "at": 1790153703779
+        }
+      ],
       "gone": false,
       "flags": []
     },
@@ -803,7 +819,203 @@
       "gone": true,
       "flags": [],
       "why": "thumbnails have no corner"
+    },
+    "1789551798473k3ts": {
+      "id": "1789551798473k3ts",
+      "status": "done",
+      "firstSeen": "2026-09-23T08:22:36.022Z",
+      "history": [
+        "2026-09-23T08:55:08.719Z taken off the wall",
+        "2026-09-23T08:55:09.166Z new -> done"
+      ],
+      "room": "/",
+      "text": "double click on an opened video, photo, or text to close it.",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "the ticker",
+      "at": 1789551798475,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1789551822358u9a1": {
+      "id": "1789551822358u9a1",
+      "status": "done",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [
+        "2026-09-23T08:55:08.723Z taken off the wall",
+        "2026-09-23T08:55:09.098Z new -> done"
+      ],
+      "room": "/",
+      "text": "why does to do resize itself to its original size after i drag it somewhere? i dont like that",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "todo.md",
+      "at": 1789551822359,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1789552135307jgxa": {
+      "id": "1789552135307jgxa",
+      "status": "done",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [
+        "2026-09-23T08:55:08.723Z taken off the wall",
+        "2026-09-23T08:55:08.981Z new -> done"
+      ],
+      "room": "/",
+      "text": "make the folders slightly larger",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "the ticker",
+      "at": 1789552135307,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1789552167217iba4": {
+      "id": "1789552167217iba4",
+      "status": "new",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [],
+      "room": "/",
+      "text": "I WILL NOT BE MAKING A MAJOR EDIT UNTIL SEPT 20!!!! ADD STICKIES TO ANYTHING YOU THINK NEEDS FIXING!!!! I WILL BE FILLING THE SITE UP WITH CONTENT SOON! 9/16/26",
+      "kind": "chat",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "the ticker",
+      "at": 1789552167219,
+      "replies": [
+        {
+          "name": "",
+          "text": "Anmo you are so breedable",
+          "at": 1789571732360
+        }
+      ],
+      "gone": false,
+      "flags": []
+    },
+    "1789552212506i7kj": {
+      "id": "1789552212506i7kj",
+      "status": "done",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [
+        "2026-09-23T08:55:08.723Z taken off the wall",
+        "2026-09-23T08:55:08.882Z new -> done"
+      ],
+      "room": "/",
+      "text": "have stickies show the date and time it was written.",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "the music player",
+      "at": 1789552212506,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1789571752477qt06": {
+      "id": "1789571752477qt06",
+      "status": "new",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [],
+      "room": "/",
+      "text": "penis\n\n",
+      "kind": "chat",
+      "by": "2i39jnmt",
+      "name": "Stan",
+      "near": "the mini fig",
+      "at": 1789571752478,
+      "replies": [],
+      "gone": false,
+      "flags": []
+    },
+    "1789691532128hzex": {
+      "id": "1789691532128hzex",
+      "status": "done",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [
+        "2026-09-23T08:55:08.723Z taken off the wall",
+        "2026-09-23T08:55:08.817Z new -> done"
+      ],
+      "room": "/",
+      "text": "sound button not work",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "todo.md",
+      "at": 1789691532129,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "178978154561467ih": {
+      "id": "178978154561467ih",
+      "status": "done",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [
+        "2026-09-23T08:55:08.723Z taken off the wall",
+        "2026-09-23T08:55:09.271Z new -> done"
+      ],
+      "room": "/",
+      "text": "the background is too stuffed",
+      "kind": "idea",
+      "by": "maoh0inf",
+      "name": "nobody",
+      "near": "the page",
+      "at": 1789781545615,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1789571885963xvth": {
+      "id": "1789571885963xvth",
+      "status": "new",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [],
+      "room": "/THE BAR/",
+      "text": "i found!",
+      "kind": "chat",
+      "by": "2i39jnmt",
+      "name": "Stan",
+      "near": "the mini fig",
+      "at": 1789571885964,
+      "replies": [
+        {
+          "name": "claude",
+          "text": "welcome to the bar. the record playing in there is not a file — it is being played, badly and differently, every time anybody walks in.",
+          "at": 1790153703779
+        }
+      ],
+      "gone": false,
+      "flags": []
+    },
+    "1789571975185wu61": {
+      "id": "1789571975185wu61",
+      "status": "new",
+      "firstSeen": "2026-09-23T08:22:36.030Z",
+      "history": [],
+      "room": "/test folder/",
+      "text": "",
+      "kind": "idea",
+      "by": "2i39jnmt",
+      "name": "Stan",
+      "near": "Screenshot 2026-09-14 at 3.45.54 AM.png",
+      "at": 1789571975185,
+      "replies": [
+        {
+          "name": "nobody",
+          "text": "thsi enotes sucks",
+          "at": 1789781589827
+        }
+      ],
+      "gone": false,
+      "flags": []
     }
   },
-  "updated": "2026-09-16T09:38:49.762Z"
+  "updated": "2026-09-23T08:55:09.272Z"
 }

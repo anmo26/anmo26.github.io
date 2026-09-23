@@ -47,6 +47,14 @@ const POLL_BACKOFF_MAX_MS = 60_000;
 const stamp = () => new Date().toLocaleTimeString('en-US', { hour12: false });
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 
+/* The log is ON THE PAGE. It is the site telling a visitor what it has been
+   doing -- it regrew, it pushed, it published -- and that is the only thing
+   that belongs in it. Plumbing goes to stderr instead, where whoever is
+   running the watcher can still see it: Finder flapping in and out of
+   answering is a fact about this mac at four in the afternoon, and it was
+   filling the front page with it. */
+const note = (...a) => console.error(`[${stamp()}]`, ...a);
+
 function git(args, opts = {}) {
   return spawnSync('git', args, { cwd: root, encoding: 'utf8', ...opts });
 }
@@ -354,14 +362,14 @@ function poll() {
   if (snapshot === null) {
     if (!finderQuiet) {
       finderQuiet = true;
-      log('finder not answering — falling back to .DS_Store, will keep trying');
+      note('finder not answering — falling back to .DS_Store, will keep trying');
     }
     backoff = Math.min(backoff * 2, POLL_BACKOFF_MAX_MS);
     pollTimer = setTimeout(poll, backoff);
     return;
   }
 
-  if (finderQuiet) { finderQuiet = false; log('finder answering again'); }
+  if (finderQuiet) { finderQuiet = false; note('finder answering again'); }
   backoff = POLL_MS;
 
   const layout = layoutOf(snapshot);

@@ -290,7 +290,7 @@ body.is-navigating main { opacity: .45; transition-delay: .13s; }
    neighbour. Names wrap inside it rather than stretching the row, and break
    mid-word if they have to, because one long filename must not reach into the
    item beside it. */
-.item.as-icon { width: 6rem; text-align: center; }
+.item.as-icon { width: 6.6rem; text-align: center; }
 .item.as-icon h3 {
   white-space: normal;
   line-height: 1.35;
@@ -304,8 +304,8 @@ body.is-navigating main { opacity: .45; transition-delay: .13s; }
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 96px;
-  margin-bottom: .3rem;
+  height: 106px;
+  margin-bottom: .32rem;
   line-height: 0;
   cursor: grab;
 }
@@ -321,7 +321,7 @@ body.is-navigating main { opacity: .45; transition-delay: .13s; }
      it never crops it. The icons carry their own soft shadow, so there is
      none added here — a second one would double it. */
   width: auto; height: auto;
-  max-width: 72px; max-height: 72px;
+  max-width: 84px; max-height: 84px;
   margin: 0;
   -webkit-user-drag: none; user-select: none;
 }
@@ -3192,6 +3192,17 @@ body[data-scene] #tex { display: none; }
   font-style: italic;
 }
 .sticky-sign.unsigned:focus::before { content: ''; }
+
+/* when it was written. Quiet -- it is a fact about the note, not part of
+   what the note says -- and it sits between the name and the replies so
+   the line reads "who, when, and what came back". */
+.sticky-when {
+  color: rgba(51, 48, 42, .38);
+  white-space: nowrap;
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: .95em;
+}
 .sticky-more {
   border: 0;
   background: none;
@@ -3438,4 +3449,168 @@ body.theme-ink .sticky { filter: brightness(.82) saturate(.9); }
   position: static;
   opacity: .8;
   margin-left: .6rem;
+}
+
+/* ============================================================== CURSORS
+
+   Other people's hands while they are on the same page. Drawn on a layer of
+   their own, over everything and in the way of nothing -- the whole layer
+   is transparent to the pointer, so a hand can pass straight across a
+   folder without ever being something you can click.
+
+   The movement is done in app.js rather than here: a CSS transition would
+   have to guess how long the next beat is going to take, and gets it wrong
+   the moment the network does.
+   ========================================================================= */
+
+#here {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8600;              /* over the page and the notes, under the iPod */
+}
+
+.here-hand {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: .25rem;
+  will-change: transform;
+  transition: opacity .45s ease;
+}
+.here-hand.going { opacity: 0; }
+
+.here-arrow {
+  display: block;
+  flex: none;
+  fill: var(--here-ink, #33302A);
+  stroke: rgba(255, 255, 255, .85);
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 1px 1.5px rgba(38, 36, 31, .3));
+}
+
+.here-name {
+  margin-top: 9px;
+  padding: .12rem .34rem .16rem;
+  border-radius: 3px;
+  background: var(--here-ink, #33302A);
+  color: #FBFAF7;
+  font-family: var(--mono);
+  font-size: .58rem;
+  letter-spacing: .05em;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(38, 36, 31, .22);
+}
+
+/* One hand, one colour -- the same colour their notes come out, so the hand
+   that wrote the yellow note is the yellow hand. Darkened from the paper
+   shades, which are backgrounds and far too pale to be a mark. */
+.here-hand.c0 { --here-ink: #8A6B12; }
+.here-hand.c1 { --here-ink: #55702C; }
+.here-hand.c2 { --here-ink: #9A5A33; }
+.here-hand.c3 { --here-ink: #2F6079; }
+.here-hand.c4 { --here-ink: #64478C; }
+.here-hand.c5 { --here-ink: #97383C; }
+
+@media (prefers-reduced-motion: reduce) {
+  .here-hand { transition: none; }
+}
+
+/* ------------------------------------------------- a phone does not scroll
+
+   Asked for directly: on a phone there is to be no scrolling at all. So the
+   window IS the page. Nothing runs off the bottom to be chased, nothing
+   runs off the side, and the rubber-band bounce at the top and bottom of
+   iOS is gone with it -- that bounce is the single thing that makes a
+   fixed site feel like a web page rather than a thing on a screen.
+
+   What the arrangement does instead is fit, width and height together
+   (app.js), and a pinch or a double-tap goes closer, with a finger on the
+   bare paper sliding the whole canvas about underneath. */
+@media (max-width: 559px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+  }
+  /* The frame the folder slides inside. Its height is written by app.js,
+     which is the only thing that knows where the ticker ends and the
+     taskbar begins on this particular phone. */
+  .bed-window { position: relative; overflow: hidden; }
+
+  /* The window does the clipping -- body is pinned to the four edges of it.
+     `overflow: hidden` on <main> as well would clip the folder to whatever
+     height <main> happened to be, which on a bed of absolutely positioned
+     items is nothing at all. */
+
+  /* ---- and the head of the page has to earn its room ------------------
+
+     With nothing to scroll, every pixel above the folder is a pixel the
+     folder does not get. On a 812px phone the ornaments, the title, the
+     sentence and the ticker were taking 650 of them between them and the
+     files were landing below the taskbar -- off the screen, with no way
+     left to reach them.
+
+     So the top of the page is compressed rather than cropped: everything
+     that was there is still there, at the size a phone can afford. The
+     still and the clock stand side by side instead of stacked, the title
+     comes down to a phone's idea of large, and the sentence keeps three
+     lines. That buys about four hundred pixels, which is the folder. */
+
+  #corner {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+    gap: .9rem;
+    margin: .2rem auto .5rem;
+  }
+  #clock, #clock-date { font-size: 7px; }
+  #bucket, #cactus, #still { font-size: 7px; }
+  #plants { gap: 1.2rem; }
+
+  main { padding-top: .6rem; }
+
+  .masthead { margin-bottom: .9rem; }
+  .masthead h1 { font-size: 1.85rem; }
+  .masthead p {
+    margin-top: .4rem;
+    font-size: .84rem;
+    line-height: 1.4;
+    /* three lines, and the rest is in the folder anyway */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .marquee { padding: .32rem 0; margin-bottom: .7rem; font-size: .62rem; }
+
+  /* The bar was three rows of large buttons -- a fifth of the screen. Still
+     comfortably bigger than a fingertip, just not shouting. */
+  .taskbar { font-size: .62rem; padding: .2rem .4rem; }
+  .taskbar .toggle { padding: .42rem .42rem; }
+
+  /* ---- and the files are drawn at a phone's size -----------------------
+
+     An icon on this site is 84px with a filename under it, which is right
+     on a desk where there is room to spare. Twenty of them on a phone that
+     cannot scroll is a page shrunk to a fifth, where nothing has a name any
+     more. These are a phone's proportions: smaller picture, smaller name,
+     tighter column -- so the same folder lands on one screen at a size you
+     can actually read. */
+  body .plantbed.mobile-freeform > .item.as-icon { width: 5.1rem; }
+  body .plantbed.mobile-freeform > .item { max-width: 100%; }
+
+  .plantbed .item .icon { height: 56px; margin-bottom: .2rem; }
+  .plantbed .item .icon img { max-width: 46px; max-height: 46px; }
+  .plantbed .item h3 { font-size: .74rem; line-height: 1.25; }
+  .plantbed .item .meta { font-size: .6rem; }
+  body .plantbed.mobile-freeform > .item pre { max-width: 100%; font-size: .6rem; }
 }

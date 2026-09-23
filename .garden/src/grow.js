@@ -118,7 +118,49 @@ const INLINE_LIMIT = { markdown: 200000, text: 20000, raw: 4096 };
 
 // A log is read from the bottom. Showing the whole of one would push the
 // rest of the page off the screen and grow without limit.
-const LOG_TAIL_LINES = 20;
+const LOG_TAIL_LINES = 12;
+
+/* A crash's stack trace is not news. It is thirty lines of node internals,
+   it says nothing to anybody reading the front page, and it names paths on
+   a private machine -- so it never reaches the page at all. */
+const LOG_NOISE = [
+  /^\s*at\s/,                       // stack frames
+  /^\s*(errno|syscall|code):/,
+  /^\s*[{}]\s*$/,
+  /^Node\.js v/,
+  /^\s*return binding\./,
+  /node:internal/,
+  /^\s*\^+\s*$/,                    // the caret under a syntax error
+  /build error: node:/              // a crash inside node, with no story in it
+];
+
+/**
+ * The log made readable. Two things were making the front page unreadable:
+ * a crash dumping its whole stack into it, and the watcher flapping the
+ * same line hundreds of times in a row. Stack frames are dropped, and a run
+ * of the same message becomes that message once with a count after it --
+ * so the twelve lines on the page are twelve different things that happened
+ * rather than one thing that happened twelve times.
+ */
+function tidyLog(text, keep) {
+  const stamp = /^\[[0-9:]{5,8}\]\s*/;
+  const out = [];
+
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    if (LOG_NOISE.some(re => re.test(line))) continue;
+
+    const said = line.replace(stamp, '');
+    const last = out[out.length - 1];
+    if (last && last.said === said) { last.n++; continue; }
+    out.push({ line, said, n: 1 });
+  }
+
+  return out
+    .slice(-keep)
+    .map(e => (e.n > 1 ? `${e.line}  ×${e.n}` : e.line))
+    .join('\n');
+}
 const ROOT_FONT_PX = 14;
 
 // Long writing on the front page used to just keep going -- a full essay
@@ -390,8 +432,11 @@ function describe(dir, entry, rules, root, isRoot) {
   // grows forever -- gating it on total size means it reads fine for a while
   // and then one day silently turns into a download link.
   if (/\.log$/i.test(name)) {
-    const text = tailText(full, LOG_TAIL_LINES);
-    if (text === null) return { ...file, type: 'other' };
+    // Read deeper than we show: the tidying below throws lines away, and a
+    // day of one message repeating would otherwise leave the feed empty.
+    const raw = tailText(full, LOG_TAIL_LINES * 12);
+    if (raw === null) return { ...file, type: 'other' };
+    const text = tidyLog(raw, LOG_TAIL_LINES);
     return { ...file, type: 'text', contents: text, lines: text.split('\n').length };
   }
 

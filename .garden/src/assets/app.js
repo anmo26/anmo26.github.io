@@ -583,6 +583,39 @@
     bed.style.minHeight = Math.ceil(low + 24) + 'px';
   }
 
+  /* -------------------------------------------------------- the window
+     On a phone the bed is a canvas that slides under the screen, and a
+     canvas needs a frame: without one, dragging the folder up sent it
+     straight over the title and the ticker. This is that frame -- a box
+     the exact height of the room between the ticker and the taskbar, with
+     the bed moving about inside it.
+
+     It is only ever built on a phone. On a desk the bed has the page and
+     needs no window onto it. */
+
+  function bedWindow(bed) {
+    if (!bed) return null;
+    var w = bed.parentNode;
+    if (w && w.classList && w.classList.contains('bed-window')) return w;
+    if (wide()) return null;
+    w = document.createElement('div');
+    w.className = 'bed-window';
+    bed.parentNode.insertBefore(w, bed);
+    w.appendChild(bed);
+    return w;
+  }
+
+  /** How tall that window is: everything left between it and the taskbar. */
+  function sizeBedWindow(bed) {
+    var w = bedWindow(bed);
+    if (!w) return;
+    if (wide()) { w.style.height = ''; return; }
+    w.style.height = '';                       // measure where it really starts
+    var top = w.getBoundingClientRect().top;
+    var room = window.innerHeight - top - taskbarHeight() - 6;
+    w.style.height = Math.max(120, Math.round(room)) + 'px';
+  }
+
   /** The bed an element is lying on, or null if it is furniture on top. */
   function bedOf(el) {
     var p = el.parentNode;
@@ -600,7 +633,12 @@
     // scroll, and would cancel the drag the instant it moved.
     p.el.style.touchAction = 'none';
     p.el.style.transition = 'transform .12s ease-out';
-    p.el.style.transform = 'scale(1.06)';
+    /* The lift is a nudge ON TOP of whatever size the thing already is.
+       Writing a bare `scale(1.06)` here threw away the size the visitor had
+       pulled the card to, and the matching blank in `drop` below then left
+       it there -- which is why the to-do sprang back to its original size
+       the moment it was moved. See `tf0` in makeDraggable. */
+    p.el.style.transform = (p.tf0 ? p.tf0 + ' ' : '') + 'scale(1.06)';
     p.el.classList.add('focused');
     if (navigator.vibrate) { try { navigator.vibrate(12); } catch (err) {} }
   }
@@ -608,7 +646,7 @@
   function drop(p) {
     p.el.style.touchAction = '';
     p.el.style.transition = '';
-    p.el.style.transform = '';
+    p.el.style.transform = p.tf0 || '';
     p.el.classList.remove('focused');
   }
 
@@ -847,7 +885,16 @@
          what dragging an opened picture used to feel like. The scale is
          per-item now, and it is remembered so the press and every move
          afterwards agree about it. */
-      var k = bedOf(el) ? (bedScale || 1) : 1;
+      /* MEASURED off the bed rather than read out of a variable. The
+         variable is written at the end of a fit and can be a step behind
+         the page -- and a scale that is a step behind is an item that
+         creeps away from the pointer while you drag it. */
+      var bed = bedOf(el);
+      var k = 1;
+      if (bed && bed.offsetWidth) {
+        k = bed.getBoundingClientRect().width / bed.offsetWidth;
+        if (!(k > 0.05)) k = 1;
+      }
 
       pending = {
         el: el,
@@ -855,6 +902,8 @@
         onDrop: onDrop,
         handle: handle,
         scale: k,
+        // whatever size this thing has already been pulled to
+        tf0: el.style.transform || '',
         pointerId: e.pointerId,
         touch: e.pointerType !== 'mouse',
         held: e.pointerType === 'mouse',   // a mouse means it the moment it moves
@@ -1074,6 +1123,28 @@
         play('tick');
       }
     });
+
+    /* Double-click to put it back to its own size -- the same gesture as on
+       a picture, so there is one thing to remember rather than two. */
+    item.addEventListener('dblclick', function (e) {
+      if (scale === 1) return;
+      if (e.target.closest('a, button, input, textarea')) return;
+      e.preventDefault();
+      scale = 1;
+      item.style.transition = 'transform .22s cubic-bezier(.22,.8,.3,1)';
+      applyScale(item, 1);
+      setTimeout(function () {
+        item.style.transition = '';
+        growBed(bedOf(item));
+        fitSoon();
+      }, 240);
+      if (item.dataset.key) {
+        var all = get('scaled', {});
+        delete all[item.dataset.key];
+        set('scaled', all);
+      }
+      play('pluck');
+    });
   }
 
   /**
@@ -1123,16 +1194,42 @@
 
     var key = item.dataset.key;
     var sizes = get('sized', {});
+
+    /* The size the page itself would have given this picture -- from its own
+       dimensions, capped the way the page caps them. Measuring the rendered
+       width instead would lock in whatever the item happened to be at the
+       time. Kept on the box so a double-click can put it back. */
+    function born() {
+      var nat = media.naturalWidth ||
+                parseInt(media.getAttribute('width'), 10) || 0;
+      return nat ? Math.min(nat, MEDIA_START_PX) : MEDIA_START_PX;
+    }
+
     if (key && sizes[key] && sizes[key].w >= 40) {
       box.style.width = sizes[key].w + 'px';
     } else {
-      // Size from the picture's own dimensions, capped the way the page caps
-      // them -- measuring the rendered width here would lock in whatever the
-      // item happened to be.
-      var nat = media.naturalWidth ||
-                parseInt(media.getAttribute('width'), 10) || 0;
-      box.style.width = (nat ? Math.min(nat, MEDIA_START_PX) : MEDIA_START_PX) + 'px';
+      box.style.width = born() + 'px';
     }
+
+    /* Double-click anything that has been pulled out of shape and it goes
+       back to the size it was born at. Asked for directly: a picture pulled
+       too big is otherwise a picture you have to pull all the way back by
+       hand. */
+    box.addEventListener('dblclick', function (e) {
+      if (box.offsetWidth === born()) return;      // already itself; let it close
+      e.preventDefault();
+      e.stopPropagation();
+      box.style.transition = 'width .22s cubic-bezier(.22,.8,.3,1), height .22s cubic-bezier(.22,.8,.3,1)';
+      box.style.width = born() + 'px';
+      snap(box);
+      setTimeout(function () { box.style.transition = ''; growBed(bedOf(item)); fitSoon(); }, 240);
+      if (key) {
+        var all = get('sized', {});
+        delete all[key];
+        set('sized', all);
+      }
+      play('pluck');
+    });
 
     if (media.complete || media.videoWidth) snap(box);
     else media.addEventListener('load', function () { snap(box); }, { once: true });
@@ -1188,15 +1285,9 @@
 
   var bedScale = 1;
   var MIN_SCALE = 0.62;
-  // A phone fits by width alone, and an arrangement a laptop finds merely
-  // wide can be four or five times a phone's own width -- so fitting ALL of
-  // it in means shrinking to about a seventh, at which point the filenames
-  // are two pixels tall and the photos are specks. That is not "the same
-  // look as the desktop", it is a thumbnail of it.
-  //
-  // So legibility wins over never panning: the floor is the point where text
-  // is still readable, and a wider arrangement than that is panned across,
-  // the way you would move a small window over a big desk.
+  // Only a last-resort answer now, for the moment before a page has been
+  // measured. A phone's real scale is whatever puts the whole arrangement
+  // on the screen, because the screen is all there is -- see fitBed.
   var MOBILE_MIN_SCALE = 0.5;
   var TASKBAR_H = 44;
 
@@ -1205,17 +1296,10 @@
    *  pinch/double-tap code below, so the two can never disagree about how
    *  much room the phone actually has. */
   function mobileAvailW(bed) {
-    var cs = window.getComputedStyle(bed.parentNode);
-    return bed.parentNode.clientWidth -
+    var box = bed.parentNode;
+    var cs = window.getComputedStyle(box);
+    return box.clientWidth -
       (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
-  }
-
-  /** The plain width-fit a phone lands on when nobody has pinched or
-   *  double-tapped: as close to full size as the screen allows, floored at
-   *  the point past which a filename stops being legible. */
-  function mobileFitWidthScale(availW, contentW) {
-    var k = Math.min(1, availW / contentW);
-    return k < MOBILE_MIN_SCALE ? MOBILE_MIN_SCALE : k;
   }
 
   /** The scale at which the whole arrangement fits the phone's own screen,
@@ -1227,9 +1311,23 @@
   function fitEverythingScale(bed, size) {
     if (!size.w || !size.h) return MOBILE_MIN_SCALE;
     var availW = mobileAvailW(bed);
-    var availH = window.innerHeight - taskbarHeight() - 24;
+    var availH = mobileAvailH(bed);
     if (availW < 40 || availH < 40) return MOBILE_MIN_SCALE;
-    return Math.max(0.16, Math.min(availW / size.w, availH / size.h));
+    return Math.max(0.12, Math.min(availW / size.w, availH / size.h));
+  }
+
+  /** The room a phone really has for the arrangement: from the top of the
+   *  bed (under the masthead and the ticker) down to the taskbar. The old
+   *  sum used the whole window height, which is the height of the screen
+   *  and not the height of the space -- so "everything fits" left the
+   *  bottom of the folder behind the taskbar. */
+  function mobileAvailH(bed) {
+    var w = bed.parentNode;
+    if (w && w.classList && w.classList.contains('bed-window') && w.clientHeight) {
+      return w.clientHeight;
+    }
+    var top = bed.getBoundingClientRect().top + window.pageYOffset - bedOffsetY(bed);
+    return window.innerHeight - top - taskbarHeight() - 10;
   }
 
   function taskbarHeight() {
@@ -1293,6 +1391,8 @@
     }
     if (!used) return;
 
+    bed.setAttribute('data-phone-grid', '');
+
     // The class carries the same freeform sizing rules style.css already
     // gives a desktop item (width: max-content, the icon column, the log's
     // margin), just without that rule's own 560px gate. It has to land
@@ -1300,11 +1400,55 @@
     // still whatever width the flowed phone stack left it at.
     bed.classList.add('mobile-freeform');
 
-    deoverlapItems(items);
+    /* A desk is not a phone. The Finder arrangement is a thousand-odd
+       pixels across a room that is three hundred and seventy-five wide, and
+       now that the page does not scroll, showing all of it at once means
+       showing it at a fifth of its size -- twenty specks, no filenames.
+
+       So a phone gets its own arrangement: the same things, in the same
+       order, packed into rows that fit the screen. It is the difference
+       between a photograph of a desk and a desk. Anything the visitor then
+       moves themselves is theirs and is remembered; this only ever decides
+       where things START. */
+    phoneGrid(bed, items);
     resettleWhenImagesLoad(bed, items);
 
     bed.setAttribute('data-frozen', '');
     growBed(bed);
+  }
+
+  /**
+   * Pack a bed into rows that fit a phone. Reading order, left to right,
+   * wrapping when the row is full, each row as tall as its tallest thing.
+   */
+  function phoneGrid(bed, items) {
+    var availW = mobileAvailW(bed);
+    if (availW < 60) { deoverlapItems(items); return; }
+
+    var GAP_X = 10, GAP_Y = 12;
+    var x = 0, y = 0, rowH = 0, i, el, w, h;
+
+    for (i = 0; i < items.length; i++) {
+      el = items[i];
+      // A .garden.log or anything else the page hides has no size and must
+      // not take a slot in the grid.
+      if (!el.offsetWidth && !el.offsetHeight) continue;
+
+      el.style.position = 'absolute';
+      el.style.margin = '0';
+      el.style.maxWidth = availW + 'px';
+
+      w = Math.min(el.offsetWidth, availW);
+      h = el.offsetHeight;
+
+      if (x > 0 && x + w > availW) { x = 0; y += rowH + GAP_Y; rowH = 0; }
+
+      el.style.left = Math.round(x) + 'px';
+      el.style.top = Math.round(y) + 'px';
+
+      x += w + GAP_X;
+      if (h > rowH) rowH = h;
+    }
   }
 
   /**
@@ -1329,7 +1473,8 @@
 
     function settle() {
       if (!bed.hasAttribute('data-settling')) return;
-      deoverlapItems(items);
+      if (bed.hasAttribute('data-phone-grid')) phoneGrid(bed, items);
+      else deoverlapItems(items);
       growBed(bed);
     }
 
@@ -1439,6 +1584,7 @@
     if (!bed) return;
 
     mobilizeBed(bed);
+    sizeBedWindow(bed);
 
     // Fitting the arrangement to the window used to be a switch nobody ever
     // wanted off: with it off, half of any wide folder is simply not on the
@@ -1491,25 +1637,52 @@
       // purpose -- that choice has to survive a resize or a rotation
       // rather than being clobbered back to the width-fit the moment the
       // window so much as twitches.
+      /* A phone does not scroll at all any more -- asked for directly. The
+         page is nailed to the window: no bar sliding away, no rubber band,
+         nothing running off the bottom to be chased.
+
+         What it is NOT is everything shrunk until it fits. Twenty-five
+         things in a folder on a 375px screen would come out at a fifth of
+         their size, and a folder whose filenames cannot be read is not a
+         folder. So the FOLDER is laid out to the width of the phone (see
+         phoneGrid) and drawn at its own size, and if it runs deeper than
+         the screen you move the paper under the window -- one finger,
+         anywhere on the bare bed. Double-tap to see the whole thing at
+         once, double-tap again to come back.
+
+         The floor is still "the whole arrangement", so nothing can ever be
+         somewhere a visitor cannot reach. */
+      var whole = fitEverythingScale(bed, size);
+      var readable = Math.min(1, availW / size.w);
       if (mobileZoom != null) {
-        k = Math.max(fitEverythingScale(bed, size), Math.min(ZOOM_MAX, mobileZoom));
+        k = Math.max(whole, Math.min(ZOOM_MAX, mobileZoom));
       } else {
-        k = mobileFitWidthScale(availW, size.w);
+        k = Math.max(whole, readable);
       }
     }
 
     bedScale = k;
     if (k === 1) {
-      bed.style.transform = '';
-      bed.style.height = '';
-      bed.style.minHeight = '';
+      paintBed(bed, 1, size);
+      bed.style.width = '';
+      /* A frozen bed holds nothing in flow -- every item in it is absolute
+         -- so clearing its height collapses it to nothing and the page
+         clips the folder away above the first row. Drawn at its own size is
+         not the same as having no size. */
+      if (bed.hasAttribute('data-frozen')) {
+        bed.style.height = Math.ceil(size.h) + 'px';
+        bed.style.minHeight = bed.style.height;
+      } else {
+        bed.style.height = '';
+        bed.style.minHeight = '';
+      }
       return;
     }
 
     // transform does not change layout, so the page would keep the unscaled
     // height and scroll into empty paper. Say what the box is really worth.
     bed.style.transformOrigin = 'top left';
-    bed.style.transform = 'scale(' + k + ')';
+    paintBed(bed, k, size);
     bed.style.width = (100 / k) + '%';
     bed.style.height = Math.ceil(size.h * k) + 'px';
     // The generator writes a min-height for the unscaled arrangement into the
@@ -1549,6 +1722,87 @@
   var mobileZoom = null;   // a scale the visitor chose on purpose; null = automatic
   var pinch = null;        // { dist, scale, bed, size } while two fingers are down
 
+  /* ------------------------------------------------------------ panning
+     The page does not scroll on a phone any more, so when a pinch has gone
+     closer than the whole arrangement, something else has to move it: the
+     paper itself. One finger on a bare patch of bed drags the whole canvas
+     under the screen, and it is clamped so it can never be pushed off what
+     it is holding -- let go anywhere and there is still something to see.
+     ------------------------------------------------------------------- */
+
+  var panX = 0, panY = 0;
+
+  /** The one place the bed's transform is written: where it has been
+   *  dragged to, and how big it is drawn. Two writers could disagree. */
+  function paintBed(bed, k, size) {
+    if (wide()) { panX = 0; panY = 0; }
+    else clampPan(bed, k, size);
+    bed.style.transform =
+      (panX || panY ? 'translate(' + Math.round(panX) + 'px,' + Math.round(panY) + 'px) ' : '') +
+      'scale(' + k + ')';
+  }
+
+  function clampPan(bed, k, size) {
+    var overW = size.w * k - mobileAvailW(bed);
+    var overH = size.h * k - mobileAvailH(bed);
+    panX = overW > 0 ? Math.max(-overW, Math.min(0, panX)) : 0;
+    panY = overH > 0 ? Math.max(-overH, Math.min(0, panY)) : 0;
+  }
+
+  function panBy(dx, dy) {
+    var bed = document.querySelector('.plantbed');
+    if (!bed || wide()) return;
+    panX += dx;
+    panY += dy;
+    paintBed(bed, bedScale || 1, bedContent(bed));
+  }
+
+  /* A finger that lands on the paper rather than on a thing moves the
+     paper. Items keep their own drag; this only ever sees a press that
+     nothing else claimed. */
+  (function () {
+    var from = null;
+
+    document.addEventListener('pointerdown', function (e) {
+      // Narrow means narrow, whatever is pointing at it. A desktop window
+      // dragged in past the breakpoint gets the same page a phone does, and
+      // it cannot be one with no way to reach the bottom of the folder.
+      if (wide()) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (activeTouches.length > 1) return;
+      var bed = document.querySelector('.plantbed');
+      if (!bed || e.target !== bed) return;                 // bare paper only
+      from = { x: e.clientX, y: e.clientY };
+    }, true);
+
+    document.addEventListener('pointermove', function (e) {
+      if (!from) return;
+      var dx = e.clientX - from.x, dy = e.clientY - from.y;
+      if (!dx && !dy) return;
+      from.x = e.clientX; from.y = e.clientY;
+      /* Moving the paper is not sweeping a cursor across a document, and
+         without this the browser paints every filename it passes blue and
+         leaves the selection behind. */
+      if (!from.moved) {
+        from.moved = true;
+        document.body.classList.add('dragging');
+      }
+      try {
+        var sel = window.getSelection();
+        if (sel && sel.removeAllRanges) sel.removeAllRanges();
+      } catch (err) {}
+      if (e.cancelable) e.preventDefault();
+      panBy(dx, dy);
+    }, true);
+
+    function stop() {
+      if (from && from.moved) document.body.classList.remove('dragging');
+      from = null;
+    }
+    document.addEventListener('pointerup', stop, true);
+    document.addEventListener('pointercancel', stop, true);
+  }());
+
   function touchDistance(t0, t1) {
     var dx = t1.clientX - t0.clientX, dy = t1.clientY - t0.clientY;
     return Math.sqrt(dx * dx + dy * dy);
@@ -1561,7 +1815,7 @@
     bedScale = k;
     mobileZoom = k;
     bed.style.transformOrigin = 'top left';
-    bed.style.transform = 'scale(' + k + ')';
+    paintBed(bed, k, size);
     bed.style.width = (100 / k) + '%';
     bed.style.height = Math.ceil(size.h * k) + 'px';
     bed.style.minHeight = bed.style.height;
@@ -1594,7 +1848,9 @@
     var bed = pinch.bed, size = pinch.size;
     if (!size.w || !size.h) return;
 
-    var floor = Math.min(fitEverythingScale(bed, size), MOBILE_MIN_SCALE);
+    // Zooming out stops where the whole arrangement is on the screen.
+    // There is nothing past that but a smaller picture of the same thing.
+    var floor = fitEverythingScale(bed, size);
     var d = touchDistance(e.touches[0], e.touches[1]);
     var k = pinch.scale * (d / pinch.dist);
     if (k < floor) k = floor;
@@ -1611,12 +1867,13 @@
     var contentX = (midX - before.left) / (bedScale || 1);
     var contentY = (midY - before.top) / (bedScale || 1);
 
+    /* Keeping the point between the fingers under the fingers used to be
+       done by pulling the page's scroll back. There is no scroll on a
+       phone any more, so the paper is moved instead -- same sum, and it is
+       clamped inside applyZoom so it cannot be pinched off the screen. */
+    panX += (midX - contentX * k) - (bed.getBoundingClientRect().left - panX);
+    panY += (midY - contentY * k) - (bed.getBoundingClientRect().top - panY);
     applyZoom(bed, k, size);
-
-    var after = bed.getBoundingClientRect();
-    var main = bed.parentNode;
-    main.scrollLeft += after.left - (midX - contentX * k);
-    window.scrollBy(0, after.top - (midY - contentY * k));
   }
 
   function onPinchEnd(e) {
@@ -1679,11 +1936,23 @@
     e.preventDefault();
 
     var everything = fitEverythingScale(bed, size);
-    var comfortable = mobileFitWidthScale(mobileAvailW(bed), size.w);
+    // The size the folder is actually drawn at: laid out to the width of
+    // this phone. On a small folder the whole thing already is that size,
+    // and then a double-tap has nowhere to go, which is correct.
+    var comfortable = Math.max(everything, Math.min(1, mobileAvailW(bed) / size.w));
 
     var current = mobileZoom == null ? comfortable : mobileZoom;
     var goingOut = current > (everything + comfortable) / 2;
-    applyZoom(bed, goingOut ? everything : comfortable, size);
+    var k = goingOut ? everything : comfortable;
+
+    // Zoom in on the spot that was tapped, not on the corner of the page.
+    var box = bed.getBoundingClientRect();
+    var cx = (t.clientX - box.left) / (bedScale || 1);
+    var cy = (t.clientY - box.top) / (bedScale || 1);
+    panX += (t.clientX - cx * k) - (box.left - panX);
+    panY += (t.clientY - cy * k) - (box.top - panY);
+
+    applyZoom(bed, k, size);
   }
 
   document.addEventListener('touchend', onPossibleDoubleTap, { passive: false });
@@ -1753,7 +2022,10 @@
 
   var TOGGLES = [
     { id: 'sound', label: 'sound', def: true,
-      apply: function (on) { soundOn = on; ambSync(); } },
+      /* Switched on, it says so. The room tone underneath is deliberately
+         almost nothing, and a switch whose whole effect is "almost
+         nothing" is a switch people reasonably report as broken. */
+      apply: function (on, user) { soundOn = on; ambSync(); if (on && user) play('pluck'); } },
     // The cactus and the still are one thing to anybody looking at them:
     // the living corner of the page. One switch, not two.
     { id: 'plants', label: 'plants', def: true,
@@ -1768,6 +2040,13 @@
        included -- and leaves them where they are for everybody else. */
     { id: 'notes', label: 'notes', def: true,
       apply: function (on) { document.body.classList.toggle('notes-off', !on); } },
+
+    /* Other people's hands, live, while they are on the same page. It is
+       the one thing on this site that tells anybody else you are here, so
+       it is a switch and not a feature: turned off, this browser stops
+       reading the shared document AND stops writing to it. */
+    { id: 'cursors', label: 'people', def: true,
+      apply: function (on) { hereOn = on; if (typeof hereSync === 'function') hereSync(); } },
 
     // The music player. This parks the whole thing off the side of the
     // screen and brings it back; `‹‹` on the player itself only docks it.
@@ -1943,7 +2222,7 @@
         on = !on;
         btn.setAttribute('aria-pressed', String(on));
         set('toggle.' + t.id, on);
-        t.apply(on);
+        t.apply(on, true);
       });
       bar.appendChild(btn);
       t.apply(on);
@@ -2482,6 +2761,26 @@
     openViewers = Math.max(0, openViewers - 1);
   }
 
+  /* Double-click an open picture, film or page and it shuts. Asked for, and
+     it is what a desktop already does with a window.
+
+     Two things are deliberately not a close. A control is a control: the
+     play button, the link out, the scrollbar of a long text. And if the
+     double-click has just selected a word, the visitor was reading, not
+     dismissing -- so the selection wins and the panel stays. */
+  document.addEventListener('dblclick', function (e) {
+    var panel = e.target.closest ? e.target.closest('.viewer') : null;
+    if (!panel) return;
+    if (e.target.closest('a, button, input, textarea, select, video, audio, iframe')) return;
+    try {
+      var sel = window.getSelection();
+      if (sel && String(sel).length) return;
+    } catch (err) {}
+    e.preventDefault();
+    closeViewer(panel);
+    play('pluck');
+  });
+
   function openViewer(href, name, kind) {
     var panel = document.createElement('div');
     panel.className = 'viewer';
@@ -2856,7 +3155,14 @@
     ocean:     { type: 'lowpass',  freq: 300,  q: 0.90, gain: 0.046, swell: 0.140, rate: 0.10,
                  every: [2600, 7000],  voice: 'bubble' },
     moonlight: { type: 'bandpass', freq: 3400, q: 1.20, gain: 0.010, swell: 0.040, rate: 0.13,
-                 every: [3000, 9000],  voice: 'cricket' }
+                 every: [3000, 9000],  voice: 'cricket' },
+
+    /* Every room had a tone except the rooms that are just rooms -- the
+       front page and every ordinary folder -- so on the page most people
+       actually sit on, the sound switch turned nothing on and nothing off
+       and read as broken. This is the quietest thing in the list on
+       purpose: a desk in a room, not an effect. */
+    desk:      { type: 'lowpass',  freq: 240,  q: 0.40, gain: 0.009, swell: 0.008, rate: 0.02 }
   };
 
   /* ---------------------------------------------------------- the trio
@@ -4805,7 +5111,10 @@
 
   function syncScene() {
     var want = document.body.getAttribute('data-scene') || '';
-    if (want === sceneOn) return;
+    /* `want` empty is a real answer -- an ordinary folder, which has a room
+       tone of its own now -- so only a NAMED scene that is already up is
+       allowed to short-circuit. */
+    if (want && want === sceneOn) return;
     if (sceneOn) unmountScene();
     if (want === 'garden') mountGarden();
     else if (want === 'moonlight') mountMoonlight();
@@ -4814,6 +5123,7 @@
     else if (want === 'nursery') mountNurseryScene();
     else if (want === 'bar') mountBar();
     else if (want === 'forum') mountForum();
+    else ambience('desk');
   }
 
   function mountGarden() {
@@ -5844,6 +6154,103 @@
     return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3).toLowerCase();
   }
 
+  /* The hour a note was written, in the visitor's own clock. Asked for
+     directly: a wall of paper with no dates on it is a wall you cannot read
+     in order. Today says the time, anything older says the day as well, so
+     the common case stays short. */
+  function clockOf(ts) {
+    var d = new Date(ts);
+    var h = d.getHours(), m = d.getMinutes();
+    var ap = h < 12 ? 'am' : 'pm';
+    h = h % 12; if (!h) h = 12;
+    return h + ':' + (m < 10 ? '0' : '') + m + ap;
+  }
+
+  function stamp(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    var now = new Date();
+    var sameDay = d.getFullYear() === now.getFullYear() &&
+                  d.getMonth() === now.getMonth() &&
+                  d.getDate() === now.getDate();
+    return sameDay ? clockOf(ts) : when(ts) + ' · ' + clockOf(ts);
+  }
+
+  function stampLong(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    return 'written ' + d.getDate() + ' ' +
+           MONTHS[d.getMonth()].slice(0, 3).toLowerCase() + ' ' +
+           d.getFullYear() + ', ' + clockOf(ts);
+  }
+
+  /* ------------------------------------------------------- where it lands
+     A note is dropped at a page coordinate, and a page coordinate means a
+     particular window. Open the same page narrower and a note somebody
+     stuck beside a folder lands squarely on the name of the site -- which
+     is how the front page came to have a square of paper over the title
+     and half the welcome.
+
+     So a note is nudged, never moved: only far enough to clear the head of
+     the page, and only when it would otherwise be sitting on it. Which
+     thing it was stuck BY is recorded on the note itself, so the meaning
+     of where it was put survives the nudge.
+
+     On a phone there is the second half of it: nothing scrolls any more, so
+     a note off the side of the screen is a note nobody can ever reach. Out
+     there, it comes back in.
+     --------------------------------------------------------------------- */
+
+  function headBottom() {
+    var low = 0;
+    ['.masthead', '.marquee'].forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (!el || !el.getClientRects().length) return;
+      var b = el.getBoundingClientRect().bottom + window.pageYOffset;
+      if (b > low) low = b;
+    });
+    return low + 8;
+  }
+
+  function placeNote(el) {
+    var w = el.offsetWidth || 190, h = el.offsetHeight || 150;
+    var x = parseFloat(el.style.left) || 0;
+    var y = parseFloat(el.style.top) || 0;
+
+    var floor = headBottom();
+    if (y < floor) y = floor;
+
+    var room = document.documentElement.clientWidth;
+    if (x + w > room - 6) x = room - w - 6;
+    if (x < 6) x = 6;
+
+    if (!wide()) {
+      // nothing scrolls, so nothing may be off the bottom either
+      var deep = window.innerHeight - taskbarHeight() - h - 4;
+      if (y > deep) y = Math.max(floor, deep);
+    }
+
+    el.style.left = Math.round(x) + 'px';
+    el.style.top = Math.round(y) + 'px';
+  }
+
+  /** Every note on the page, checked against the head of the page again.
+   *  The masthead is not its final height until the fonts and the pictures
+   *  have landed, and a note placed against a head that was still growing
+   *  ends up sitting on the ticker. */
+  function replaceNotes() {
+    document.querySelectorAll('.sticky').forEach(function (el) {
+      if (el.contains(document.activeElement)) return;   // they are writing in it
+      placeNote(el);
+    });
+  }
+
+  window.addEventListener('resize', replaceNotes);
+  window.addEventListener('load', function () {
+    replaceNotes();
+    setTimeout(replaceNotes, 500);
+  });
+
   function stickyEl(note, focus) {
     var mine = note.by === myHand();
 
@@ -5870,10 +6277,12 @@
       '<div class="sticky-foot">' +
         '<span class="sticky-sign" title="sign your notes"' +
           (mine ? ' contenteditable="plaintext-only"' : '') + '></span>' +
+        '<span class="sticky-when"></span>' +
         '<button class="sticky-more" type="button"></button>' +
       '</div>' +
       '<div class="sticky-thread" hidden></div>';
     document.body.appendChild(el);
+    placeNote(el);
 
     var body = el.querySelector('.sticky-body');
     body.textContent = note.text || '';
@@ -5882,6 +6291,12 @@
     var sign = el.querySelector('.sticky-sign');
     sign.textContent = note.name || (mine ? '' : 'someone');
     if (mine && !note.name) sign.classList.add('unsigned');
+
+    var stampEl = el.querySelector('.sticky-when');
+    if (note.at) {
+      stampEl.textContent = stamp(note.at);
+      stampEl.title = stampLong(note.at);
+    }
 
     var kindBtn = el.querySelector('.sticky-kind');
     var more = el.querySelector('.sticky-more');
@@ -8231,6 +8646,278 @@
     ambience('bar');
   }
 
+  /* ============================================================== CURSORS
+     Other people, on the page, while you are on it. A hand moving about a
+     room is the clearest possible sign that somebody else is actually
+     there -- more than a visitor count, and quieter than a chat.
+
+     How it works, and what it costs. There is no server here and there
+     never will be: every shared thing on this site is one public document
+     that everybody reads and everybody writes. So a cursor cannot stream.
+     Each browser writes where its pointer is about once a second and reads
+     everybody else's at the same time, and what you see is drawn BETWEEN
+     those readings rather than at them -- each hand glides from where it
+     was to where it now is over the next beat. That is the difference
+     between a cursor that teleports once a second and one that moves.
+
+     What is written down: a random name for the browser, whatever the
+     visitor has signed their notes, which page they are on, and a
+     coordinate. Nothing else, and it is gone twenty seconds after they
+     stop moving. The taskbar switch takes you off it entirely -- switched
+     off, this browser neither reads nor writes.
+
+     The coordinate is in the BED's own unscaled pixels, not the screen's.
+     Two people on two different windows see the page at two different
+     sizes, and a screen coordinate would put somebody's hand on the tree
+     when it was really on the to-do.
+     ------------------------------------------------------------------- */
+
+  var HERE_DOC = 'https://textdb.dev/api/data/anmo-garden-here-8f3c1d';
+  var HERE_BEAT_MS = 1100;     // how often this browser speaks and listens
+  var HERE_GONE_MS = 20000;    // no word for this long and a hand is gone
+  var HERE_MAX = 40;           // hands kept in the document at all
+
+  var hereOn = get('toggle.cursors', true);
+  var hereLayer = null;        // where the hands are drawn
+  var hereHands = {};          // hand -> { el, dot, from, to, at, x, y }
+  var hereMine = null;         // where my own pointer last was, in bed pixels
+  var hereSent = null;         // what I last put in the document
+  var hereChain = Promise.resolve();
+  var hereTimer = 0;
+  var hereFrame = 0;
+
+  /** The bed's own unscaled pixels, from a point on the screen. */
+  function bedPoint(clientX, clientY) {
+    var bed = document.querySelector('.plantbed');
+    if (!bed) return null;
+    var box = bed.getBoundingClientRect();
+    var k = bed.offsetWidth ? box.width / bed.offsetWidth : 1;
+    if (!(k > 0.05)) k = 1;
+    return { x: (clientX - box.left) / k, y: (clientY - box.top) / k };
+  }
+
+  /** And back again. */
+  function screenPoint(x, y) {
+    var bed = document.querySelector('.plantbed');
+    if (!bed) return null;
+    var box = bed.getBoundingClientRect();
+    var k = bed.offsetWidth ? box.width / bed.offsetWidth : 1;
+    if (!(k > 0.05)) k = 1;
+    return { x: box.left + x * k, y: box.top + y * k };
+  }
+
+  function hereRead(t) {
+    var j = null;
+    try { j = t ? JSON.parse(t) : null; } catch (e) { j = null; }
+    if (!j || typeof j !== 'object' || !j.who || typeof j.who !== 'object') j = { who: {} };
+    return j;
+  }
+
+  /** Everybody who has not said anything for a while stops being here. */
+  function herePrune(doc) {
+    var now = Date.now(), k, live = [];
+    for (k in doc.who) {
+      if (!Object.prototype.hasOwnProperty.call(doc.who, k)) continue;
+      var v = doc.who[k];
+      if (!v || now - (Number(v.t) || 0) > HERE_GONE_MS) { delete doc.who[k]; continue; }
+      live.push({ k: k, t: Number(v.t) || 0 });
+    }
+    // A document that only ever grows is a document that eventually breaks.
+    if (live.length > HERE_MAX) {
+      live.sort(function (a, b) { return a.t - b.t; });
+      while (live.length > HERE_MAX) delete doc.who[live.shift().k];
+    }
+    return doc;
+  }
+
+  /** One beat: say where I am, and find out where everybody else is. */
+  function hereBeat() {
+    if (!hereOn || document.hidden) return;
+
+    hereChain = hereChain.then(function () {
+      return fetch(HERE_DOC, { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.text() : ''; })
+        .then(function (t) {
+          var doc = herePrune(hereRead(t));
+          herePaint(doc);
+
+          /* Only write when there is something new to say. A browser
+             sitting still should not be rewriting a shared document
+             every second on everybody else's behalf. */
+          var me = myHand();
+          var mine = hereMine;
+          if (!mine) return null;
+          var same = hereSent &&
+                     Math.abs(hereSent.x - mine.x) < 2 &&
+                     Math.abs(hereSent.y - mine.y) < 2 &&
+                     Date.now() - hereSent.t < HERE_GONE_MS / 3;
+          if (same) return null;
+
+          doc.who[me] = {
+            n: mySignature().slice(0, 24),
+            r: noteRoom(),
+            x: Math.round(mine.x),
+            y: Math.round(mine.y),
+            c: handColour(me),
+            t: Date.now()
+          };
+          hereSent = { x: mine.x, y: mine.y, t: Date.now() };
+          return fetch(HERE_DOC, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(doc)
+          });
+        })
+        .catch(function () { /* offline: the page is no worse off */ });
+    }).catch(function () {});
+  }
+
+  /** Take myself out of the document on the way out of the door. */
+  function hereLeave() {
+    var me = myHand();
+    try {
+      fetch(HERE_DOC, { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.text() : ''; })
+        .then(function (t) {
+          var doc = hereRead(t);
+          if (!doc.who[me]) return null;
+          delete doc.who[me];
+          return fetch(HERE_DOC, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(doc)
+          });
+        }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function hereLayerEl() {
+    if (hereLayer && hereLayer.parentNode) return hereLayer;
+    hereLayer = document.createElement('div');
+    hereLayer.id = 'here';
+    hereLayer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(hereLayer);
+    return hereLayer;
+  }
+
+  function hereHandEl(hand, colour) {
+    if (hereHands[hand]) return hereHands[hand];
+    var el = document.createElement('div');
+    el.className = 'here-hand c' + (colour % NOTE_COLOURS);
+    el.innerHTML =
+      '<svg class="here-arrow" viewBox="0 0 12 18" width="12" height="18">' +
+        '<path d="M1 1 L1 15 L4.6 11.6 L7 17 L9.4 16 L7 10.8 L11.4 10.6 Z"/>' +
+      '</svg>' +
+      '<span class="here-name"></span>';
+    hereLayerEl().appendChild(el);
+    hereHands[hand] = { el: el, name: el.querySelector('.here-name'),
+                        from: null, to: null, at: 0 };
+    return hereHands[hand];
+  }
+
+  /** Fold the document into the hands on screen. */
+  function herePaint(doc) {
+    var room = noteRoom(), me = myHand(), now = Date.now(), k, seen = {};
+
+    for (k in doc.who) {
+      if (!Object.prototype.hasOwnProperty.call(doc.who, k)) continue;
+      var v = doc.who[k];
+      if (k === me || !v || v.r !== room) continue;          // this room only
+      seen[k] = true;
+      var h = hereHandEl(k, Number(v.c) || 0);
+      var next = { x: Number(v.x) || 0, y: Number(v.y) || 0 };
+      // Where it is now becomes where it comes from, so it glides.
+      h.from = h.to ? { x: h.to.x, y: h.to.y } : next;
+      h.to = next;
+      h.at = now;
+      var name = String(v.n || '').trim();
+      if (h.name.textContent !== (name || 'someone')) {
+        h.name.textContent = name || 'someone';
+      }
+      h.el.classList.remove('going');
+    }
+
+    for (k in hereHands) {
+      if (!Object.prototype.hasOwnProperty.call(hereHands, k)) continue;
+      if (seen[k]) continue;
+      // Gone: fade it out rather than snatching it off the page.
+      var g = hereHands[k];
+      g.el.classList.add('going');
+      (function (key, node) {
+        setTimeout(function () {
+          if (hereHands[key] !== g) return;
+          if (node.parentNode) node.parentNode.removeChild(node);
+          delete hereHands[key];
+        }, 600);
+      }(k, g.el));
+    }
+
+    hereRun();
+  }
+
+  /** Between beats. Every hand slides from where it was to where it is. */
+  function hereRun() {
+    if (hereFrame) return;
+    hereFrame = requestAnimationFrame(function step() {
+      hereFrame = 0;
+      var now = Date.now(), any = false, k;
+      for (k in hereHands) {
+        if (!Object.prototype.hasOwnProperty.call(hereHands, k)) continue;
+        var h = hereHands[k];
+        if (!h.to) continue;
+        var p = h.at ? Math.min(1, (now - h.at) / HERE_BEAT_MS) : 1;
+        // ease out, so it arrives rather than stopping
+        var e = 1 - Math.pow(1 - p, 3);
+        var from = h.from || h.to;
+        var at = screenPoint(from.x + (h.to.x - from.x) * e,
+                             from.y + (h.to.y - from.y) * e);
+        if (!at) continue;
+        h.el.style.transform = 'translate3d(' + Math.round(at.x) + 'px,' +
+                                                Math.round(at.y) + 'px,0)';
+        if (p < 1) any = true;
+      }
+      if (any || Object.keys(hereHands).length) hereRun();
+    });
+  }
+
+  /** Nobody is drawn, nothing is written, and nothing is read. */
+  function hereStop() {
+    clearInterval(hereTimer);
+    hereTimer = 0;
+    var k;
+    for (k in hereHands) {
+      if (!Object.prototype.hasOwnProperty.call(hereHands, k)) continue;
+      var n = hereHands[k].el;
+      if (n.parentNode) n.parentNode.removeChild(n);
+    }
+    hereHands = {};
+    hereSent = null;
+  }
+
+  function hereSync() {
+    if (!hereOn) { hereStop(); hereLeave(); return; }
+    if (hereTimer) return;
+    hereBeat();
+    hereTimer = setInterval(hereBeat, HERE_BEAT_MS);
+  }
+
+  function mountHere() {
+    document.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;      // a finger has no cursor
+      var p = bedPoint(e.clientX, e.clientY);
+      if (p) hereMine = p;
+    }, true);
+
+    // Leaving the page, or putting it in the background, is leaving the room.
+    window.addEventListener('pagehide', hereLeave);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) hereLeave();
+      else hereSync();
+    });
+
+    hereSync();
+  }
+
   function boot() {
     mountClock();
     mountSecrets();
@@ -8244,6 +8931,7 @@
     mountNav();
     mountViewers();
     mountTicker();
+    mountHere();
     bootPage();
   }
 

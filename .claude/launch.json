@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "garden-static",
+      "name": "garden",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8791"],
-      "port": 8791
+      "runtimeArgs": ["-m", "http.server", "8792", "--directory", "/Users/anmoli/Desktop/garden"],
+      "port": 8792
     }
   ]
 }
