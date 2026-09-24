@@ -172,7 +172,7 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "test folder/",
+      "near": "music/",
       "at": 1789504711825,
       "replies": [
         {
@@ -1026,9 +1026,12 @@
     },
     "179017677576677oj": {
       "id": "179017677576677oj",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-24T07:05:26.110Z",
-      "history": [],
+      "history": [
+        "2026-09-24T07:22:35.442Z taken off the wall",
+        "2026-09-24T07:22:36.020Z new -> done"
+      ],
       "room": "/",
       "text": "bug: when i double click to minimize, it opens the actual photo and then it glitches after it minimizes so the scale is off",
       "kind": "idea",
@@ -1037,14 +1040,17 @@
       "near": "Screenshot 2026-09-18 at 9.28.34 PM.png",
       "at": 1790176775769,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": []
     },
     "17901768210474bn6": {
       "id": "17901768210474bn6",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-24T07:05:26.117Z",
-      "history": [],
+      "history": [
+        "2026-09-24T07:22:35.452Z taken off the wall",
+        "2026-09-24T07:22:35.857Z new -> done"
+      ],
       "room": "/",
       "text": "way too many tabs at the bottom. make it better and clean",
       "kind": "idea",
@@ -1059,9 +1065,9 @@
           "at": 1790233681170
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": []
     }
   },
-  "updated": "2026-09-24T07:12:44.977Z"
+  "updated": "2026-09-24T07:22:36.023Z"
 }

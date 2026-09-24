@@ -3,25 +3,9 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 24/09/2026, 03:12:44. 49 notes in the ledger.
+Read 24/09/2026, 03:22:36. 49 notes in the ledger.
 
-## new (12)
-
-### 17901768210474bn6
-
-- **idea**, front page · the page
-- by Anmo (r5u3jewz), today
-
-> way too many tabs at the bottom. make it better and clean
-
-  - *Anmo:* what does people even mean?
-
-### 179017677576677oj
-
-- **idea**, front page · Screenshot 2026-09-18 at 9.28.34 PM.png
-- by Anmo (r5u3jewz), today
-
-> bug: when i double click to minimize, it opens the actual photo and then it glitches after it minimizes so the scale is off
+## new (10)
 
 ### 1789571975185wu61
 
@@ -175,7 +159,7 @@ Read 24/09/2026, 03:12:44. 49 notes in the ledger.
 
 ### 1789504711825155i
 
-- **idea**, front page · test folder/
+- **idea**, front page · music/
 - by Anmo (r5u3jewz), 8 days ago
 
 > i want an easy way to upload things to this site from my iphone. i dont want to always like upload photos to my computer, then drag them into the garden folder from there. any easy way to streamline this process? connect the garden folder into my iphone??? DO THIS IN A FUTURE UPDATE
@@ -184,7 +168,23 @@ Read 24/09/2026, 03:12:44. 49 notes in the ledger.
 
 **decided:** not a change to the site — see the answer
 
-## done (28)
+## done (30)
+
+### 17901768210474bn6
+
+- **idea**, front page · the page — *taken off the wall*
+- by Anmo (r5u3jewz), today
+
+> way too many tabs at the bottom. make it better and clean
+
+  - *Anmo:* what does people even mean?
+
+### 179017677576677oj
+
+- **idea**, front page · Screenshot 2026-09-18 at 9.28.34 PM.png — *taken off the wall*
+- by Anmo (r5u3jewz), today
+
+> bug: when i double click to minimize, it opens the actual photo and then it glitches after it minimizes so the scale is off
 
 ### 178978154561467ih
 

@@ -2019,6 +2019,62 @@
     tex.style.height = Math.max(0, Math.round(tall - top)) + 'px';
   }
 
+  /* ================================================================ LIGHT
+     Monet painted the same haystack thirty times. The haystack was never
+     the point -- the light was, and the whole series exists to say that a
+     thing at six in the morning and the same thing at six in the evening
+     are not the same thing.
+
+     This is a folder on a desk, and a desk sits in a room, and a room has
+     a window. So the paper takes the hour: cold and rose before the sun is
+     properly up, plain and white through the middle of the day, gold in the
+     late afternoon, violet at dusk, and nearly blue at night. It is the
+     visitor's own hour, from their own clock, so somebody opening this at
+     two in the morning in another country gets two in the morning.
+
+     Deliberately barely there. A page that announced this would be a
+     gimmick; a page that just happens to be warmer at five is a room.
+     It only ever touches the default paper -- choosing one in the taskbar
+     is a decision, and a decision outranks the weather.
+     ------------------------------------------------------------------- */
+
+  var LIGHT_BANDS = [
+    [5, 'dawn'], [8, 'morning'], [11, 'noon'],
+    [15, 'afternoon'], [18, 'dusk'], [21, 'night']
+  ];
+
+  function lightNow() {
+    var h = new Date().getHours(), band = 'night', i;
+    for (i = 0; i < LIGHT_BANDS.length; i++) {
+      if (h >= LIGHT_BANDS[i][0]) band = LIGHT_BANDS[i][1];
+    }
+    return band;
+  }
+
+  function paintLight() {
+    var band = lightNow();
+    if (document.body.getAttribute('data-light') === band) return;
+    document.body.setAttribute('data-light', band);
+  }
+
+  function mountLight() {
+    /* The washes live on their own layer so they can never fight the paper's
+       own pattern, which is painted into the body's background. It is built
+       once and left alone; the stylesheet decides whether it is shown. */
+    if (!document.getElementById('monet')) {
+      var wash = document.createElement('div');
+      wash.id = 'monet';
+      wash.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(wash);
+    }
+    paintLight();
+    // The hour turns over rarely; checking for it should cost nothing.
+    setInterval(function () { if (!document.hidden) paintLight(); }, 120000);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) paintLight();
+    });
+  }
+
   function mountTexture() {
     if (document.getElementById('tex')) return;
     var tex = document.createElement('div');
@@ -2101,8 +2157,11 @@
      bone, "paper" and olive were three off-whites within a few points of
      each other, which is not a choice, it is a rounding error. Paper is
      gone and olive is an actual olive now. */
-  var THEMES = ['', 'theme-pocari', 'theme-olive', 'theme-ink'];
-  var THEME_NAMES = ['bone', 'pocari', 'olive', 'ink'];
+  /* Monet sits second because it is the one worth finding. It is not a
+     colour like the others -- it is a time of day, and it changes while you
+     are looking at it. See the LIGHT section in style.css. */
+  var THEMES = ['', 'theme-monet', 'theme-pocari', 'theme-olive', 'theme-ink'];
+  var THEME_NAMES = ['bone', 'monet', 'pocari', 'olive', 'ink'];
 
   // Grain used to be a single on/off, and for a long time it was wired to a
   // class the stylesheet did not define -- the button did nothing at all.
@@ -5312,6 +5371,7 @@
     document.body.classList.remove('on-sun');
     document.body.classList.remove('on-moon');
     document.body.classList.remove('on-crypt');
+    document.body.classList.remove('on-ether');
     document.body.classList.remove('upstairs');
     document.body.classList.remove('downstairs');
     document.documentElement.classList.remove('moon-open');
@@ -6861,9 +6921,76 @@
 
   function forumId() { return String(Date.now()) + Math.random().toString(36).slice(2, 6); }
 
+  /* ================================================================ ETHER
+     A board where nobody knows who anybody is, and everybody is talking
+     about the same thing. That is *All About Lily Chou-Chou*, and it is
+     what this room is now: not a forum with avatars and scores and a
+     ranking, but a field of anonymous voices posting into the dark.
+
+     What makes the film's board work is what it LEAVES OUT. No likes. No
+     followers. No profile to build. Nothing to win. Just handles and
+     hours, and the odd fact that the person you have been talking to all
+     month is sitting three desks away.
+
+     So the room gets its own weather -- a slow drift of characters behind
+     the writing, which is the ether itself -- and the posts are set as a
+     bulletin board from 2001 rather than as cards in a feed.
+     ------------------------------------------------------------------- */
+
+  var ETHER_DRIFT = [
+    'lily', 'the ether', 'does anybody', 'i heard it again',
+    'listening', 'blue', 'rice field', 'kite', 'walkman', 'nobody knows',
+    'the sound', 'are you there', 'still awake', 'it hurts less'
+  ];
+
+  function mountEtherField(root) {
+    var field = document.createElement('pre');
+    field.id = 'ether';
+    field.setAttribute('aria-hidden', 'true');
+    root.appendChild(field);
+
+    var motes = [];
+    function seed(y) {
+      return {
+        word: ETHER_DRIFT[Math.floor(Math.random() * ETHER_DRIFT.length)],
+        x: Math.random(),
+        y: y,
+        v: 0.08 + Math.random() * 0.16
+      };
+    }
+    for (var i = 0; i < 14; i++) motes.push(seed(Math.random()));
+
+    function paint() {
+      var cols = Math.max(20, Math.floor(field.clientWidth / 7.1));
+      var rows = Math.max(8, Math.floor(field.clientHeight / 15));
+      var grid = [], r;
+      for (r = 0; r < rows; r++) grid.push(new Array(cols).fill(' '));
+
+      motes.forEach(function (m, n) {
+        m.y -= m.v / rows;
+        if (m.y < -0.05) motes[n] = seed(1.05);
+        var row = Math.floor(m.y * rows);
+        if (row < 0 || row >= rows) return;
+        var col = Math.floor(m.x * (cols - m.word.length - 2)) + 1;
+        for (var c = 0; c < m.word.length; c++) {
+          if (col + c >= 0 && col + c < cols) grid[row][col + c] = m.word.charAt(c);
+        }
+      });
+
+      field.textContent = grid.map(function (g) { return g.join(''); }).join('\n');
+    }
+
+    paint();
+    sceneTimers.push(setInterval(function () {
+      if (!document.hidden) paint();
+    }, 260));
+    window.addEventListener('resize', paint);
+  }
+
   function mountForum() {
     sceneOn = 'forum';
-    sceneTone = 'bar';
+    sceneTone = 'moonlight';
+    document.body.classList.add('on-ether');
 
     var main = document.querySelector('main');
     if (!main) return;
@@ -6872,12 +6999,14 @@
     root.id = 'forum';
     root.innerHTML =
       '<div class="forum-head">' +
-        '<h2>the forum</h2>' +
-        '<p class="forum-sub">anything at all. be nice. everyone can see this.</p>' +
+        '<h2>the ether</h2>' +
+        '<p class="forum-sub">nobody knows who anybody is here. ' +
+          'no likes, no scores, nothing to win. just say it.</p>' +
       '</div>' +
       '<div class="forum-body"></div>';
     main.appendChild(root);
     sceneNodes.push(root);
+    mountEtherField(root);
 
     var bodyEl = root.querySelector('.forum-body');
 
@@ -6929,7 +7058,7 @@
       if (!threads.length) {
         var none = document.createElement('p');
         none.className = 'forum-none';
-        none.textContent = 'nobody has said anything yet.';
+        none.textContent = 'nobody has said anything yet. somebody has to be first.';
         bodyEl.appendChild(none);
         return;
       }
@@ -9200,6 +9329,7 @@
     mountPogo();
     mountBin();
     mountTexture();
+    mountLight();
     mountToggles();
     mountHint();
     mountNav();

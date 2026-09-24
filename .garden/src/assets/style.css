@@ -3646,3 +3646,231 @@ body.theme-ink .sticky { filter: brightness(.82) saturate(.9); }
   opacity: .45;
 }
 .picker-check.on::before { background: currentColor; opacity: 1; }
+
+/* ================================================================ THE ETHER
+
+   All About Lily Chou-Chou. The board in that film works because of what it
+   leaves out: no faces, no scores, no followers, nothing to win — just
+   handles, hours, and people saying the true thing to strangers because
+   they cannot say it to anyone else.
+
+   So this room is dark, the writing is a bulletin board rather than a feed,
+   and behind it the ether drifts: fragments of what people say here, rising
+   slowly through the page and gone.
+   ========================================================================= */
+
+body.on-ether {
+  --paper:      #15171B;
+  --paper-deep: #101216;
+  --surface:    #1B1E23;
+  --surface-2:  #202329;
+  --ink:        #D6DBE2;
+  --ink-soft:   #9AA3AE;
+  --ink-faint:  #6E7681;
+  --ochre:      #9FB4C4;
+  --olive:      #7E8B93;
+  --rule:       rgba(214, 219, 226, .16);
+  --rule-soft:  rgba(214, 219, 226, .08);
+  background: var(--paper);
+}
+body.on-ether .masthead h1,
+body.on-ether .masthead p { color: var(--ink); }
+
+#forum { position: relative; }
+
+/* the drift. Behind everything, touchable by nothing, and faint enough that
+   it reads as weather rather than as text you are supposed to be reading. */
+#ether {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 15px;
+  letter-spacing: .06em;
+  color: rgba(159, 180, 196, .13);
+  user-select: none;
+}
+body.on-ether .forum-head,
+body.on-ether .forum-body { position: relative; z-index: 1; }
+
+body.on-ether .forum-head h2 {
+  font-family: var(--mono);
+  font-size: .82rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--ochre);
+}
+body.on-ether .forum-sub { color: var(--ink-faint); font-size: .8rem; }
+
+/* A post is a bulletin board line, not a card: a number, a handle, an hour,
+   and then the thing itself underneath. */
+body.on-ether .forum-body {
+  font-family: var(--mono);
+  font-size: .78rem;
+  line-height: 1.6;
+}
+body.on-ether .forum-title,
+body.on-ether .forum-write,
+body.on-ether .reply-new {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+body.on-ether .forum-post,
+body.on-ether .forum-open,
+body.on-ether .reply-send {
+  background: transparent;
+  color: var(--ochre);
+  border: 1px solid var(--rule);
+}
+body.on-ether .forum-post:hover,
+body.on-ether .forum-open:hover { color: var(--ink); border-color: var(--ochre); }
+
+@media (prefers-reduced-motion: reduce) {
+  #ether { display: none; }
+}
+
+/* ==================================================================== LIGHT
+
+   Monet painted the same haystack thirty times, and the haystack was never
+   the point. The light was. The whole series exists to say that a thing at
+   six in the morning and the same thing at six in the evening are not the
+   same thing.
+
+   So "monet" is not a colour in the paper list beside bone and olive. It is
+   a TIME OF DAY, and it changes underneath you while the page is open: cold
+   rose before the sun is properly up, straw and cerulean through the middle
+   of the day, gold in the late afternoon, violet at dusk, indigo at night.
+   It is the visitor's own clock, so somebody opening this at two in the
+   morning somewhere else gets two in the morning.
+
+   How it is painted: half a dozen enormous, very soft radial washes, laid
+   over each other and drifting. That is roughly what broken colour does —
+   no stroke is the colour of the thing, and the colour of the thing only
+   happens in the eye. Nothing is an image; it is all gradients, so it costs
+   nothing to download and nothing to draw.
+
+   app.js writes `data-light` onto <body> from the hour. The rooms that set
+   their own light — the ether, the moon, the crypt — are left alone.
+   ========================================================================= */
+
+#monet {
+  display: none;
+  position: fixed;
+  inset: -20%;                 /* room to drift without showing an edge */
+  z-index: -1;
+  pointer-events: none;
+  opacity: .85;
+  background-repeat: no-repeat;
+  animation: monet-drift 90s ease-in-out infinite alternate;
+}
+
+body.theme-monet #monet { display: block; }
+
+@keyframes monet-drift {
+  from { transform: translate3d(0, 0, 0)        scale(1);    }
+  to   { transform: translate3d(2.5%, -2%, 0)   scale(1.06); }
+}
+
+/* the paper under the washes, and the ink that has to stay readable on it */
+body.theme-monet {
+  --paper:      #EFEDE6;
+  --paper-deep: #E5E2D9;
+  --surface:    #F8F6F1;
+  --surface-2:  #FCFBF8;
+  transition: background-color 3s linear;
+}
+
+/* --------------------------------------------------------- before sunrise
+   Impression, soleil levant: grey-blue water, and one rose coming up. */
+body.theme-monet[data-light="dawn"] {
+  --paper: #EBE4E4; --paper-deep: #E1D8DA; --surface: #F6F0F1; --surface-2: #FBF7F8;
+  --ink-faint: #6D6165;
+}
+body.theme-monet[data-light="dawn"] #monet {
+  background-image:
+    radial-gradient(60% 45% at 22% 18%, rgba(226, 150, 140, .40), transparent 70%),
+    radial-gradient(55% 40% at 78% 26%, rgba(196, 164, 196, .34), transparent 72%),
+    radial-gradient(70% 50% at 50% 82%, rgba(120, 140, 172, .26), transparent 74%),
+    radial-gradient(40% 30% at 12% 68%, rgba(236, 196, 158, .24), transparent 70%),
+    radial-gradient(45% 35% at 88% 74%, rgba(150, 160, 190, .22), transparent 72%);
+}
+
+/* ------------------------------------------------------------- morning
+   Poplars: cool green-blue, the light still thin. */
+body.theme-monet[data-light="morning"] {
+  --paper: #EAEDE8; --paper-deep: #DFE3DC; --surface: #F4F7F3; --surface-2: #FAFCF9;
+}
+body.theme-monet[data-light="morning"] #monet {
+  background-image:
+    radial-gradient(58% 44% at 26% 22%, rgba(150, 186, 200, .34), transparent 70%),
+    radial-gradient(52% 40% at 74% 18%, rgba(214, 220, 178, .32), transparent 72%),
+    radial-gradient(66% 48% at 54% 80%, rgba(170, 196, 168, .26), transparent 74%),
+    radial-gradient(38% 30% at 10% 62%, rgba(226, 216, 176, .22), transparent 70%),
+    radial-gradient(42% 34% at 90% 70%, rgba(160, 180, 200, .20), transparent 72%);
+}
+
+/* ---------------------------------------------------------------- noon
+   Haystacks, full summer: straw, cerulean, and the white of the light. */
+body.theme-monet[data-light="noon"] #monet {
+  background-image:
+    radial-gradient(56% 42% at 24% 20%, rgba(238, 214, 146, .36), transparent 70%),
+    radial-gradient(54% 40% at 76% 22%, rgba(146, 186, 218, .30), transparent 72%),
+    radial-gradient(70% 50% at 50% 84%, rgba(206, 214, 170, .26), transparent 74%),
+    radial-gradient(36% 28% at 14% 70%, rgba(248, 236, 196, .26), transparent 70%),
+    radial-gradient(40% 32% at 86% 72%, rgba(178, 204, 200, .20), transparent 72%);
+}
+
+/* ----------------------------------------------------------- afternoon
+   Late Haystacks: everything gold, the shadows gone violet. */
+body.theme-monet[data-light="afternoon"] {
+  --paper: #F1EBDC; --paper-deep: #E8E0CD; --surface: #FAF6EA; --surface-2: #FDFBF3;
+}
+body.theme-monet[data-light="afternoon"] #monet {
+  background-image:
+    radial-gradient(58% 44% at 22% 24%, rgba(240, 190, 112, .40), transparent 70%),
+    radial-gradient(52% 40% at 78% 20%, rgba(232, 164, 122, .32), transparent 72%),
+    radial-gradient(68% 50% at 52% 82%, rgba(196, 174, 198, .26), transparent 74%),
+    radial-gradient(38% 30% at 12% 66%, rgba(214, 196, 132, .26), transparent 70%),
+    radial-gradient(42% 34% at 88% 76%, rgba(178, 160, 190, .22), transparent 72%);
+}
+
+/* ---------------------------------------------------------------- dusk
+   Rouen cathedral at the end of the day: violet and magenta, one last fire. */
+body.theme-monet[data-light="dusk"] {
+  --paper: #E9E2E7; --paper-deep: #DED5DE; --surface: #F4EFF3; --surface-2: #FAF7F9;
+  --ink-faint: #665C68;
+}
+body.theme-monet[data-light="dusk"] #monet {
+  background-image:
+    radial-gradient(58% 44% at 24% 22%, rgba(206, 130, 168, .38), transparent 70%),
+    radial-gradient(54% 42% at 76% 26%, rgba(150, 126, 186, .36), transparent 72%),
+    radial-gradient(70% 50% at 48% 84%, rgba(110, 112, 158, .28), transparent 74%),
+    radial-gradient(40% 30% at 14% 70%, rgba(238, 156, 118, .26), transparent 70%),
+    radial-gradient(44% 34% at 88% 72%, rgba(128, 122, 172, .24), transparent 72%);
+}
+
+/* --------------------------------------------------------------- night
+   The Thames nocturnes, and the late water lilies: indigo, and not much else. */
+body.theme-monet[data-light="night"] {
+  --paper: #E3E5EC; --paper-deep: #D7DAE4; --surface: #F0F2F7; --surface-2: #F8F9FC;
+  --ink-faint: #5F636F;
+}
+body.theme-monet[data-light="night"] #monet {
+  background-image:
+    radial-gradient(60% 46% at 26% 20%, rgba(96, 116, 172, .38), transparent 70%),
+    radial-gradient(54% 42% at 74% 28%, rgba(126, 110, 164, .32), transparent 72%),
+    radial-gradient(72% 52% at 50% 84%, rgba(64, 86, 124, .30), transparent 74%),
+    radial-gradient(38% 30% at 12% 68%, rgba(150, 168, 200, .22), transparent 70%),
+    radial-gradient(42% 34% at 88% 74%, rgba(102, 124, 154, .22), transparent 72%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #monet { animation: none; }
+  body.theme-monet { transition: none; }
+}
