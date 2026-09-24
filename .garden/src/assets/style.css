@@ -4450,3 +4450,64 @@ body[data-scene="field"]::after {
   #rice-sun, #kite, .rice-row { animation: none; }
   body[data-scene="field"]::after { animation: none; }
 }
+
+/* --------------------------------------------------- the field's radio
+
+   The one thing you can do in the field. It is set as quietly as the room
+   is: no transport, no scrubber, no volume — a switch, the name of what is
+   playing, and a sentence telling you why there is no pause button.
+   ===================================================================== */
+
+.field-radio {
+  position: relative;
+  z-index: 2;
+  margin: 3rem auto 0;
+  max-width: 30rem;
+  text-align: center;
+}
+
+.field-listen {
+  font-family: var(--mono);
+  font-size: .74rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #2F5A22;
+  background: rgba(255, 255, 255, .58);
+  border: 1px solid rgba(47, 90, 34, .3);
+  border-radius: 2px;
+  padding: .7rem 1.3rem;
+  cursor: pointer;
+  transition: background .25s ease, border-color .25s ease, color .25s ease;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.field-listen:hover { background: rgba(255, 255, 255, .82); border-color: rgba(47, 90, 34, .55); }
+.field-listen:disabled { opacity: .5; cursor: default; }
+
+.field-now {
+  margin: .9rem 0 0;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .06em;
+  color: #3C6B2C;
+  min-height: 1.2em;
+  overflow-wrap: anywhere;
+}
+.field-note {
+  margin: .5rem 0 0;
+  font-family: var(--serif);
+  font-size: .78rem;
+  line-height: 1.5;
+  color: rgba(47, 74, 34, .62);
+}
+
+/* Headphones on: the field goes a little further away, which is the whole
+   point of the shot. */
+body.field-listening #rice { opacity: .8; }
+body.field-listening #scene.rice { filter: saturate(.86) brightness(1.05); }
+body.field-listening #scene.rice,
+body.field-listening #rice { transition: opacity 2.5s ease, filter 2.5s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.field-listening #scene.rice, body.field-listening #rice { transition: none; }
+}

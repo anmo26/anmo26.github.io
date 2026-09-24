@@ -8657,6 +8657,213 @@
     }
 
     ambience('field');
+
+    /* The field is not an empty room. See THE FIELD RADIO. */
+    var main = document.querySelector('main');
+    if (main) mountFieldRadio(main);
+  }
+
+
+  /* ========================================================== THE FIELD RADIO
+     A room where everybody is listening to the same thing at the same
+     second. Not everybody playing the same song -- everybody THIRTY-ONE
+     SECONDS INTO the same song, together, whether or not they ever say a
+     word to each other.
+
+     That is All About Lily Chou-Chou, which is about a lot of lonely people
+     who are all listening to the same record and cannot say so out loud. A
+     player that gives everybody their own private playback is the exact
+     opposite of that film, so this one does not have a pause button. You
+     can put the headphones on and you can take them off. You cannot stop
+     the music, because it is not yours.
+
+     How it works: one small shared document holds which record is on and
+     the moment it started. Everybody reads it, works out how far in the
+     record must be by now, and seeks there. Nothing streams and nothing is
+     co-ordinated -- there is only a number, and a clock everybody already
+     has. When a record ends, whoever notices first writes down the next
+     one, and everybody else finds it within a few seconds.
+
+     The records are the mp3s in music/Records, read off the site's own
+     listing rather than hardcoded, because the folder IS the site and a
+     song Anmo drops in there should simply turn up in the field.
+     ------------------------------------------------------------------- */
+
+  var FIELD_DOC = 'https://textdb.dev/api/data/anmo-garden-field-8f3c1d';
+  /* Thirty seconds, not nine. Once a browser has been put in the right
+     place the record keeps itself there -- it plays in real time like
+     everybody else's -- so the only thing a poll is really for is noticing
+     that the record has CHANGED. Asking three times a minute was pure load
+     on a small shared service that the notes and the cursors are also
+     using, and when it started refusing, the field stopped syncing. */
+  var FIELD_POLL_MS = 30000;
+  var fieldAudio = null;
+  var fieldTracks = [];
+  var fieldOn = false;
+  var fieldNow = -1;          // which record this browser has loaded
+  var fieldMissed = 0;
+
+  /** The records, read off music/Records the way a visitor would read it. */
+  function fieldRecords(done) {
+    if (fieldTracks.length) { done(fieldTracks); return; }
+    var url = new URL('music/Records/', siteRoot()).href;
+    fetch(url, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var out = [];
+        doc.querySelectorAll('a[href]').forEach(function (a) {
+          var href = a.getAttribute('href');
+          if (!href || !/\.mp3$/i.test(href)) return;
+          var abs = new URL(href, url).href;
+          if (out.indexOf(abs) === -1) out.push(abs);
+        });
+        // Same order for everybody, whatever order the page happened to list
+        // them in -- two people on two machines must pick the same record.
+        out.sort();
+        fieldTracks = out;
+        done(out);
+      })
+      .catch(function () { done([]); });
+  }
+
+  function fieldRead(text) {
+    var j = null;
+    try { j = text ? JSON.parse(text) : null; } catch (e) { j = null; }
+    if (!j || typeof j !== 'object') j = {};
+    return { track: Number(j.track) || 0, at: Number(j.at) || 0 };
+  }
+
+  function fieldWrite(state) {
+    return fetch(FIELD_DOC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    }).catch(function () {});
+  }
+
+  /** Put this browser where the shared clock says the record has got to. */
+  function fieldSync(state, tracks, hard) {
+    if (!tracks.length) return;
+    var i = ((state.track % tracks.length) + tracks.length) % tracks.length;
+
+    if (i !== fieldNow || hard) {
+      fieldNow = i;
+      fieldAudio.src = tracks[i];
+      fieldAudio.load();
+    }
+
+    var into = (Date.now() - state.at) / 1000;
+    if (!(into >= 0)) into = 0;
+
+    function seek() {
+      var len = fieldAudio.duration;
+      if (!len || !isFinite(len)) return;
+      if (into >= len) {
+        /* This record finished a while ago and nobody has moved the
+           needle. Whoever gets here first does it. */
+        var next = { track: i + 1, at: Date.now() };
+        fieldWrite(next);
+        fieldSync(next, tracks, true);
+        return;
+      }
+      // Only if we are actually out of step. Seeking on every poll would
+      // make the sound stutter once every nine seconds for no reason.
+      if (Math.abs(fieldAudio.currentTime - into) > 2.5) {
+        try { fieldAudio.currentTime = into; } catch (e) {}
+      }
+      if (fieldOn && fieldAudio.paused) {
+        var p = fieldAudio.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+    }
+
+    if (fieldAudio.readyState >= 1) seek();
+    else fieldAudio.addEventListener('loadedmetadata', seek, { once: true });
+  }
+
+  function fieldBeat(tracks, note) {
+    /* Refusals back off rather than stopping for good: one in four beats
+       after a few misses, so a service having a bad minute costs a slow
+       reconnection rather than a dead room. */
+    if (fieldMissed > 3 && (fieldMissed % 4)) { fieldMissed++; return; }
+    fetch(FIELD_DOC, { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('busy');
+        return r.text();
+      })
+      .then(function (t) {
+        fieldMissed = 0;
+        var state = fieldRead(t);
+        if (!state.at) {                  // nobody has ever been here
+          state = { track: 0, at: Date.now() };
+          fieldWrite(state);
+        }
+        fieldSync(state, tracks, false);
+        if (note) {
+          var name = decodeURIComponent(tracks[fieldNow] || '').split('/').pop()
+                       .replace(/\.mp3$/i, '');
+          note.textContent = fieldOn
+            ? name
+            : 'somebody is playing ' + name;
+        }
+      })
+      .catch(function () { fieldMissed++; });
+  }
+
+  function mountFieldRadio(root) {
+    var box = document.createElement('div');
+    box.className = 'field-radio';
+    box.innerHTML =
+      '<button class="field-listen" type="button">put the headphones on</button>' +
+      '<p class="field-now"></p>' +
+      '<p class="field-note">everybody standing here is hearing the same second ' +
+        'of the same record. you can take them off. you cannot stop it.</p>';
+    root.appendChild(box);
+    sceneNodes.push(box);
+
+    var btn = box.querySelector('.field-listen');
+    var note = box.querySelector('.field-now');
+
+    fieldAudio = document.createElement('audio');
+    fieldAudio.preload = 'metadata';
+    box.appendChild(fieldAudio);
+
+    fieldRecords(function (tracks) {
+      if (!tracks.length) {
+        note.textContent = 'there are no records in the field yet.';
+        btn.disabled = true;
+        return;
+      }
+
+      fieldBeat(tracks, note);
+      sceneTimers.push(setInterval(function () {
+        if (!document.hidden) fieldBeat(tracks, note);
+      }, FIELD_POLL_MS));
+
+      /* A record that has run out while somebody is standing here moves on
+         without waiting for the next poll. */
+      fieldAudio.addEventListener('ended', function () {
+        var next = { track: fieldNow + 1, at: Date.now() };
+        fieldWrite(next);
+        fieldSync(next, tracks, true);
+      });
+
+      btn.addEventListener('click', function () {
+        fieldOn = !fieldOn;
+        btn.textContent = fieldOn ? 'take them off' : 'put the headphones on';
+        document.body.classList.toggle('field-listening', fieldOn);
+        if (fieldOn) {
+          fieldBeat(tracks, note);
+          var p = fieldAudio.play();
+          if (p && p.catch) p.catch(function () {});
+        } else {
+          fieldAudio.pause();
+          fieldBeat(tracks, note);
+        }
+        play('tick');
+      });
+    });
   }
 
   /* ------------------------------------------------ the sea, three clicks
