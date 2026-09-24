@@ -3144,7 +3144,7 @@ body[data-scene] #tex { display: none; }
   outline: none;
   min-height: 4.4rem;
 }
-.sticky.empty .sticky-body::before {
+.sticky.empty .sticky-#halo::before {
   content: 'write something';
   color: rgba(51, 48, 42, .32);
   font-style: italic;
@@ -3977,37 +3977,14 @@ body.theme-monet #monet { transition: filter 4s linear; }
   /* Night deepens the band behind the stars. --night is written by app.js
      from how far the sun is below the horizon, so this fades up through
      twilight rather than switching on. */
-  /* Night is a colour, not a grey. At .55 of a near-black over cream paper
-     this came out the colour of a wet pavement; it wants to be saturated
-     and it wants to go nearly opaque at the top, so that the top of the
-     page reads as sky and not as a smudge over the page. The fade down is
-     long and eased, so there is no line where the sky stops -- it becomes
-     the paper, the way a horizon does. */
-  background:
-    linear-gradient(to bottom,
-      rgba(8, 13, 38, calc(var(--night, 0) * .96)) 0%,
-      rgba(12, 20, 52, calc(var(--night, 0) * .88)) 34%,
-      rgba(22, 34, 72, calc(var(--night, 0) * .60)) 62%,
-      rgba(40, 54, 92, calc(var(--night, 0) * .22)) 84%,
-      transparent 100%);
-  transition: background 4s linear;
+  /* The sky itself is painted in the SVG now (see skyBands in app.js), so
+     there is nothing to lay behind it -- two gradients trying to be the
+     same sky only ever fight. This keeps the band's own transition. */
+
 }
 #sky svg { display: block; width: 100%; height: 100%; }
 
-/* And by day the same band is a pale blue that barely announces itself --
-   enough that the sun has something to cross, not so much that the page
-   stops being paper. --day is written by app.js from the sun's height. */
-#sky::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(to bottom,
-      rgba(132, 176, 220, calc(var(--day, 0) * .34)) 0%,
-      rgba(168, 202, 232, calc(var(--day, 0) * .20)) 52%,
-      transparent 100%);
-  transition: background 4s linear;
-}
+
 
 /* A star is a fixed point of light that the air moves in front of. Pure CSS,
    staggered per star so they are never in step. */
@@ -4021,7 +3998,12 @@ body.theme-monet #monet { transition: filter 4s linear; }
 }
 
 /* the unlit part of the moon: the paper showing through, not black paint */
-.moon-dark { fill: var(--paper); }
+/* The unlit part of the moon. Not paper-coloured -- the sky behind it is
+   painted now, and a paper-coloured bite out of a twilight sky is a hole.
+   A soft shadow instead, which reads against any sky there is. */
+/* The unlit limb. Dark, but not a hole -- some of the sky shows through it
+   the way earthshine shows through a real one. */
+.moon-dark { fill: rgba(30, 36, 58, .72); }
 
 /* ------------------------------------------------------------- weather
 
@@ -4167,6 +4149,21 @@ body.sky-night #bucket .f, body.sky-night #cactus .f, body.sky-night #still .f {
    using to turn the music off.
    ========================================================================= */
 
+/* The layers live on an element of their own rather than on <body>.
+
+   They blend, and an element that blends forces the box it is inside to
+   become a stacking context of its own -- which meant <body> became one,
+   and everything the site draws BEHIND the page (the sky, the monet washes)
+   was suddenly behind the body's own paper as well, and simply vanished.
+   A wrapper keeps the blending where it belongs and gives the paper back
+   its depth. */
+#halo {
+  position: fixed;
+  inset: 0;
+  z-index: 9490;
+  pointer-events: none;
+}
+
 /* the colour going out of it. Grey has no saturation of its own to lend,
    and `saturation` takes only that -- so this is a dimmer on how colourful
    the page is and it cannot shift a single hue. */
@@ -4188,7 +4185,7 @@ body::before {
    falls, and the corners go because a fast lens cannot hold a corner. The
    first layer is film grain, which therefore only ever appears in the
    light -- which is where grain lives. */
-body::after {
+#halo::after {
   content: '';
   position: fixed;
   inset: -6%;
@@ -4209,7 +4206,7 @@ body::after {
   transition: opacity 3s ease, visibility 0s linear 3s;
 }
 
-body.music-playing::before {
+body.music-playing #halo::before {
   opacity: .24;
   visibility: visible;
   transition: opacity 3s ease, visibility 0s;
@@ -4217,7 +4214,7 @@ body.music-playing::before {
 /* .72 rather than .95. At full strength the flare did not just bloom a
    photograph, it erased it -- and a picture you cannot make out is not an
    overexposed picture, it is a missing one. */
-body.music-playing::after {
+body.music-playing #halo::after {
   opacity: .72;
   visibility: visible;
   transition: opacity 3s ease, visibility 0s;
@@ -4234,16 +4231,16 @@ body.music-playing::after {
 /* On the dark rooms and the dark paper, a white veil is fog rather than
    sun, so almost all of it comes off -- but not all of it. Headphones on
    at one in the morning is still headphones on. */
-body.music-playing.theme-ink::after,
-body.music-playing[data-scene="ocean"]::after,
-body.music-playing[data-scene="crypt"]::after,
-body.music-playing[data-scene="moonlight"]::after,
-body.music-playing[data-scene="bar"]::after,
-body.music-playing.on-ether::after,
+body.music-playing.theme-ink #halo::after,
+body.music-playing[data-scene="ocean"] #halo::after,
+body.music-playing[data-scene="crypt"] #halo::after,
+body.music-playing[data-scene="moonlight"] #halo::after,
+body.music-playing[data-scene="bar"] #halo::after,
+body.music-playing.on-ether #halo::after,
 /* and the monet paper after dark, which is a dark room like any other */
-body.music-playing.theme-monet[data-light="night"]::after,
-body.music-playing.theme-monet[data-light="evening"]::after,
-body.music-playing.theme-monet[data-light="dawn"]::after { opacity: .28; }
+body.music-playing.theme-monet[data-light="night"] #halo::after,
+body.music-playing.theme-monet[data-light="evening"] #halo::after,
+body.music-playing.theme-monet[data-light="dawn"] #halo::after { opacity: .28; }
 
 /* A photograph keeps a little more of itself than the paper does. The
    highlights are still meant to go -- that is the whole look -- but you

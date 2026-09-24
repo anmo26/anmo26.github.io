@@ -9708,6 +9708,68 @@
     host.style.height = Math.round(Math.max(200, low + 18)) + 'px';
   }
 
+  /* ------------------------------------------------------ the colour of it
+     A sky is not a blue rectangle. It is a gradient that runs from deep at
+     the top to pale at the horizon, and near sunrise and sunset the bottom
+     of it catches fire while the top is still night. So the whole band is
+     mixed from the sun's height rather than picked from a list: every stop
+     below is a colour at one altitude, and the actual sky is an
+     interpolation between the two the sun is currently between.
+
+     The last stop of every one of them is transparent, because the bottom
+     of the sky is not a colour -- it is where the page starts. */
+
+  function mix(a, b, t) {
+    return [Math.round(a[0] + (b[0] - a[0]) * t),
+            Math.round(a[1] + (b[1] - a[1]) * t),
+            Math.round(a[2] + (b[2] - a[2]) * t)];
+  }
+  function rgba(c, a) {
+    return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a.toFixed(3) + ')';
+  }
+
+  /* zenith, middle, horizon -- at a handful of sun altitudes. Between them
+     it is mixed. Degrees, from well below the horizon to high noon. */
+  var SKY_KEYS = [
+    { alt: -18, top: [6, 9, 26],     mid: [10, 15, 38],   low: [16, 24, 54],   a: 0.97 },
+    { alt: -10, top: [10, 14, 40],   mid: [24, 30, 68],   low: [58, 48, 92],   a: 0.95 },
+    { alt: -6,  top: [18, 24, 62],   mid: [52, 48, 96],   low: [128, 76, 104], a: 0.92 },
+    { alt: -2,  top: [34, 46, 94],   mid: [104, 76, 124], low: [214, 118, 96], a: 0.88 },
+    { alt: 2,   top: [58, 92, 148],  mid: [158, 130, 148], low: [246, 164, 104], a: 0.80 },
+    { alt: 8,   top: [82, 126, 182], mid: [166, 186, 206], low: [244, 206, 158], a: 0.62 },
+    { alt: 20,  top: [96, 146, 200], mid: [158, 194, 224], low: [214, 226, 236], a: 0.44 },
+    { alt: 60,  top: [104, 156, 210], mid: [162, 200, 228], low: [222, 234, 240], a: 0.38 }
+  ];
+
+  function skyBands(alt) {
+    var i, a, b, t;
+    if (alt <= SKY_KEYS[0].alt) return SKY_KEYS[0];
+    for (i = 0; i < SKY_KEYS.length - 1; i++) {
+      a = SKY_KEYS[i]; b = SKY_KEYS[i + 1];
+      if (alt <= b.alt) {
+        t = (alt - a.alt) / (b.alt - a.alt);
+        return {
+          top: mix(a.top, b.top, t),
+          mid: mix(a.mid, b.mid, t),
+          low: mix(a.low, b.low, t),
+          a: a.a + (b.a - a.a) * t
+        };
+      }
+    }
+    return SKY_KEYS[SKY_KEYS.length - 1];
+  }
+
+  /* The sun's own colour. White at height, gold as it comes down, and a
+     deep red right on the horizon -- which is the air, not the star: low
+     sun is seen through far more atmosphere and the blue is scattered out
+     of it long before it arrives. */
+  function sunColour(alt) {
+    if (alt >= 25) return [255, 250, 232];
+    if (alt >= 8)  return mix([255, 226, 168], [255, 250, 232], (alt - 8) / 17);
+    if (alt >= 0)  return mix([255, 168, 92],  [255, 226, 168], alt / 8);
+    return mix([236, 104, 66], [255, 168, 92], Math.max(0, (alt + 6) / 6));
+  }
+
   function skyPaint(host, where) {
     placeSky(host);
     var now = new Date();
@@ -9726,8 +9788,68 @@
     var day = Math.max(0, Math.min(1, (sp.alt + 6) / 12));
 
     var svg = [];
+    /* The size goes on the element as attributes, in PIXELS, measured off
+       the box it is sitting in. Sized by the stylesheet -- or by attributes
+       in per cent -- the sky came out exactly the right shape and then
+       painted nothing at all: every shape inside it resolved, had a real
+       bounding box, and simply never appeared. Given two numbers it is
+       there. */
+    var pxW = host.clientWidth || SKY_W;
+    var pxH = host.clientHeight || SKY_H;
     svg.push('<svg viewBox="0 0 ' + SKY_W + ' ' + SKY_H + '" preserveAspectRatio="none" ' +
+             'width="' + pxW + '" height="' + pxH + '" ' +
              'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">');
+
+    /* ---- the sky itself, mixed from how high the sun is ---- */
+    var band = skyBands(sp.alt);
+    var sunHere = project(sp.alt, sp.az, lat);
+    var sunCol = sunColour(sp.alt);
+
+    svg.push('<defs>');
+    svg.push('<linearGradient id="skyfill" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="' + rgba(band.top, band.a) + '"/>' +
+      '<stop offset="0.42" stop-color="' + rgba(band.mid, band.a * 0.94) + '"/>' +
+      '<stop offset="0.78" stop-color="' + rgba(band.low, band.a * 0.66) + '"/>' +
+      '<stop offset="1" stop-color="' + rgba(band.low, 0) + '"/>' +
+      '</linearGradient>');
+
+    /* The air around the sun. Wide, warm, and strongest when the sun is
+       low -- which is when you can actually look at it. */
+    var haze = sp.alt < 14 ? Math.max(0, 1 - Math.abs(sp.alt) / 22) : 0.12;
+    svg.push('<radialGradient id="sunhaze">' +
+      '<stop offset="0" stop-color="' + rgba(sunCol, 0.55 * haze) + '"/>' +
+      '<stop offset="0.35" stop-color="' + rgba(sunCol, 0.22 * haze) + '"/>' +
+      '<stop offset="1" stop-color="' + rgba(sunCol, 0) + '"/>' +
+      '</radialGradient>');
+
+    /* and the star itself: a white core that goes to its own colour and
+       then to nothing, rather than three flat discs stacked up. */
+    svg.push('<radialGradient id="sundisc">' +
+      '<stop offset="0" stop-color="rgba(255,255,252,1)"/>' +
+      '<stop offset="0.45" stop-color="' + rgba(sunCol, 0.98) + '"/>' +
+      '<stop offset="0.78" stop-color="' + rgba(sunCol, 0.55) + '"/>' +
+      '<stop offset="1" stop-color="' + rgba(sunCol, 0) + '"/>' +
+      '</radialGradient>');
+
+    svg.push('<radialGradient id="moondisc">' +
+      '<stop offset="0" stop-color="rgba(255,255,250,.97)"/>' +
+      '<stop offset="0.72" stop-color="rgba(242,243,236,.92)"/>' +
+      '<stop offset="1" stop-color="rgba(232,234,226,.86)"/>' +
+      '</radialGradient>');
+    svg.push('</defs>');
+
+    svg.push('<rect x="0" y="0" width="' + SKY_W + '" height="' + SKY_H +
+             '" fill="url(#skyfill)"/>');
+
+    /* The glow the sun throws along the horizon, on the side it is on.
+       This is the thing that makes a sunset read as a sunset: the sky near
+       the sun is on fire and the far side of it is still blue. */
+    if (sp.alt > -10 && sunHere.on) {
+      svg.push('<ellipse cx="' + sunHere.x.toFixed(1) + '" cy="' +
+               Math.min(SKY_H, sunHere.y).toFixed(1) +
+               '" rx="' + (SKY_W * 0.52) + '" ry="' + (SKY_H * 0.78) +
+               '" fill="url(#sunhaze)"/>');
+    }
 
     /* ---- the stars, and the galaxy behind them ---- */
     if (night > 0.02) {
@@ -9780,7 +9902,7 @@
 
     /* ---- the moon, at its real phase ---- */
     var mplace = project(mp.alt, mp.az, lat);
-    if (mplace.on && mp.alt > -2) {
+    if (mplace.on && mp.alt > -2) {                  /* see `dim` below */
       /* How much of it is lit, and which side. The terminator is drawn as a
          second disc offset across the face -- crude next to the real
          geometry, and indistinguishable at this size. */
@@ -9788,31 +9910,46 @@
       var lit = (1 - Math.cos(elong * RAD)) / 2;
       var waxing = elong < 180;
       var mr = 13;
+      /* A new moon is not a dark disc in the sky, it is nothing at all --
+         it is up there in the daytime with its back to us. Drawing the
+         unlit side as a solid shape put a navy hole in the sunset. So the
+         whole moon fades out as it empties, and the last sliver goes with
+         it. */
       var dim = 0.30 + 0.70 * (1 - night * 0.55);
+      dim *= Math.max(0, Math.min(1, (lit - 0.06) / 0.16));
+      if (dim < 0.03) { mplace.on = false; }
       svg.push('<g opacity="' + dim.toFixed(2) + '">');
       svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
                '" r="' + (mr + 9) + '" fill="rgba(240,244,255,.07)"/>');
       svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
-               '" r="' + mr + '" fill="rgba(246,246,238,.93)"/>');
+               '" r="' + mr + '" fill="url(#moondisc)"/>');
       if (lit < 0.97) {
-        var shift = (1 - lit) * 2 * mr * (waxing ? -1 : 1);
-        svg.push('<circle cx="' + (mplace.x + shift).toFixed(1) + '" cy="' +
-                 mplace.y.toFixed(1) + '" r="' + mr + '" class="moon-dark"/>');
+        /* The shadow has to be CLIPPED to the moon. Left free it ran off
+           the side of the disc and painted a dark blob in the sky beside
+           it, which is what a half moon looked like: a bruise. */
+        /* The offset is how far the shadow has SLID OFF, so it runs with
+           the lit fraction and not against it. Inverted, a moon that was
+           ninety-six per cent full got a shadow sitting almost exactly on
+           top of it -- a full moon came out black. */
+        var shift = lit * 2 * mr * (waxing ? -1 : 1);
+        svg.push('<clipPath id="moonclip"><circle cx="' + mplace.x.toFixed(1) +
+                 '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '"/></clipPath>');
+        svg.push('<circle clip-path="url(#moonclip)" cx="' + (mplace.x + shift).toFixed(1) +
+                 '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '" class="moon-dark"/>');
       }
       svg.push('</g>');
     }
 
     /* ---- the sun ---- */
-    var splace = project(sp.alt, sp.az, lat);
-    if (splace.on && sp.alt > -6) {
-      var warm = sp.alt < 8 ? 1 : 0;      // low sun goes orange
-      var core = warm ? '255,186,110' : '255,238,190';
-      svg.push('<circle cx="' + splace.x.toFixed(1) + '" cy="' + splace.y.toFixed(1) +
-               '" r="58" fill="rgba(' + core + ',' + (0.13 + 0.10 * day).toFixed(2) + ')"/>');
-      svg.push('<circle cx="' + splace.x.toFixed(1) + '" cy="' + splace.y.toFixed(1) +
-               '" r="26" fill="rgba(' + core + ',.22)"/>');
-      svg.push('<circle cx="' + splace.x.toFixed(1) + '" cy="' + splace.y.toFixed(1) +
-               '" r="13" fill="rgba(' + core + ',.92)"/>');
+    if (sunHere.on && sp.alt > -5) {
+      /* It swells as it sinks. That is an illusion rather than optics, but
+         it is the illusion everybody has actually seen, and a sun that
+         stayed the same size all the way down reads as a sticker. */
+      var sr = 15 + Math.max(0, (10 - sp.alt)) * 0.55;
+      svg.push('<circle cx="' + sunHere.x.toFixed(1) + '" cy="' + sunHere.y.toFixed(1) +
+               '" r="' + (sr * 4.6).toFixed(1) + '" fill="url(#sunhaze)"/>');
+      svg.push('<circle cx="' + sunHere.x.toFixed(1) + '" cy="' + sunHere.y.toFixed(1) +
+               '" r="' + sr.toFixed(1) + '" fill="url(#sundisc)"/>');
     }
 
     svg.push('</svg>');
@@ -9822,7 +9959,13 @@
        the clock, the still -- are drawn in dark ink, and dark ink on a
        night sky cannot be read. This tells the stylesheet to turn just
        those over while the sky behind them is dark. */
-    document.body.classList.toggle('sky-night', night > 0.45);
+    /* Whether the writing in front of the sky needs to turn over is a
+       question about the sky, not about the clock. At sunset the sun is
+       still up -- it is not "night" by any measure -- and the top of the
+       band is already a deep violet that black type disappears into. So
+       this asks how dark the paint actually is. */
+    var lum = (band.top[0] * 0.299 + band.top[1] * 0.587 + band.top[2] * 0.114) / 255;
+    document.body.classList.toggle('sky-night', lum * band.a < 0.42);
     host.setAttribute('data-night', night > 0.5 ? 'yes' : 'no');
     host.style.setProperty('--night', night.toFixed(3));
     host.style.setProperty('--day', day.toFixed(3));
@@ -9879,6 +10022,17 @@
     host.id = 'sky';
     host.setAttribute('aria-hidden', 'true');
     document.body.appendChild(host);
+
+    /* The layer the walkman blends on. It has to be a real element: doing
+       it on the body's own ::before and ::after made the body a stacking
+       context, and everything drawn behind the page went behind the paper
+       with it. See THE WALKMAN in style.css. */
+    if (!document.getElementById('halo')) {
+      var halo = document.createElement('div');
+      halo.id = 'halo';
+      halo.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(halo);
+    }
 
     function go(where) {
       skyPaint(host, where);
