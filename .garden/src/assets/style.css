@@ -3614,3 +3614,35 @@ body.theme-ink .sticky { filter: brightness(.82) saturate(.9); }
   .plantbed .item .meta { font-size: .6rem; }
   body .plantbed.mobile-freeform > .item pre { max-width: 100%; font-size: .6rem; }
 }
+
+/* A heading inside a menu. The taskbar's drawer holds three different kinds
+   of thing -- what is standing on the page, what the paper is, what is
+   printed on it -- and without a word between them it reads as one long
+   list of unrelated switches. */
+.picker-head {
+  display: block;
+  padding: .5rem .7rem .2rem;
+  font-family: var(--mono);
+  font-size: .56rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  opacity: .7;
+  pointer-events: none;
+}
+.picker-head:first-child { padding-top: .35rem; }
+
+/* A switch in that drawer is on or off, not one-of-several, so it gets a
+   mark that reads as a state rather than as a choice. */
+.picker-check::before {
+  content: '';
+  display: inline-block;
+  width: .42rem;
+  height: .42rem;
+  margin-right: .45rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  vertical-align: baseline;
+  opacity: .45;
+}
+.picker-check.on::before { background: currentColor; opacity: 1; }

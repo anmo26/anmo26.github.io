@@ -237,7 +237,7 @@
       "kind": "idea",
       "by": "r5u3jewz",
       "name": "Anmo",
-      "near": "the mini fig",
+      "near": "the page",
       "at": 1789505238090,
       "replies": [
         {
@@ -738,7 +738,9 @@
       "id": "17895376834560i0m",
       "status": "new",
       "firstSeen": "2026-09-16T09:33:45.309Z",
-      "history": [],
+      "history": [
+        "2026-09-24T07:12:44.966Z taken off the wall"
+      ],
       "room": "/MOONLIGHT/",
       "text": "am i the only one who has found this place? leave a comment if u found it too!!",
       "kind": "chat",
@@ -753,14 +755,16 @@
           "at": 1789537823496
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": []
     },
     "1789537712080fu9j": {
       "id": "1789537712080fu9j",
       "status": "new",
       "firstSeen": "2026-09-16T09:33:45.309Z",
-      "history": [],
+      "history": [
+        "2026-09-24T07:12:44.977Z taken off the wall"
+      ],
       "room": "/MOONLIGHT/",
       "text": "i made the rocket fly by clicking the button below it!",
       "kind": "chat",
@@ -775,7 +779,7 @@
           "at": 1790153703779
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": []
     },
     "1789537732329pxw9": {
@@ -881,7 +885,9 @@
       "id": "1789552167217iba4",
       "status": "new",
       "firstSeen": "2026-09-23T08:22:36.030Z",
-      "history": [],
+      "history": [
+        "2026-09-24T07:05:26.117Z taken off the wall"
+      ],
       "room": "/",
       "text": "I WILL NOT BE MAKING A MAJOR EDIT UNTIL SEPT 20!!!! ADD STICKIES TO ANYTHING YOU THINK NEEDS FIXING!!!! I WILL BE FILLING THE SITE UP WITH CONTENT SOON! 9/16/26",
       "kind": "chat",
@@ -896,7 +902,7 @@
           "at": 1789571732360
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": []
     },
     "1789552212506i7kj": {
@@ -922,7 +928,9 @@
       "id": "1789571752477qt06",
       "status": "new",
       "firstSeen": "2026-09-23T08:22:36.030Z",
-      "history": [],
+      "history": [
+        "2026-09-24T07:05:26.117Z taken off the wall"
+      ],
       "room": "/",
       "text": "penis\n\n",
       "kind": "chat",
@@ -931,7 +939,7 @@
       "near": "the mini fig",
       "at": 1789571752478,
       "replies": [],
-      "gone": false,
+      "gone": true,
       "flags": []
     },
     "1789691532128hzex": {
@@ -1015,7 +1023,45 @@
       ],
       "gone": false,
       "flags": []
+    },
+    "179017677576677oj": {
+      "id": "179017677576677oj",
+      "status": "new",
+      "firstSeen": "2026-09-24T07:05:26.110Z",
+      "history": [],
+      "room": "/",
+      "text": "bug: when i double click to minimize, it opens the actual photo and then it glitches after it minimizes so the scale is off",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "Screenshot 2026-09-18 at 9.28.34 PM.png",
+      "at": 1790176775769,
+      "replies": [],
+      "gone": false,
+      "flags": []
+    },
+    "17901768210474bn6": {
+      "id": "17901768210474bn6",
+      "status": "new",
+      "firstSeen": "2026-09-24T07:05:26.117Z",
+      "history": [],
+      "room": "/",
+      "text": "way too many tabs at the bottom. make it better and clean",
+      "kind": "idea",
+      "by": "r5u3jewz",
+      "name": "Anmo",
+      "near": "the page",
+      "at": 1790176821047,
+      "replies": [
+        {
+          "name": "Anmo",
+          "text": "what does people even mean?",
+          "at": 1790233681170
+        }
+      ],
+      "gone": false,
+      "flags": []
     }
   },
-  "updated": "2026-09-23T08:55:09.272Z"
+  "updated": "2026-09-24T07:12:44.977Z"
 }

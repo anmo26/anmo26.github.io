@@ -295,6 +295,12 @@
     }
 
     function render(text) {
+      /* Nobody is looking. The clock switched off in the taskbar, or the
+         whole tab in the background -- either way this is five hundred
+         cells of HTML being built and parsed for a thing that is not on
+         any screen. The plan still runs; only the painting stops. */
+      if (document.hidden || !host.offsetParent) return;
+
       // Nothing has changed since the last frame: do not rebuild five
       // hundred cells to put back exactly what is already on the screen.
       var sig = text + '|' + Object.keys(churn).join(',') + '|' + tick;
@@ -319,7 +325,13 @@
     var FLIP_FACES = 4;      // wrong faces before the right one
     var FLIP_MS = 48;        // how long each face is up
     var WAVE_MS = 56;        // how much later each card to the LEFT starts
-    var STEP_MS = 24;        // how often the whole face is looked at
+    /* One render per face, rather than two. A flip is four faces at FLIP_MS
+     each, and the clock rebuilds its whole five-hundred-cell face every step
+     -- at 24ms that was eight full rebuilds a second, every second, for the
+     seconds card alone. At 48 it is four, the flap turns at exactly the same
+     speed, and the only thing halved is the shimmer in the ground under a
+     turning card, which nobody can see at twenty-one frames a second. */
+  var STEP_MS = 48;        // how often the whole face is looked at
 
     var DIGITS = '0123456789';
     var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -1215,10 +1227,21 @@
        back to the size it was born at. Asked for directly: a picture pulled
        too big is otherwise a picture you have to pull all the way back by
        hand. */
+    /** A double-click only means something while this is out of shape. */
+    function armed() { return box.offsetWidth !== born(); }
+    function arm() { box.toggleAttribute('data-dbl', armed()); }
+    arm();
+
     box.addEventListener('dblclick', function (e) {
-      if (box.offsetWidth === born()) return;      // already itself; let it close
+      if (!armed()) return;                        // already itself; let it close
       e.preventDefault();
       e.stopPropagation();
+      /* The first of the two clicks had already asked for the picture to
+         open. It is held for a moment precisely so this can call it off --
+         see waitForSecondClick. Without that, "put it back to its own size"
+         also threw the full-size photo up on the screen, and the two of
+         them landing together is the glitch. */
+      clearTimeout(box.openTimer);
       box.style.transition = 'width .22s cubic-bezier(.22,.8,.3,1), height .22s cubic-bezier(.22,.8,.3,1)';
       box.style.width = born() + 'px';
       snap(box);
@@ -1228,6 +1251,7 @@
         delete all[key];
         set('sized', all);
       }
+      setTimeout(arm, 260);
       play('pluck');
     });
 
@@ -1252,6 +1276,7 @@
           all[key] = { w: box.offsetWidth };
           set('sized', all);
         }
+        arm();
         growBed(bedOf(item));
         fitSoon();
         play('tick');
@@ -2020,6 +2045,13 @@
 
   /* ============================================================== TOGGLES */
 
+  /* Which switches stand out in the open, and which live in the drawer.
+     The bar had grown to thirteen things in a row -- "way too many tabs at
+     the bottom", and that is right. What stays out is what somebody
+     actually reaches for; what goes in is what you set once. */
+  var BAR_SWITCHES = ['sound', 'notes'];
+  var DRAWER_SWITCHES = ['plants', 'clock', 'music', 'cursors'];
+
   var TOGGLES = [
     { id: 'sound', label: 'sound', def: true,
       /* Switched on, it says so. The room tone underneath is deliberately
@@ -2038,14 +2070,19 @@
     /* Somebody else's wall of paper should not be the first thing between
        a visitor and the site. This puts every note away -- their own
        included -- and leaves them where they are for everybody else. */
-    { id: 'notes', label: 'notes', def: true,
+    /* Off until somebody asks for it. A stranger arriving at the front
+       page should meet the folder, not a wall of other people's paper --
+       "i want users to discover that themselves". The switch is the second
+       word in the taskbar, so finding them is one click for anybody who
+       wants them, and the choice is remembered from then on. */
+    { id: 'notes', label: 'notes', def: false,
       apply: function (on) { document.body.classList.toggle('notes-off', !on); } },
 
     /* Other people's hands, live, while they are on the same page. It is
        the one thing on this site that tells anybody else you are here, so
        it is a switch and not a feature: turned off, this browser stops
        reading the shared document AND stops writing to it. */
-    { id: 'cursors', label: 'people', def: true,
+    { id: 'cursors', label: 'cursors', def: true,
       apply: function (on) { hereOn = on; if (typeof hereSync === 'function') hereSync(); } },
 
     // The music player. This parks the whole thing off the side of the
@@ -2085,7 +2122,15 @@
      menu closes on the next tap anywhere else.
      --------------------------------------------------------------------- */
 
-  function mountPicker(bar, spec) {
+  /* ------------------------------------------------------ the menu shell
+     The hanging part of every taskbar menu: where it opens, how it closes,
+     and the breath of grace on the way out. Three different kinds of menu
+     sit in this same coat -- a choice, a list of things to do, and a page
+     of switches -- and none of them should have to know about the edge of
+     the window.
+     --------------------------------------------------------------------- */
+
+  function menuShell(bar) {
     var wrap = document.createElement('span');
     wrap.className = 'picker';
 
@@ -2098,51 +2143,13 @@
     var menu = document.createElement('div');
     menu.className = 'picker-menu';
     menu.hidden = true;
-
-    var at = spec.value();
-    var buttons = [];
-
-    /* Two kinds of menu wear the same coat. One is a CHOICE -- the paper,
-       the pattern -- and its button shows what is currently chosen. The
-       other is a short list of THINGS TO DO, and its button keeps its own
-       name however many times you use it. */
-    function paint() {
-      btn.innerHTML = '<span class="led"></span>' +
-        (spec.action ? spec.label
-                     : (spec.label ? spec.label + ': ' : '') + spec.names[at]);
-      btn.setAttribute('aria-pressed',
-        spec.action ? 'false' : (spec.pressed ? String(spec.pressed(at)) : 'true'));
-      if (!spec.action) {
-        buttons.forEach(function (b, i) {
-          b.setAttribute('aria-checked', String(i === at));
-          b.classList.toggle('on', i === at);
-        });
-      }
-      spec.apply(at);
-    }
-
-    spec.names.forEach(function (name, i) {
-      var opt = document.createElement('button');
-      opt.className = 'picker-option';
-      opt.type = 'button';
-      opt.setAttribute('role', 'menuitemradio');
-      opt.textContent = name;
-      opt.addEventListener('click', function () {
-        if (!spec.action) at = i;
-        spec.save(i);
-        paint();
-        close();
-        play('tick');
-      });
-      buttons.push(opt);
-      menu.appendChild(opt);
-    });
     menu.setAttribute('role', 'menu');
 
     function place() {
       /* It hangs off the window, so it has to be told where the button is
-         -- and pulled back inside if it would go off the right-hand edge. */
-      /* Flush against the top of the button, with NO gap. There were nine
+         -- and pulled back inside if it would go off the right-hand edge.
+
+         Flush against the top of the button, with NO gap. There were nine
          pixels of nothing between the two, and crossing them counted as
          leaving -- so the menu shut every time you reached for it and not
          one option could ever be clicked. */
@@ -2181,16 +2188,7 @@
       clearTimeout(shutting);
       shutting = setTimeout(close, 220);
     });
-    /* With a mouse, the button itself does the ordinary thing -- "note"
-       makes a note -- and resting on it offers the alternatives. A finger
-       has no hover, so there the button opens the list instead, or the
-       second choice would be unreachable. */
-    var canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (spec.action && canHover) { spec.save(0); close(); play('tick'); return; }
-      if (menu.hidden) open(); else close();
-    });
+
     window.addEventListener('resize', function () { if (!menu.hidden) place(); });
     document.addEventListener('click', function (e) {
       if (!wrap.contains(e.target)) close();
@@ -2202,16 +2200,162 @@
     wrap.appendChild(menu);
     wrap.appendChild(btn);
     bar.appendChild(wrap);
+
+    return { wrap: wrap, btn: btn, menu: menu, open: open, close: close, place: place };
+  }
+
+  /** A row in a menu that is a heading rather than something to press. */
+  function menuHead(menu, text) {
+    var h = document.createElement('span');
+    h.className = 'picker-head';
+    h.textContent = text;
+    menu.appendChild(h);
+  }
+
+  function mountPicker(bar, spec) {
+    var shell = menuShell(bar);
+    var btn = shell.btn, menu = shell.menu, wrap = shell.wrap;
+
+    var at = spec.value();
+    var buttons = [];
+
+    /* Two kinds of menu wear the same coat. One is a CHOICE -- the paper,
+       the pattern -- and its button shows what is currently chosen. The
+       other is a short list of THINGS TO DO, and its button keeps its own
+       name however many times you use it. */
+    function paint() {
+      btn.innerHTML = '<span class="led"></span>' +
+        (spec.action ? spec.label
+                     : (spec.label ? spec.label + ': ' : '') + spec.names[at]);
+      btn.setAttribute('aria-pressed',
+        spec.action ? 'false' : (spec.pressed ? String(spec.pressed(at)) : 'true'));
+      if (!spec.action) {
+        buttons.forEach(function (b, i) {
+          b.setAttribute('aria-checked', String(i === at));
+          b.classList.toggle('on', i === at);
+        });
+      }
+      spec.apply(at);
+    }
+
+    spec.names.forEach(function (name, i) {
+      var opt = document.createElement('button');
+      opt.className = 'picker-option';
+      opt.type = 'button';
+      opt.setAttribute('role', 'menuitemradio');
+      opt.textContent = name;
+      opt.addEventListener('click', function () {
+        if (!spec.action) at = i;
+        spec.save(i);
+        paint();
+        shell.close();
+        play('tick');
+      });
+      buttons.push(opt);
+      menu.appendChild(opt);
+    });
+
+    /* With a mouse, the button itself does the ordinary thing -- "note"
+       makes a note -- and resting on it offers the alternatives. A finger
+       has no hover, so there the button opens the list instead, or the
+       second choice would be unreachable. */
+    var canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (spec.action && canHover) { spec.save(0); shell.close(); play('tick'); return; }
+      if (menu.hidden) shell.open(); else shell.close();
+    });
+
     paint();
     return { paint: paint, el: wrap };
+  }
+
+  /* ---------------------------------------------------------- a drawer
+     The third kind: a page of switches behind one word. The taskbar had
+     grown to thirteen controls in a row -- "way too many tabs at the
+     bottom", and fair enough. The things you press often stay out in the
+     open; the things you set once and forget live in here.
+
+     `rows` is a flat list, and a row is either a heading, a switch, or one
+     of a set of alternatives:
+
+       { head:  'the paper' }
+       { check: 'clock',  get: fn, set: fn }
+       { pick:  'olive',  group: 'paper', on: fn, set: fn }
+     --------------------------------------------------------------------- */
+
+  function mountDrawer(bar, label, rows) {
+    var shell = menuShell(bar);
+    var made = [];
+
+    shell.btn.innerHTML = '<span class="led"></span>' + label;
+    shell.btn.setAttribute('aria-pressed', 'true');
+    shell.btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (shell.menu.hidden) shell.open(); else shell.close();
+    });
+
+    function paint() {
+      made.forEach(function (m) {
+        var on = m.row.check ? !!m.row.get() : !!m.row.on();
+        m.el.classList.toggle('on', on);
+        m.el.setAttribute('aria-checked', String(on));
+      });
+    }
+
+    rows.forEach(function (row) {
+      if (row.head) { menuHead(shell.menu, row.head); return; }
+
+      var opt = document.createElement('button');
+      opt.className = 'picker-option' + (row.check ? ' picker-check' : '');
+      opt.type = 'button';
+      opt.setAttribute('role', row.check ? 'menuitemcheckbox' : 'menuitemradio');
+      opt.textContent = row.check || row.pick;
+      opt.addEventListener('click', function () {
+        row.set();
+        paint();
+        play('tick');
+        // A switch is often one of several you want; a choice is the end of
+        // the errand. So only a choice closes the drawer behind it.
+        if (!row.check) shell.close();
+      });
+      shell.menu.appendChild(opt);
+      made.push({ el: opt, row: row });
+    });
+
+    paint();
+    return { paint: paint, el: shell.wrap };
   }
 
   function mountToggles() {
     var bar = document.getElementById('taskbar-toggles');
     if (!bar) return;
 
-    TOGGLES.forEach(function (t) {
-      if (t.only && !t.only()) return;
+    /* Every switch is applied, whether or not it is drawn: a thing in the
+       drawer is still a thing that is on or off. */
+    var live = TOGGLES.filter(function (t) { return !t.only || t.only(); });
+    live.forEach(function (t) { t.apply(get('toggle.' + t.id, !!t.def)); });
+
+    function switchRow(t) {
+      return {
+        check: t.label,
+        get: function () { return get('toggle.' + t.id, !!t.def); },
+        set: function () {
+          var on = !get('toggle.' + t.id, !!t.def);
+          set('toggle.' + t.id, on);
+          t.apply(on, true);
+        }
+      };
+    }
+
+    function byId(id) {
+      for (var i = 0; i < live.length; i++) if (live[i].id === id) return live[i];
+      return null;
+    }
+
+    BAR_SWITCHES.forEach(function (id) {
+      var t = byId(id);
+      if (!t) return;
       var on = get('toggle.' + t.id, !!t.def);
       var btn = document.createElement('button');
       btn.className = 'toggle';
@@ -2225,7 +2369,6 @@
         t.apply(on, true);
       });
       bar.appendChild(btn);
-      t.apply(on);
     });
 
     /* The mini fig. He was called "pogo" and could only be turned off,
@@ -2237,48 +2380,77 @@
       names: ['pogo', 'run', 'fly', 'away'],
       pressed: function (i) { return i < 3; },
       value: function () {
-        var i = get('minifig', 0);
-        return (i >= 0 && i <= 3) ? i : 0;
+        /* Away to begin with. He is the loudest thing on the page and
+           somebody arriving for the first time should meet a quiet folder
+           and find him, rather than have him found for them. Choose a gait
+           once and that is what it is from then on. */
+        var i = get('minifig', 3);
+        return (i >= 0 && i <= 3) ? i : 3;
       },
       save: function (i) { set('minifig', i); },
       apply: function (i) {
         var m = document.getElementById('pogo');
         if (m) m.hidden = (i === 3);
         if (i < 3) pogoGait(GAITS[i]);
+        pogoRunning();
       }
     });
 
-    /* the paper. Clamped, because somebody sitting on the fifth theme from
-       when there were five would otherwise land on an index that is not
-       there and get no theme and no label at all. */
-    mountPicker(bar, {
-      names: THEME_NAMES,
-      value: function () {
-        var i = get('theme', 0);
-        return (i >= 0 && i < THEMES.length) ? i : 0;
-      },
-      save: function (i) { set('theme', i); },
-      apply: function (i) {
-        THEMES.forEach(function (c) { if (c) document.body.classList.remove(c); });
-        if (THEMES[i]) document.body.classList.add(THEMES[i]);
-      }
+    /* ------------------------------------------------------- the drawer
+       Everything you set once and then forget: what is standing on the
+       page, what the paper is, and what is printed on it. Clamped, because
+       somebody sitting on the fifth theme from when there were five would
+       otherwise land on an index that is not there. */
+
+    function themeAt() {
+      var i = get('theme', 0);
+      return (i >= 0 && i < THEMES.length) ? i : 0;
+    }
+    function paintTheme() {
+      var i = themeAt();
+      THEMES.forEach(function (c) { if (c) document.body.classList.remove(c); });
+      if (THEMES[i]) document.body.classList.add(THEMES[i]);
+    }
+
+    function textureAt() {
+      var i = get('texture', 0);
+      return (i >= 0 && i < TEXTURES.length) ? i : 0;
+    }
+    function paintTexture() {
+      var i = textureAt();
+      TEXTURES.forEach(function (c) { if (c) document.body.classList.remove(c); });
+      if (TEXTURES[i]) document.body.classList.add(TEXTURES[i]);
+      placeTexture();
+    }
+
+    paintTheme();
+    paintTexture();
+
+    var rows = [{ head: 'on the page' }];
+    DRAWER_SWITCHES.forEach(function (id) {
+      var t = byId(id);
+      if (t) rows.push(switchRow(t));
     });
 
-    // the pattern printed on it -- same shape as the paper above
-    mountPicker(bar, {
-      names: TEXTURE_NAMES,
-      pressed: function (i) { return !!i; },
-      value: function () {
-        var i = get('texture', 0);
-        return (i >= 0 && i < TEXTURES.length) ? i : 0;
-      },
-      save: function (i) { set('texture', i); },
-      apply: function (i) {
-        TEXTURES.forEach(function (c) { if (c) document.body.classList.remove(c); });
-        if (TEXTURES[i]) document.body.classList.add(TEXTURES[i]);
-        placeTexture();
-      }
+    rows.push({ head: 'the paper' });
+    THEME_NAMES.forEach(function (name, i) {
+      rows.push({
+        pick: name,
+        on: function () { return themeAt() === i; },
+        set: function () { set('theme', i); paintTheme(); }
+      });
     });
+
+    rows.push({ head: 'printed on it' });
+    TEXTURE_NAMES.forEach(function (name, i) {
+      rows.push({
+        pick: name,
+        on: function () { return textureAt() === i; },
+        set: function () { set('texture', i); paintTexture(); }
+      });
+    });
+
+    mountDrawer(bar, 'the page', rows);
 
     /* Tidy up is the gentle one, and the one people will actually reach
        for, so it comes first. It slides the things on THIS page back to
@@ -2947,8 +3119,23 @@
       if (!kind) return;
 
       e.preventDefault();
-      openViewer(a.href, a.getAttribute('data-name') || decodeURIComponent(
-        a.pathname.split('/').pop()), kind);
+
+      /* One click on a picture opens it. Two means "put it back to the size
+         it was born at" -- and the first of those two is indistinguishable
+         from the first kind until the second either arrives or does not.
+
+         So on a picture that HAS been resized, and only then, opening is
+         held for the length of a double-click. Everything else on the site
+         still opens the instant it is clicked. */
+      var box = e.target.closest ? e.target.closest('[data-resizable][data-dbl]') : null;
+      var name = a.getAttribute('data-name') ||
+                 decodeURIComponent(a.pathname.split('/').pop());
+      if (!box) { openViewer(a.href, name, kind); return; }
+
+      clearTimeout(box.openTimer);
+      box.openTimer = setTimeout(function () {
+        openViewer(a.href, name, kind);
+      }, 260);
     });
 
     document.addEventListener('keydown', function (e) {
@@ -4270,6 +4457,9 @@
   var pogoGravity = function () {};
   var pogoSwim = function () {};
   var pogoGait = function () {};
+  // Set by mountPogo too: start or stop his loop when he is put away or
+  // brought back, so "away" costs nothing rather than running unseen.
+  var pogoRunning = function () {};
 
   var GRAVITY = 2100;        // px per second per second
   var POGO_H = 56;           // how tall he is, near enough
@@ -4322,6 +4512,11 @@
     var gait = GAITS[get('minifig', 0)] || 'pogo';
     var runClock = 0;
     var ledges = [];
+  var ledgeTimer = 0;
+  // How often the ledges are measured. Every tick is a getBoundingClientRect
+  // on every item, note and panel on the page, which makes the browser stop
+  // and work out the layout -- so it only runs while he is actually out.
+  var LEDGE_MS = 400;
     var last = 0;
     var drawn = '';
 
@@ -4647,12 +4842,41 @@
                             Math.round(y - H) + 'px,0)';
     }
 
+    /* He stops when he is not there. The loop used to keep turning at sixty
+       frames a second whether he was on the page or not -- it simply
+       skipped the step -- and the ledges went on being measured beside it.
+       "Away" now costs nothing at all, and so does a tab in the background. */
+    var running = false;
+
     function frame(now) {
+      if (!running) return;
       var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
       if (!document.hidden && !man.hidden) step(dt);
       requestAnimationFrame(frame);
     }
+
+    function runFig(on) {
+      if (on === running) return;
+      running = on;
+      if (on) {
+        last = 0;
+        readLedges();
+        ledgeTimer = setInterval(readLedges, LEDGE_MS);
+        requestAnimationFrame(frame);
+      } else {
+        clearInterval(ledgeTimer);
+        ledgeTimer = 0;
+      }
+    }
+
+    pogoRunning = function () { runFig(!man.hidden); };
+
+    document.addEventListener('visibilitychange', function () {
+      // A background tab gets no frames anyway; this stops the 400ms
+      // measuring as well, which it does still get.
+      runFig(!document.hidden && !man.hidden);
+    });
 
     function pointAt(clientX, clientY) {
       targetX = clientX + window.pageXOffset;
@@ -4668,9 +4892,8 @@
 
     // The ledges move: items get dragged, the page scrolls, the window
     // changes shape, a folder is walked into.
-    readLedges();
-    setInterval(readLedges, 400);
     window.addEventListener('resize', readLedges);
+    runFig(!man.hidden);
 
     pogoErrand = function (pageX, ms) {
       errand = { x: pageX, until: 0, ms: ms || 1200 };
@@ -8673,14 +8896,26 @@
      ------------------------------------------------------------------- */
 
   var HERE_DOC = 'https://textdb.dev/api/data/anmo-garden-here-8f3c1d';
-  var HERE_BEAT_MS = 1100;     // how often this browser speaks and listens
+  /* Every shared thing on this site lives on one small free service, and
+     the notes live there too -- so a cursor that asks twice a second is a
+     cursor that can get the WALL throttled. Slow enough to be a good
+     guest, fast enough that a hand still reads as a hand, because what you
+     see is drawn between the beats rather than at them. */
+  var HERE_BEAT_MS = 1800;     // how often this browser speaks and listens
   var HERE_GONE_MS = 20000;    // no word for this long and a hand is gone
   var HERE_MAX = 40;           // hands kept in the document at all
+  var HERE_PATIENCE = 4;       // beats of nobody before the pace drops
+  var HERE_SLOW = 5;           // and then only one beat in this many
+  var HERE_GIVE_UP = 6;        // refusals in a row before it stops asking
+  var hereMissed = 0;          // how many asks in a row have come back wrong
+  var hereRest = 0;            // beats to sit out before trying again
 
   var hereOn = get('toggle.cursors', true);
   var hereLayer = null;        // where the hands are drawn
   var hereHands = {};          // hand -> { el, dot, from, to, at, x, y }
-  var hereMine = null;         // where my own pointer last was, in bed pixels
+  var hereRaw = null;          // where my own pointer last was, on the screen
+  var hereMine = null;         // and the same point in the bed's own pixels
+  var hereAlone = 0;           // beats in a row with nobody else here
   var hereSent = null;         // what I last put in the document
   var hereChain = Promise.resolve();
   var hereTimer = 0;
@@ -8734,10 +8969,34 @@
   function hereBeat() {
     if (!hereOn || document.hidden) return;
 
+    /* Alone on the page, this is two requests a second to say so. After a
+       few beats of nobody the pace drops right back, and the first sign of
+       company brings it straight up again -- so a busy page is live and a
+       quiet one costs almost nothing. */
+    if (hereAlone > HERE_PATIENCE && (hereAlone % HERE_SLOW)) { hereAlone++; return; }
+
+    /* The wall and the cursors share one small free service, and it will
+       refuse a browser that asks too often. If it starts refusing, this
+       backs away -- doubling the wait each time, and giving up on the
+       cursors altogether after a few -- because a moving arrow is worth
+       nothing at all next to everybody's notes still arriving. */
+    if (hereRest > 0) { hereRest--; return; }
+    if (hereMissed >= HERE_GIVE_UP) return;
+
+    // The one measurement of the page, once a beat rather than once a move.
+    if (hereRaw) {
+      var at = bedPoint(hereRaw.x, hereRaw.y);
+      if (at) hereMine = at;
+    }
+
     hereChain = hereChain.then(function () {
       return fetch(HERE_DOC, { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.text() : ''; })
+        .then(function (r) {
+          if (!r.ok) throw new Error('busy');
+          return r.text();
+        })
         .then(function (t) {
+          hereMissed = 0;
           var doc = herePrune(hereRead(t));
           herePaint(doc);
 
@@ -8768,7 +9027,11 @@
             body: JSON.stringify(doc)
           });
         })
-        .catch(function () { /* offline: the page is no worse off */ });
+        .catch(function () {
+          // offline, or told to wait. Either way: ask less often.
+          hereMissed++;
+          hereRest = Math.min(32, Math.pow(2, hereMissed));
+        });
     }).catch(function () {});
   }
 
@@ -8818,12 +9081,14 @@
   /** Fold the document into the hands on screen. */
   function herePaint(doc) {
     var room = noteRoom(), me = myHand(), now = Date.now(), k, seen = {};
+    var company = 0;
 
     for (k in doc.who) {
       if (!Object.prototype.hasOwnProperty.call(doc.who, k)) continue;
       var v = doc.who[k];
       if (k === me || !v || v.r !== room) continue;          // this room only
       seen[k] = true;
+      company++;
       var h = hereHandEl(k, Number(v.c) || 0);
       var next = { x: Number(v.x) || 0, y: Number(v.y) || 0 };
       // Where it is now becomes where it comes from, so it glides.
@@ -8852,6 +9117,7 @@
       }(k, g.el));
     }
 
+    hereAlone = company ? 0 : hereAlone + 1;
     hereRun();
   }
 
@@ -8876,7 +9142,10 @@
                                                 Math.round(at.y) + 'px,0)';
         if (p < 1) any = true;
       }
-      if (any || Object.keys(hereHands).length) hereRun();
+      /* Only while something is actually moving. Keeping this alive for as
+         long as any hand EXISTS meant a frame of work sixty times a second
+         for a cursor that had already arrived and was sitting still. */
+      if (any) hereRun();
     });
   }
 
@@ -8902,10 +9171,15 @@
   }
 
   function mountHere() {
+    /* Just the two numbers, and nothing else. This used to work out where
+       the pointer was in the bed's own coordinates HERE -- which means
+       measuring the bed, which means the browser stopping to work out the
+       whole page's layout, on every single mouse move. Sixty to a hundred
+       times a second, for a number that is read once a second. The
+       measuring happens in the beat now. */
     document.addEventListener('pointermove', function (e) {
       if (e.pointerType !== 'mouse') return;      // a finger has no cursor
-      var p = bedPoint(e.clientX, e.clientY);
-      if (p) hereMine = p;
+      hereRaw = { x: e.clientX, y: e.clientY };
     }, true);
 
     // Leaving the page, or putting it in the background, is leaving the room.

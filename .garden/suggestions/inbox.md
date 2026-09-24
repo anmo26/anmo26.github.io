@@ -3,14 +3,30 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 23/09/2026, 04:55:09. 47 notes in the ledger.
+Read 24/09/2026, 03:12:44. 49 notes in the ledger.
 
-## new (10)
+## new (12)
+
+### 17901768210474bn6
+
+- **idea**, front page · the page
+- by Anmo (r5u3jewz), today
+
+> way too many tabs at the bottom. make it better and clean
+
+  - *Anmo:* what does people even mean?
+
+### 179017677576677oj
+
+- **idea**, front page · Screenshot 2026-09-18 at 9.28.34 PM.png
+- by Anmo (r5u3jewz), today
+
+> bug: when i double click to minimize, it opens the actual photo and then it glitches after it minimizes so the scale is off
 
 ### 1789571975185wu61
 
 - **idea**, /test folder/ · Screenshot 2026-09-14 at 3.45.54 AM.png
-- by Stan (2i39jnmt), 6 days ago
+- by Stan (2i39jnmt), 7 days ago
 
 > 
 
@@ -19,7 +35,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789571885963xvth
 
 - **chat**, /THE BAR/ · the mini fig
-- by Stan (2i39jnmt), 6 days ago
+- by Stan (2i39jnmt), 7 days ago
 
 > i found!
 
@@ -27,15 +43,15 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 
 ### 1789571752477qt06
 
-- **chat**, front page · the mini fig
-- by Stan (2i39jnmt), 6 days ago
+- **chat**, front page · the mini fig — *taken off the wall*
+- by Stan (2i39jnmt), 7 days ago
 
 > penis 
 
 ### 1789552167217iba4
 
-- **chat**, front page · the ticker
-- by Anmo (r5u3jewz), 6 days ago
+- **chat**, front page · the ticker — *taken off the wall*
+- by Anmo (r5u3jewz), 7 days ago
 
 > I WILL NOT BE MAKING A MAJOR EDIT UNTIL SEPT 20!!!! ADD STICKIES TO ANYTHING YOU THINK NEEDS FIXING!!!! I WILL BE FILLING THE SITE UP WITH CONTENT SOON! 9/16/26
 
@@ -44,7 +60,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789537732329pxw9
 
 - **chat**, /THE GARDEN/ · Screenshot 2026-09-04 at 2.38.29 AM.png
-- by master yoda! (8nmirhlz), 7 days ago
+- by master yoda! (8nmirhlz), 8 days ago
 
 > who else found this garden? its kinda cool! try growing the tree!!!!! click it multiple times at the base.
 
@@ -52,8 +68,8 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 
 ### 1789537712080fu9j
 
-- **chat**, /MOONLIGHT/ · the music player
-- by master yoda! (8nmirhlz), 7 days ago
+- **chat**, /MOONLIGHT/ · the music player — *taken off the wall*
+- by master yoda! (8nmirhlz), 8 days ago
 
 > i made the rocket fly by clicking the button below it!
 
@@ -61,8 +77,8 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 
 ### 17895376834560i0m
 
-- **chat**, /MOONLIGHT/ · the page
-- by master yoda! (8nmirhlz), 7 days ago
+- **chat**, /MOONLIGHT/ · the page — *taken off the wall*
+- by master yoda! (8nmirhlz), 8 days ago
 
 > am i the only one who has found this place? leave a comment if u found it too!!
 
@@ -71,7 +87,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789537496650fyua
 
 - **chat**, front page · the mini fig — *taken off the wall*
-- by master yoda! (8nmirhlz), 7 days ago
+- by master yoda! (8nmirhlz), 8 days ago
 
 > hi! i like this site a lot. please dont delete this note!
 
@@ -81,7 +97,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 17895162076872dhe
 
 - **idea**, front page · IMG_3265.jpeg — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > hi
 
@@ -93,7 +109,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789505682452de1g
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > after fixing the ui in accordance to a sticky note. please delete the sticky note. also check in the garden. i left a note in there that you may have missed. 
 
@@ -102,7 +118,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789507931694w871
 
 - **idea**, front page · IMG_3427.JPG — *taken off the wall*
-- by unsigned (1cee3n80), 7 days ago
+- by unsigned (1cee3n80), 8 days ago
 
 > hi
 
@@ -116,7 +132,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789507445293l23a
 
 - **idea**, /THE FORUM/
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > is this forum page broken? i just posted something but nobody is responding
 
@@ -127,7 +143,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789507297001j52u
 
 - **idea**, front page · stories/ — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > SORRY EVERYONE IF THE TOGGLES AT THE BOTTOM ARENT WORKING PROPERLY!!! I RAN OUT OF USAGE CREDITS. ILL FIX IT SOON!!!!!! as well as all the ui sticky note ideas posted everywhere else on the site. big things coming!
 
@@ -138,7 +154,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 17895070087502hnj
 
 - **idea**, front page · IMG_3265.jpeg
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > Def need to host on cloudflare or a personal domain soon so i can upload more thigns and also make things run smoother (less lag) and also so that people can't easily find all the files to this project.
 
@@ -148,8 +164,8 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 
 ### 17895052380903b28
 
-- **idea**, front page · the mini fig
-- by Anmo (r5u3jewz), 7 days ago
+- **idea**, front page · the page
+- by Anmo (r5u3jewz), 8 days ago
 
 > the iphone version of this site IS BUTTCHEEKS!!!!! NEED MASSIVE UI OVERHAUL!!!!! might have to operate completely from desktop. DONT FIX THIS RN. WE DONT HAVE ENOUGH USAGE LEFT ON CLAUDE!!!!
 
@@ -160,7 +176,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789504711825155i
 
 - **idea**, front page · test folder/
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > i want an easy way to upload things to this site from my iphone. i dont want to always like upload photos to my computer, then drag them into the garden folder from there. any easy way to streamline this process? connect the garden folder into my iphone??? DO THIS IN A FUTURE UPDATE
 
@@ -173,49 +189,49 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 178978154561467ih
 
 - **idea**, front page · the page — *taken off the wall*
-- by nobody (maoh0inf), 4 days ago
+- by nobody (maoh0inf), 5 days ago
 
 > the background is too stuffed
 
 ### 1789691532128hzex
 
 - **idea**, front page · todo.md — *taken off the wall*
-- by Anmo (r5u3jewz), 5 days ago
+- by Anmo (r5u3jewz), 6 days ago
 
 > sound button not work
 
 ### 1789552212506i7kj
 
 - **idea**, front page · the music player — *taken off the wall*
-- by Anmo (r5u3jewz), 6 days ago
+- by Anmo (r5u3jewz), 7 days ago
 
 > have stickies show the date and time it was written.
 
 ### 1789552135307jgxa
 
 - **idea**, front page · the ticker — *taken off the wall*
-- by Anmo (r5u3jewz), 6 days ago
+- by Anmo (r5u3jewz), 7 days ago
 
 > make the folders slightly larger
 
 ### 1789551822358u9a1
 
 - **idea**, front page · todo.md — *taken off the wall*
-- by Anmo (r5u3jewz), 6 days ago
+- by Anmo (r5u3jewz), 7 days ago
 
 > why does to do resize itself to its original size after i drag it somewhere? i dont like that
 
 ### 1789551798473k3ts
 
 - **idea**, front page · the ticker — *taken off the wall*
-- by Anmo (r5u3jewz), 6 days ago
+- by Anmo (r5u3jewz), 7 days ago
 
 > double click on an opened video, photo, or text to close it.
 
 ### 1789538121072ktcp
 
 - **chat**, /pogo/ · 0N7A2311.JPG — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > thumbnail photos shouldnt be scaleable. its broken. fix this. 
 
@@ -224,7 +240,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789534519578dyh6
 
 - **idea**, front page · todo.md — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > when i rescale image and to-do list, it makes it way too big than the amount i am scaling it. 
 
@@ -233,7 +249,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789509563803pqcg
 
 - **idea**, front page · stories/ — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > i think there is some small issue with the notes. like i think i wasn't able to see someone elses note and for some reason my signature dissapeared from my notes. please troubleshoot this. 
 
@@ -242,7 +258,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 17895077260956g23
 
 - **idea**, front page — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > god damn the minifigs r ugly. make them better but still the same size!
 
@@ -251,7 +267,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789507480134r38b
 
 - **idea**, front page — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > when i told you to make pogo guy get stuck in the sticky notes, this isnt what i meant. I mean that if we could surround him with images, or sticky notes, we could essentially surround him and not make him abel to move. i didnt mean to have him get stuck on top. However, i love the wobble effect when he does jump on sticky notes. please please keep that!
 
@@ -260,7 +276,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789507266851shjk
 
 - **idea**, front page · the page — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > i think only I or claude should be able to delete other peoples notes. and I dont want ranodm users to be able to delete my notes.
 
@@ -269,7 +285,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 178950707598022cd
 
 - **idea**, front page — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > upload all the idea sticky notes into gardeners log somehow?? help me work out the complexities and like logic of this. i need all the files into making this sight organized so i can reference or fix things in the future. 
 
@@ -278,7 +294,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789506876038nb4h
 
 - **idea**, front page — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > For the flying one, make it sorta inspired by sunwukong when he flies on a cloud. combine jump and run because its supposed to just be a guy running and jumping around where the cursor goes.
 
@@ -287,7 +303,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789506848670b2fy
 
 - **idea**, front page — *taken off the wall*
-- by Anmo (r5u3jewz), 7 days ago
+- by Anmo (r5u3jewz), 8 days ago
 
 > ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.
 
@@ -296,7 +312,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789505514089i5zs
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > it shoulndt be hard for the pogo sticker to jump lower, irl pogo stickers can kinda kill their bounce in 3 bounces or less
 
@@ -305,7 +321,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789505423818kqmw
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > i dont think its smart to have to dig 50 times to unlcok the crypt. keep the crypt a secret folder, but if you cick on the trash bin that you throw things down into the crypt. you get automatically taken there. delete the shovel in garden.
 
@@ -314,7 +330,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789505186101nwl9
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > show how many unique* players have explored different pages on this site (allows me to track traffic on each page)
 
@@ -323,7 +339,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789505115588e10y
 
 - **idea**, /THE GARDEN/ — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > when i try to drag files into the crypt. it looks like somethign is blocking it from moving into the bucket!!!
 
@@ -332,7 +348,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789504862707fkf5
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > allow myself to save files from the crypt back into the overworld
 
@@ -341,7 +357,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789504380969dddi
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > make a folder purely for an online forum to chat about anything. make it pretty standard forum(not using sticky notes)
 
@@ -350,7 +366,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 17895040098726vyz
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > allow peple to respond to these sticky notes(have a see reply buttons so these stickies dont overpopulate the screen). Also make sure people are able to turn off the stickies so that it doesnt affec their experience with the site. make there the option to have two types of stickies. one for suggestions, one for like ocmmenting and chatting. both can have the reply feature which allows me to respond to ppl
 
@@ -359,7 +375,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789502556750ab36
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > allow pogo guy or runners or flyers to jump onto these sticky notes, or get trapped in them!
 
@@ -368,7 +384,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789501911640f557
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > Allow claude to read these notes and incorporate them into the next ui update so that i dont have to manually copy everything from these sticky notes to input. it should be like an easy automatic process so that people who visit this site somehwat have control over small thigns that i do not notice. be careful of bad actors
 
@@ -377,7 +393,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789501827701rbnb
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > for pogo, dont just have it be pogo. make it say mini fig and allow users to choose if they want to fly, pogo, run, jump etc
 
@@ -386,7 +402,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789501801963fr7t
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > for notes, every distinct user gets their own colored notes, and have like some sort of signature so sort of who is writing the same notes
 
@@ -395,7 +411,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789501773928f852
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > for theme and patter, when hovering, show options and allow user to select the option they want rather than clicking thru all the options. also delete scan one. its an ugly patterns
 
@@ -404,7 +420,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 17895017606536nvo
 
 - **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 7 days ago
+- by unsigned (r5u3jewz), 8 days ago
 
 > this clock looks late by one second
 
@@ -415,7 +431,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 17895080503948j39
 
 - **idea**, /BOTTOM CRYPT/ — *taken off the wall*
-- by unsigned (1cee3n80), 7 days ago
+- by unsigned (1cee3n80), 8 days ago
 
 > 
 
@@ -424,7 +440,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789505526180nw8p
 
 - **idea**, front page · todo.md — *taken off the wall*
-- by unsigned (1jqlbgq2), 7 days ago
+- by unsigned (1jqlbgq2), 8 days ago
 
 > 
 
@@ -433,7 +449,7 @@ Read 23/09/2026, 04:55:09. 47 notes in the ledger.
 ### 1789505525165yv2m
 
 - **idea**, front page · 0N7A2311.JPG — *taken off the wall*
-- by unsigned (1jqlbgq2), 7 days ago
+- by unsigned (1jqlbgq2), 8 days ago
 
 > 
 

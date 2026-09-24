@@ -1540,7 +1540,11 @@
            page load)
          - be unavoidable (`auto` in the player's bar, remembered)         */
 
-    function autoWanted() { return get(AUTO_KEY, true) !== false; }
+    /* Off until somebody turns it on. Music starting by itself is the most
+     startling thing a website can do, and a stranger should meet a quiet
+     page and find the player rather than be played at. The switch is on the
+     player itself, and the choice sticks from then on. */
+  function autoWanted() { return get(AUTO_KEY, false) === true; }
 
     function firstGesture() {
       disarmGesture();
