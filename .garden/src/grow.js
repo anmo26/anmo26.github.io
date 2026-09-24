@@ -91,7 +91,7 @@ const SECRET_RE = /^secret\.(txt|md)$/i;
 // and secret.txt: one word in one file, editable in TextEdit, moves with the
 // folder if it is renamed.
 const SCENE_RE = /^scene\.(txt|md)$/i;
-const SCENES = ['garden', 'moonlight', 'ocean', 'crypt', 'nursery', 'bar', 'forum'];
+const SCENES = ['garden', 'moonlight', 'ocean', 'crypt', 'nursery', 'bar', 'forum', 'field'];
 
 function folderSecret(full) {
   let entries;

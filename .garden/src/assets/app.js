@@ -3453,6 +3453,12 @@
     moonlight: { type: 'bandpass', freq: 3400, q: 1.20, gain: 0.010, swell: 0.040, rate: 0.13,
                  every: [3000, 9000],  voice: 'cricket' },
 
+    /* A rice field in July is not quiet. It is wind in about four million
+       leaves with cicadas sitting on top of it, and the cicadas do not
+       take turns -- they start, they run, they stop. */
+    field:     { type: 'bandpass', freq: 1100, q: 0.35, gain: 0.030, swell: 0.110, rate: 0.09,
+                 every: [3400, 9000],  voice: 'cicada' },
+
     /* Every room had a tone except the rooms that are just rooms -- the
        front page and every ordinary folder -- so on the page most people
        actually sit on, the sound switch turned nothing on and nothing off
@@ -3683,6 +3689,23 @@
           g.gain.exponentialRampToValueAtTime(0.0002, t + 0.05 + k * 0.07);
         }
         o.start(t); o.stop(t + 0.26);
+      } else if (kind === 'cicada') {
+        /* A cicada is not a chirp. It is one note held down and buzzing at
+           itself about twenty times a second, coming up out of nothing and
+           going away again a second and a half later. Same two nodes as
+           everything else here -- the buzz is written into the gain. */
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(3000 + Math.random() * 420, t);
+        g.gain.setValueAtTime(0.0001, t);
+        var j, at, lvl;
+        for (j = 0; j < 30; j++) {
+          at = t + 0.05 + j * 0.045;
+          lvl = 0.010 * Math.sin(Math.PI * (j / 30));
+          g.gain.exponentialRampToValueAtTime(Math.max(lvl, 0.0001), at);
+          g.gain.exponentialRampToValueAtTime(Math.max(lvl * 0.3, 0.0001), at + 0.022);
+        }
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.48);
+        o.start(t); o.stop(t + 1.52);
       } else {
         // ice: two short bright taps against a glass
         o.type = 'triangle';
@@ -5456,6 +5479,7 @@
     else if (want === 'nursery') mountNurseryScene();
     else if (want === 'bar') mountBar();
     else if (want === 'forum') mountForum();
+    else if (want === 'field') mountField();
     else ambience('desk');
   }
 
@@ -6001,13 +6025,15 @@
   var VISIT_ROOMS = {
     'THE GARDEN': 'garden',
     'MOON': 'moon',
-    'LIBRARY!!!!!': 'library'
+    'LIBRARY!!!!!': 'library',
+    'THE FIELD': 'field'
   };
 
   var ROOM_WORD = {
     garden:  'have walked through the garden',
     moon:    'have stood on the moon',
-    library: 'have found the library'
+    library: 'have found the library',
+    field:   'have stood in this field'
   };
 
   /** The page, as a name a counter can be kept under. */
@@ -8535,6 +8561,102 @@
 
     pogoSwim(true);
     ambience('ocean');
+  }
+
+  /* ================================================================ FIELD
+     A rice field in the middle of July, which is the one picture Shunji
+     Iwai keeps coming back to: a boy standing in it on his own with
+     headphones on, the sun straight down the lens, the whole top of the
+     frame given up to white, and nothing happening for a long time.
+
+     What is here is the least that will hold that. A sun that is too big
+     and too bright. Eleven lines of grass, each one nearer than the last --
+     bigger, darker, slower in the wind -- which is the entire depth of the
+     picture, done with font-size and opacity. A kite somebody is flying
+     from somewhere you cannot see. And a lot of nothing.
+
+     Nothing in here runs in javascript after it is built. The grass is
+     drawn once and then the wind is a css keyframe per row on different
+     periods, so it never repeats and it never costs a frame. There is not
+     a timer in this room.
+     ------------------------------------------------------------------- */
+
+  var RICE_ROWS = 15;
+
+  var KITE = [
+    '   /\\',
+    '  /  \\',
+    '  \\  /',
+    '   \\/',
+    '   |',
+    '  ~',
+    '   ~'
+  ].join('\n');
+
+  function mountField() {
+    sceneOn = 'field';
+    sceneTone = 'field';
+
+    var scene = document.createElement('div');
+    scene.id = 'scene';
+    scene.className = 'rice';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML =
+      '<div id="rice-sun"></div>' +
+      '<pre id="kite"></pre>' +
+      '<div id="rice"></div>';
+    document.body.appendChild(scene);
+
+    document.getElementById('kite').textContent = KITE;
+
+    /* ------------------------------------------------------------ grass
+       Row 0 is the far edge of the field: small, pale, and the wind gets
+       there first. Row 10 is at your knees. Everything that makes it read
+       as distance is in those three numbers. */
+    var rice = document.getElementById('rice');
+    var i, c, n, px, cols, line, row, near;
+
+    /* Drawn once, wider than the window can ever be opened on this screen,
+       and then clipped. That is the whole reason there is no resize
+       handler and no redraw in this room. */
+    var span = Math.round(Math.max(window.innerWidth,
+      (window.screen && window.screen.width) || 0) * 1.3) + 240;
+
+    for (i = 0; i < RICE_ROWS; i++) {
+      near = i / (RICE_ROWS - 1);              // 0 far, 1 underfoot
+      px = 7 + near * 19;
+
+      line = '';
+      cols = Math.ceil(span / (px * 0.62));
+      for (c = 0; c < cols; c++) {
+        /* A rice plant is a stalk with a heavy head on it that bends over.
+           Mostly uprights, a few heads, and every so often a short one, so
+           the top of the band is ragged rather than mown. */
+        n = noise(i, c, 131);
+        line += n > 0.93 ? 'Y' : n > 0.79 ? 'v' : n > 0.47 ? '|' :
+                n > 0.22 ? 'w' : n > 0.10 ? "'" : ',';
+      }
+
+      row = document.createElement('pre');
+      row.className = 'rice-row';
+      row.textContent = line;
+      /* the far row sits highest -- that is the horizon -- and each nearer
+         one comes down the screen towards you. */
+      row.style.bottom = ((1 - near) * 48).toFixed(1) + '%';
+      row.style.fontSize = px.toFixed(1) + 'px';
+      /* haze: the far rows are barely there, which is the only thing doing
+         the work of distance in a picture with no perspective in it. */
+      row.style.opacity = (0.13 + near * 0.85).toFixed(2);
+      /* the near rows are heavier and lean further, and no two rows are on
+         the same clock, so the wind crosses the field instead of the whole
+         field twitching at once. */
+      row.style.setProperty('--sway', (1.1 + near * 2.2).toFixed(2) + 'deg');
+      row.style.animationDuration = (4.6 + near * 4.4 + noise(i, 0, 7) * 1.8).toFixed(2) + 's';
+      row.style.animationDelay = '-' + (noise(i, 1, 9) * 9).toFixed(2) + 's';
+      rice.appendChild(row);
+    }
+
+    ambience('field');
   }
 
   /* ------------------------------------------------ the sea, three clicks

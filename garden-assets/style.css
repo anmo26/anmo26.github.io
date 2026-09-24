@@ -4138,3 +4138,318 @@ body.sky-night #clock .d { color: rgba(226, 233, 245, .65); }
 
 /* and the still and the prickly pear standing beside it */
 body.sky-night #bucket .f, body.sky-night #cactus .f, body.sky-night #still .f { color: #E4EAF4; }
+
+/* ================================================================= WALKMAN
+
+   Shunji Iwai's kids are never not wearing headphones. Half of All About
+   Lily Chou-Chou is a boy standing in the middle of other people with a
+   wire going up to his ears, and the whole point of the shot is that he is
+   not in the same place as anybody else in it. The world is still there.
+   It is just a little further off, a little too bright, and none of it is
+   about him any more.
+
+   So while the player is actually PLAYING -- not loaded, not docked,
+   playing -- the whole site goes there. The colour drains out of it a
+   little, the light comes up past where it should be, the corners blow,
+   and the light drifts, because nobody holding a camera holds it still.
+   Stop the song and the room comes back over three seconds.
+
+   None of this is javascript. ipod.js already puts `music-playing` on the
+   body when something is sounding and takes it off when it is not, so this
+   is two layers -- the body's own ::before and ::after, which were going
+   spare -- fading in on opacity, which is the one thing a browser can
+   change without repainting anything. Both are `visibility: hidden` when
+   there is no music, so a page nobody is listening to pays nothing at all
+   for them.
+
+   It never touches the taskbar or the player: those sit at 9998 and 9999
+   and this stops at 9500. You have to be able to read the thing you are
+   using to turn the music off.
+   ========================================================================= */
+
+/* the colour going out of it. Grey has no saturation of its own to lend,
+   and `saturation` takes only that -- so this is a dimmer on how colourful
+   the page is and it cannot shift a single hue. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9490;
+  pointer-events: none;
+  background: #808080;
+  mix-blend-mode: saturation;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 3s ease, visibility 0s linear 3s;
+}
+
+/* and the light coming up past where it should stop. The sun is out of
+   frame top left, there is a flare falling across the lens the way a flare
+   falls, and the corners go because a fast lens cannot hold a corner. The
+   first layer is film grain, which therefore only ever appears in the
+   light -- which is where grain lives. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -6%;
+  z-index: 9500;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size: 200px 200px, auto, auto, auto, auto, auto;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.09'/%3E%3C/svg%3E"),
+    radial-gradient(48% 42% at 8% -12%, rgba(255, 255, 244, .82), rgba(255, 255, 236, .18) 44%, transparent 74%),
+    radial-gradient(22% 16% at 32% 10%, rgba(255, 250, 216, .26), transparent 70%),
+    radial-gradient(9% 7% at 46% 24%, rgba(255, 248, 206, .20), transparent 70%),
+    linear-gradient(153deg, rgba(255, 253, 230, .15) 0 7%, rgba(255, 253, 230, .05) 22%, transparent 38%),
+    radial-gradient(118% 88% at 46% 38%, transparent 56%, rgba(255, 255, 248, .16) 100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 3s ease, visibility 0s linear 3s;
+}
+
+body.music-playing::before {
+  opacity: .24;
+  visibility: visible;
+  transition: opacity 3s ease, visibility 0s;
+}
+/* .72 rather than .95. At full strength the flare did not just bloom a
+   photograph, it erased it -- and a picture you cannot make out is not an
+   overexposed picture, it is a missing one. */
+body.music-playing::after {
+  opacity: .72;
+  visibility: visible;
+  transition: opacity 3s ease, visibility 0s;
+  /* the hand holding it. 71s, so you can never catch it moving -- you only
+     notice that the light is not where it was. */
+  animation: held 71s ease-in-out infinite alternate;
+}
+
+@keyframes held {
+  from { transform: translate3d(0, 0, 0)        scale(1);    }
+  to   { transform: translate3d(1.6%, -1.2%, 0) scale(1.03); }
+}
+
+/* On the dark rooms and the dark paper, a white veil is fog rather than
+   sun, so almost all of it comes off -- but not all of it. Headphones on
+   at one in the morning is still headphones on. */
+body.music-playing.theme-ink::after,
+body.music-playing[data-scene="ocean"]::after,
+body.music-playing[data-scene="crypt"]::after,
+body.music-playing[data-scene="moonlight"]::after,
+body.music-playing[data-scene="bar"]::after,
+body.music-playing.on-ether::after,
+/* and the monet paper after dark, which is a dark room like any other */
+body.music-playing.theme-monet[data-light="night"]::after,
+body.music-playing.theme-monet[data-light="evening"]::after,
+body.music-playing.theme-monet[data-light="dawn"]::after { opacity: .28; }
+
+/* A photograph keeps a little more of itself than the paper does. The
+   highlights are still meant to go -- that is the whole look -- but you
+   should still be able to see what the picture is of. */
+body.music-playing .item img,
+body.music-playing .item video { filter: saturate(1.35) contrast(1.06); }
+
+/* Type shot slightly too hot picks up a halo. Only the things you actually
+   read get it -- a glow costs a repaint per glyph, and the ASCII on this
+   site runs to tens of thousands of them. The light above is what blooms
+   the drawings. */
+.masthead h1,
+.masthead p,
+.item h3 a,
+.item .meta {
+  text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  transition: text-shadow 3s ease;
+}
+body.music-playing .masthead h1,
+body.music-playing .masthead p,
+body.music-playing .item h3 a,
+body.music-playing .item .meta {
+  text-shadow: 0 0 .5em rgba(255, 255, 255, .9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.music-playing::after { animation: none; }
+}
+
+/* ================================================================= SHUTTER
+
+   A photograph does not arrive. It resolves. Open one here and for the
+   best part of a second it is blown -- white, flat, no colour in it at all
+   -- and then the exposure comes down and the picture is there. It is the
+   same second of film every one of these pictures went through before
+   anybody saw it.
+
+   One animation on one element, and it runs itself the moment app.js puts
+   the picture in the panel. If the file is still coming down the wire it
+   simply resolves out of the white a little later, which is right.
+   ========================================================================= */
+
+@keyframes shutter {
+  0%   { opacity: .25; filter: brightness(2.6) contrast(.32) saturate(.15); transform: scale(1.012); }
+  30%  { opacity: 1; }
+  100% { opacity: 1; filter: brightness(1) contrast(1) saturate(1); transform: none; }
+}
+
+.viewer-body img,
+.viewer-body video {
+  animation: shutter .85s cubic-bezier(.2, .7, .3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer-body img,
+  .viewer-body video { animation: none; }
+}
+
+/* =================================================================== FIELD
+
+   A rice field in the middle of July: the one picture Iwai keeps going
+   back to. A boy on his own in the middle of it with headphones on, the
+   sun straight down the lens, the whole top of the frame given up to
+   white, and nothing happening for a long time.
+
+   The depth in it is three numbers per row and nothing else -- eleven
+   lines of grass, each one bigger, darker and slower in the wind than the
+   one behind it. app.js draws them once (see the FIELD section there) and
+   then never touches them again: the wind is one keyframe per row on
+   eleven different clocks, which is why it crosses the field instead of
+   the whole field twitching at once, and why there is not a timer in this
+   room.
+
+   The folder is still the point. All of this is behind it.
+   ========================================================================= */
+
+body[data-scene="field"] {
+  --paper:      #EFF5E2;
+  --paper-deep: #E2EBCE;
+  --surface:    #F8FBEE;
+  --surface-2:  #FCFEF7;
+  --ink:        #1F2A18;
+  --ink-soft:   #44523A;
+  --ink-faint:  #576449;
+  /* the two that are allowed to keep their colour out here: light through
+     leaves, and the field itself. */
+  --ochre:      #7A5E12;
+  --ochre-pale: #D6CE92;
+  --olive:      #2F6B22;
+  --olive-pale: #A4C489;
+  --rule:       rgba(31, 42, 24, .13);
+  --rule-soft:  rgba(31, 42, 24, .06);
+  background-image: linear-gradient(to bottom,
+    #FCFEF6 0%, #F6FBEA 30%, #EDF6DC 52%, #E0EEC6 72%, #CFE5AC 100%);
+  background-attachment: fixed;
+}
+body[data-scene="field"] .item.kind-directory h3 a { color: #2F6B22; }
+
+/* Anything standing in the field has grass behind it, and grass behind a
+   word is a word you cannot read. Every one of them gets a wash of the
+   paper spread out around it -- which in a frame this hot is not a trick,
+   it is what happens to type shot against a bright ground. */
+body[data-scene="field"] .masthead h1,
+body[data-scene="field"] .masthead p,
+body[data-scene="field"] .masthead a,
+body[data-scene="field"] .item h3 a,
+body[data-scene="field"] .item .meta {
+  text-shadow:
+    0 0 .35em rgba(252, 255, 246, .98),
+    0 0 .9em  rgba(250, 255, 240, .92),
+    0 0 1.8em rgba(250, 255, 240, .7);
+}
+
+/* The room is overexposed all the time, which is what the walkman layer
+   above already knows how to do -- so it is the same one element, on for a
+   second reason. In here with a song on, it is simply both. */
+body[data-scene="field"]::after {
+  opacity: .9;
+  visibility: visible;
+  transition: opacity 3s ease, visibility 0s;
+  animation: held 71s ease-in-out infinite alternate;
+}
+
+#scene.rice { overflow: hidden; }
+
+/* the sun, too big and too close and not quite in shot. Warm, because a
+   white sun on white paper is not a sun, it is nothing. */
+#rice-sun {
+  position: absolute;
+  left: -22%;
+  top: -30%;
+  width: 96%;
+  height: 96%;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(255, 255, 248, .98) 0 14%,
+    rgba(255, 250, 212, .72) 30%,
+    rgba(252, 240, 170, .34) 50%,
+    rgba(238, 236, 160, .12) 68%,
+    rgba(238, 240, 170, 0) 82%);
+  animation: rice-glare 26s ease-in-out infinite alternate;
+}
+@keyframes rice-glare {
+  from { transform: scale(1)    translate3d(0, 0, 0);     opacity: .84; }
+  to   { transform: scale(1.09) translate3d(1.8%, 1%, 0); opacity: 1;   }
+}
+
+/* somebody is flying this from somewhere you cannot see */
+#kite {
+  position: absolute;
+  left: 76%;
+  top: 7%;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.05;
+  color: rgba(44, 68, 34, .42);
+  animation: kite-fly 96s ease-in-out infinite;
+}
+@keyframes kite-fly {
+  0%   { transform: translate(0, 0)        rotate(-7deg); }
+  22%  { transform: translate(-9vw, -3vh)  rotate(5deg);  }
+  47%  { transform: translate(-19vw, 5vh)  rotate(-4deg); }
+  71%  { transform: translate(-8vw, -5vh)  rotate(7deg);  }
+  100% { transform: translate(0, 0)        rotate(-7deg); }
+}
+
+/* the field. Clipped rather than measured -- the rows are drawn wider than
+   any screen anybody has, so nothing here has to be redrawn on a resize. */
+#rice {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 44px;
+  height: 52%;
+  overflow: hidden;
+}
+.rice-row {
+  position: absolute;
+  left: -6%;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-weight: 700;
+  line-height: .92;
+  color: #4C8A26;
+  /* the wind bends the tops, not the roots */
+  transform-origin: 50% 100%;
+  animation-name: rice-wind;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+@keyframes rice-wind {
+  from { transform: skewX(calc(var(--sway, 2deg) * -1)) translateX(-.4%); }
+  to   { transform: skewX(var(--sway, 2deg))            translateX(.4%);  }
+}
+
+/* A phone is mostly sky, which is fine -- but the grass has to still be
+   grass and not a green stripe, so it keeps more of the screen. */
+@media (max-width: 559px) {
+  #rice { height: 46%; bottom: 40px; }
+  #kite { left: 62%; font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rice-sun, #kite, .rice-row { animation: none; }
+  body[data-scene="field"]::after { animation: none; }
+}
