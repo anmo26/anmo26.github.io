@@ -14,3 +14,6 @@ node_modules/
 # .thumbs/ is deliberately NOT ignored. The page points at it, so a visitor
 # gets a broken image if it is not published -- and a thumbnail that only
 # exists on this Mac makes nothing faster for anyone.
+
+# agent worktrees — working copies, never part of the site
+.claude/worktrees/

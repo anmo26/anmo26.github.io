@@ -6127,6 +6127,10 @@
               at: Date.now(),
               city: city,
               place: hit.name,
+              // the sky needs these too, and this is the only lookup that
+              // knows them -- see mountSky
+              lat: hit.latitude,
+              lon: hit.longitude,
               temp: Math.round(w.current.temperature_2m),
               wind: Math.round(w.current.wind_speed_10m),
               day: !!w.current.is_day,
@@ -9371,6 +9375,428 @@
     hereSync();
   }
 
+  /* ============================================================== THE SKY
+     The real one. Not a decoration that looks like a sky -- the actual sun,
+     the actual moon at its actual phase, and the actual stars that are over
+     the person reading the page, at the hour they are reading it.
+
+     Everything here is worked out from three numbers: where they are, what
+     the date is, and what time it is. The first comes from their own time
+     zone (a city name, then a lat/long from the same open weather service
+     the rest of the site uses) -- there is no IP lookup, no permission
+     prompt, and their position never leaves the browser.
+
+     From those three numbers:
+
+       - the sun's place in the sky, from the standard low-precision solar
+         position -- good to about a hundredth of a degree, which is far
+         better than a band of pixels can show;
+       - the moon's place AND its phase, from Meeus's short lunar theory,
+         so the crescent points the right way and is the right width;
+       - the stars, from a catalogue of the bright ones carried in this
+         file, rotated into place by the local sidereal time. Orion really
+         does rise in the autumn here and really is absent in July;
+       - the Milky Way, which is the plane of the galaxy converted out of
+         galactic coordinates -- so it hangs at the angle it actually hangs
+         at, and swings round through the year.
+
+     It is drawn as one SVG, repainted once a minute. Nothing here runs per
+     frame; the only thing that moves continuously is a CSS twinkle.
+     ------------------------------------------------------------------- */
+
+  var RAD = Math.PI / 180;
+
+  /** Days since J2000.0, the epoch everything below is measured from. */
+  function j2000(now) {
+    return (now.getTime() / 86400000) + 2440587.5 - 2451545.0;
+  }
+
+  /** Greenwich mean sidereal time in degrees: which way the Earth is facing. */
+  function gmst(d) {
+    return norm360(280.46061837 + 360.98564736629 * d);
+  }
+
+  function norm360(x) { x = x % 360; return x < 0 ? x + 360 : x; }
+
+  /** Right ascension and declination of the sun, in degrees. */
+  function sunAt(d) {
+    var L = norm360(280.460 + 0.9856474 * d);
+    var g = norm360(357.528 + 0.9856003 * d) * RAD;
+    var lam = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * RAD;
+    var eps = (23.439 - 0.0000004 * d) * RAD;
+    return {
+      ra: norm360(Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) / RAD),
+      dec: Math.asin(Math.sin(eps) * Math.sin(lam)) / RAD,
+      lam: lam / RAD
+    };
+  }
+
+  /** The moon, and enough of it to draw the right crescent. */
+  function moonAt(d) {
+    var L = norm360(218.316 + 13.176396 * d);
+    var M = norm360(134.963 + 13.064993 * d) * RAD;
+    var F = norm360(93.272 + 13.229350 * d) * RAD;
+
+    var lam = (L + 6.289 * Math.sin(M)) * RAD;
+    var bet = (5.128 * Math.sin(F)) * RAD;
+    var eps = (23.439 - 0.0000004 * d) * RAD;
+
+    var x = Math.cos(bet) * Math.cos(lam);
+    var y = Math.cos(eps) * Math.cos(bet) * Math.sin(lam) - Math.sin(eps) * Math.sin(bet);
+    var z = Math.sin(eps) * Math.cos(bet) * Math.sin(lam) + Math.cos(eps) * Math.sin(bet);
+
+    return {
+      ra: norm360(Math.atan2(y, x) / RAD),
+      dec: Math.asin(z) / RAD,
+      lam: lam / RAD
+    };
+  }
+
+  /**
+   * Where something with this right ascension and declination is in the sky
+   * from here, right now: how high up, and which way round.
+   */
+  function altaz(ra, dec, lat, lon, d) {
+    var lst = norm360(gmst(d) + lon);
+    var H = (lst - ra) * RAD;
+    var dr = dec * RAD, lr = lat * RAD;
+
+    var sinAlt = Math.sin(dr) * Math.sin(lr) + Math.cos(dr) * Math.cos(lr) * Math.cos(H);
+    var alt = Math.asin(Math.max(-1, Math.min(1, sinAlt))) / RAD;
+
+    var az = Math.atan2(-Math.sin(H) * Math.cos(dr),
+                        Math.cos(lr) * Math.sin(dr) - Math.sin(lr) * Math.cos(dr) * Math.cos(H)) / RAD;
+    return { alt: alt, az: norm360(az) };
+  }
+
+  /* The bright stars, as [right ascension in hours, declination, magnitude,
+     name]. Enough of them that the shapes people actually know are all here
+     -- Orion, the Plough, Cassiopeia, the Summer Triangle, Scorpius, the
+     Southern Cross -- without carrying a catalogue of ten thousand. */
+  var STARS = [
+    [6.752, -16.72, -1.46, 'Sirius'], [6.399, -52.70, -0.72, 'Canopus'],
+    [14.661, -60.84, -0.27, 'Rigil Kentaurus'], [14.261, 19.18, -0.05, 'Arcturus'],
+    [18.616, 38.78, 0.03, 'Vega'], [5.278, 46.00, 0.08, 'Capella'],
+    [5.242, -8.20, 0.13, 'Rigel'], [7.655, 5.22, 0.34, 'Procyon'],
+    [1.629, -57.24, 0.46, 'Achernar'], [5.919, 7.41, 0.50, 'Betelgeuse'],
+    [14.064, -60.37, 0.61, 'Hadar'], [19.846, 8.87, 0.77, 'Altair'],
+    [4.599, 16.51, 0.85, 'Aldebaran'], [16.490, -26.43, 0.96, 'Antares'],
+    [13.420, -11.16, 0.98, 'Spica'], [10.140, 11.97, 1.35, 'Regulus'],
+    [12.443, -63.10, 1.25, 'Acrux'], [7.577, 31.89, 1.14, 'Pollux'],
+    [22.961, -29.62, 1.16, 'Fomalhaut'], [20.690, 45.28, 1.25, 'Deneb'],
+    [12.795, -59.69, 1.30, 'Mimosa'], [11.062, 61.75, 1.79, 'Dubhe'],
+    [13.792, 49.31, 1.86, 'Alkaid'], [12.900, 55.96, 1.77, 'Alioth'],
+    [12.257, 57.03, 2.27, 'Phecda'], [11.030, 56.38, 2.37, 'Merak'],
+    [12.257, 53.69, 3.31, 'Megrez'], [13.399, 54.93, 2.23, 'Mizar'],
+    [0.140, 29.09, 2.07, 'Alpheratz'], [0.945, 60.72, 2.24, 'Caph'],
+    [0.675, 56.54, 2.24, 'Schedar'], [1.430, 60.24, 2.68, 'Ruchbah'],
+    [0.153, 59.15, 2.39, 'Navi'], [1.906, 63.67, 3.35, 'Segin'],
+    [5.679, -1.94, 1.69, 'Alnilam'], [5.604, -1.20, 1.77, 'Alnitak'],
+    [5.533, -0.30, 2.23, 'Mintaka'], [5.796, -9.67, 2.07, 'Saiph'],
+    [5.418, 6.35, 1.64, 'Bellatrix'], [3.405, 49.86, 1.79, 'Mirfak'],
+    [3.136, 40.96, 2.12, 'Algol'], [2.065, 42.33, 2.07, 'Mirach'],
+    [2.120, 23.46, 2.01, 'Hamal'], [3.791, 24.11, 2.87, 'Alcyone'],
+    [16.399, -3.69, 2.08, 'Rasalhague'], [17.582, 12.56, 2.08, 'Rasalgethi'],
+    [17.943, 51.49, 2.23, 'Eltanin'], [16.691, 31.60, 2.23, 'Kornephoros'],
+    [15.578, 26.71, 2.22, 'Alphecca'], [17.560, -37.10, 1.86, 'Shaula'],
+    [17.622, -43.00, 1.62, 'Sargas'], [16.005, -22.62, 2.56, 'Dschubba'],
+    [15.981, -26.11, 2.89, 'Pi Sco'], [18.403, -34.38, 1.79, 'Kaus Australis'],
+    [19.044, -29.88, 2.05, 'Nunki'], [20.427, -56.74, 1.91, 'Peacock'],
+    [22.137, -46.96, 1.74, 'Alnair'], [9.460, -8.66, 1.98, 'Alphard'],
+    [8.158, -47.34, 1.75, 'Avior'], [9.285, -59.28, 1.67, 'Aspidiske'],
+    [10.716, -64.39, 2.21, 'Miaplacidus'], [6.378, -17.96, 1.83, 'Adhara'],
+    [7.140, -26.39, 1.84, 'Wezen'], [6.977, -28.97, 2.45, 'Aludra'],
+    [2.530, 89.26, 1.98, 'Polaris'], [14.845, 74.16, 2.08, 'Kochab'],
+    [21.309, 62.59, 2.45, 'Alderamin'], [22.096, 6.20, 2.49, 'Sadalsuud'],
+    [23.063, 28.08, 2.42, 'Scheat'], [23.079, 15.21, 2.49, 'Markab'],
+    [0.221, 15.18, 2.83, 'Algenib'], [1.163, 35.62, 2.06, 'Mirach2'],
+    [4.950, 33.17, 1.90, 'Elnath'], [6.629, 16.40, 1.93, 'Alhena'],
+    [7.335, 21.98, 3.06, 'Wasat'], [8.925, 5.95, 3.52, 'Acubens'],
+    [11.818, 14.57, 2.14, 'Denebola'], [10.333, 19.84, 2.56, 'Algieba'],
+    [11.235, 20.52, 3.34, 'Zosma'], [12.573, -17.54, 2.94, 'Gienah'],
+    [12.169, -22.62, 2.65, 'Algorab'], [17.507, -37.04, 2.29, 'Lesath'],
+    [18.110, -36.76, 2.70, 'Alnasl'], [19.923, 35.08, 2.86, 'Albireo'],
+    [20.370, 40.26, 2.46, 'Sadr'], [21.216, 30.23, 2.48, 'Gienah Cygni'],
+    [22.711, -46.88, 2.87, 'Tiaki'], [3.037, 4.09, 2.54, 'Menkar'],
+    [2.720, -40.30, 2.40, 'Acamar'], [4.238, -62.47, 2.86, 'Doradus'],
+    [12.519, -57.11, 2.79, 'Delta Cru'], [12.795, -48.96, 2.58, 'Gacrux2']
+  ];
+
+  /**
+   * The plane of the galaxy, converted out of galactic coordinates. This is
+   * what makes the Milky Way hang at the angle it actually hangs at and
+   * swing round through the year, instead of being a smear somebody drew.
+   */
+  function galacticPlane() {
+    var aNGP = 192.85948, dNGP = 27.12825, lNCP = 122.93192;
+    var out = [];
+    for (var l = 0; l < 360; l += 3) {
+      var lr = (lNCP - l) * RAD, b = 0;
+      var sd = Math.sin(dNGP * RAD) * Math.sin(b) +
+               Math.cos(dNGP * RAD) * Math.cos(b) * Math.cos(lr);
+      var dec = Math.asin(sd) / RAD;
+      var ra = norm360(aNGP + Math.atan2(
+        Math.cos(b) * Math.sin(lr),
+        Math.cos(dNGP * RAD) * Math.sin(b) - Math.sin(dNGP * RAD) * Math.cos(b) * Math.cos(lr)
+      ) / RAD);
+      // brightest towards the centre of the galaxy, which is at l = 0
+      var near = Math.min(Math.abs(l), 360 - l);
+      out.push({ ra: ra, dec: dec, glow: Math.max(0.25, 1 - near / 110) });
+    }
+    return out;
+  }
+
+  var MILKY = null;
+
+  /* ---------------------------------------------------------- the drawing */
+
+  var SKY_W = 1000, SKY_H = 260;   // the SVG's own coordinates; CSS scales it
+
+  /** Alt/az onto the band. Looking south from the north, north from the south. */
+  function project(alt, az, lat) {
+    var centre = lat >= 0 ? 180 : 0;
+    var off = az - centre;
+    while (off > 180) off -= 360;
+    while (off < -180) off += 360;
+    if (lat < 0) off = -off;                 // south of the equator it runs the other way
+    return {
+      x: SKY_W / 2 + (off / 130) * (SKY_W / 2),
+      y: SKY_H - (alt / 90) * SKY_H,
+      on: Math.abs(off) <= 132 && alt > -8
+    };
+  }
+
+  /* How far down the page the sky reaches. Measured, not guessed: it ends
+     at the ticker, which is the line the page already uses to separate the
+     head of the page from the folder. That makes the ticker the horizon,
+     and it means the things drawn in light ink (see body.sky-night) are
+     exactly the things standing in front of the sky and no others. */
+  function placeSky(host) {
+    var low = 0;
+    ['.masthead', '#corner'].forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (!el || !el.getClientRects().length) return;
+      var b = el.getBoundingClientRect().bottom + window.pageYOffset;
+      if (b > low) low = b;
+    });
+    var m = document.querySelector('.marquee');
+    if (m && m.getClientRects().length) {
+      low = Math.max(low, m.getBoundingClientRect().top + window.pageYOffset);
+    }
+    host.style.height = Math.round(Math.max(200, low + 18)) + 'px';
+  }
+
+  function skyPaint(host, where) {
+    placeSky(host);
+    var now = new Date();
+    var d = j2000(now);
+    var lat = where.lat, lon = where.lon;
+
+    var sun = sunAt(d);
+    var sp = altaz(sun.ra, sun.dec, lat, lon, d);
+    var moon = moonAt(d);
+    var mp = altaz(moon.ra, moon.dec, lat, lon, d);
+
+    /* How dark it is. Civil twilight ends around six degrees below the
+       horizon and astronomical dark around eighteen; the stars come up
+       across that gap rather than switching on. */
+    var night = Math.max(0, Math.min(1, (-sp.alt - 2) / 14));
+    var day = Math.max(0, Math.min(1, (sp.alt + 6) / 12));
+
+    var svg = [];
+    svg.push('<svg viewBox="0 0 ' + SKY_W + ' ' + SKY_H + '" preserveAspectRatio="none" ' +
+             'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">');
+
+    /* ---- the stars, and the galaxy behind them ---- */
+    if (night > 0.02) {
+      if (!MILKY) MILKY = galacticPlane();
+      var band = [];
+      MILKY.forEach(function (m) {
+        var a = altaz(m.ra, m.dec, lat, lon, d);
+        var p = project(a.alt, a.az, lat);
+        if (p.on) band.push({ p: p, glow: m.glow });
+      });
+      band.forEach(function (b) {
+        svg.push('<circle cx="' + b.p.x.toFixed(1) + '" cy="' + b.p.y.toFixed(1) +
+                 '" r="' + (30 * b.glow).toFixed(1) + '" fill="rgba(180,196,236,' +
+                 (0.055 * b.glow * night).toFixed(3) + ')"/>');
+      });
+
+      /* And the grain in it. The Milky Way IS unresolved stars -- that is
+         the whole of what it is -- so the band is dusted with faint points
+         rather than left as a smear. They are scattered deterministically
+         from their own index, so they are the same points every time the
+         sky is repainted and do not crawl about between minutes. */
+      band.forEach(function (b, n) {
+        var k, jx, jy, f;
+        for (k = 0; k < 5; k++) {
+          jx = (Math.sin((n * 7.31 + k * 2.17)) * 43758.5453) % 1;
+          jy = (Math.sin((n * 3.77 + k * 5.91)) * 12345.6789) % 1;
+          f = 0.10 + Math.abs(jy) * 0.20;
+          svg.push('<circle cx="' + (b.p.x + jx * 46).toFixed(1) +
+                   '" cy="' + (b.p.y + jy * 34).toFixed(1) +
+                   '" r="' + (0.5 + Math.abs(jx) * 0.5).toFixed(2) +
+                   '" fill="rgba(226,234,252,' + (f * b.glow * night).toFixed(3) + ')"/>');
+        }
+      });
+
+      STARS.forEach(function (st, i) {
+        var a = altaz(st[0] * 15, st[1], lat, lon, d);
+        var p = project(a.alt, a.az, lat);
+        if (!p.on || a.alt < 0) return;
+        /* Magnitude is backwards and logarithmic -- a first-magnitude star
+           is brighter than a third. Both the size and the light come off
+           it so Sirius reads as Sirius and the rest fall away behind it. */
+        var bright = Math.max(0.22, (3.0 - st[2]) / 3.6) * night;
+        var r = Math.max(0.9, (3.1 - st[2] * 0.5));
+        svg.push('<circle class="star" style="--tw:' + (2.6 + (i % 7) * 0.55) + 's;--d:' +
+                 ((i % 11) * 0.31).toFixed(2) + 's" cx="' + p.x.toFixed(1) +
+                 '" cy="' + p.y.toFixed(1) + '" r="' + r.toFixed(2) +
+                 '" fill="rgba(238,243,255,' + bright.toFixed(3) + ')"/>');
+      });
+    }
+
+    /* ---- the moon, at its real phase ---- */
+    var mplace = project(mp.alt, mp.az, lat);
+    if (mplace.on && mp.alt > -2) {
+      /* How much of it is lit, and which side. The terminator is drawn as a
+         second disc offset across the face -- crude next to the real
+         geometry, and indistinguishable at this size. */
+      var elong = norm360(moon.lam - sun.lam);
+      var lit = (1 - Math.cos(elong * RAD)) / 2;
+      var waxing = elong < 180;
+      var mr = 13;
+      var dim = 0.30 + 0.70 * (1 - night * 0.55);
+      svg.push('<g opacity="' + dim.toFixed(2) + '">');
+      svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
+               '" r="' + (mr + 9) + '" fill="rgba(240,244,255,.07)"/>');
+      svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
+               '" r="' + mr + '" fill="rgba(246,246,238,.93)"/>');
+      if (lit < 0.97) {
+        var shift = (1 - lit) * 2 * mr * (waxing ? -1 : 1);
+        svg.push('<circle cx="' + (mplace.x + shift).toFixed(1) + '" cy="' +
+                 mplace.y.toFixed(1) + '" r="' + mr + '" class="moon-dark"/>');
+      }
+      svg.push('</g>');
+    }
+
+    /* ---- the sun ---- */
+    var splace = project(sp.alt, sp.az, lat);
+    if (splace.on && sp.alt > -6) {
+      var warm = sp.alt < 8 ? 1 : 0;      // low sun goes orange
+      var core = warm ? '255,186,110' : '255,238,190';
+      svg.push('<circle cx="' + splace.x.toFixed(1) + '" cy="' + splace.y.toFixed(1) +
+               '" r="58" fill="rgba(' + core + ',' + (0.13 + 0.10 * day).toFixed(2) + ')"/>');
+      svg.push('<circle cx="' + splace.x.toFixed(1) + '" cy="' + splace.y.toFixed(1) +
+               '" r="26" fill="rgba(' + core + ',.22)"/>');
+      svg.push('<circle cx="' + splace.x.toFixed(1) + '" cy="' + splace.y.toFixed(1) +
+               '" r="13" fill="rgba(' + core + ',.92)"/>');
+    }
+
+    svg.push('</svg>');
+
+    host.innerHTML = svg.join('');
+    /* The things that stand in front of the sky -- the name of the site,
+       the clock, the still -- are drawn in dark ink, and dark ink on a
+       night sky cannot be read. This tells the stylesheet to turn just
+       those over while the sky behind them is dark. */
+    document.body.classList.toggle('sky-night', night > 0.45);
+    host.setAttribute('data-night', night > 0.5 ? 'yes' : 'no');
+    host.style.setProperty('--night', night.toFixed(3));
+    host.style.setProperty('--day', day.toFixed(3));
+  }
+
+  /* ------------------------------------------------------------ weather
+     Not a symbol in a corner. If it is raining on the person reading this,
+     it rains on the page: thin strokes down the sky band, faster in a
+     storm. Snow drifts instead. Fog takes the whole band down to a veil,
+     and cloud sends slow shapes across it. All CSS once it is built, so it
+     costs one element and no JavaScript at all while it runs. */
+
+  function skyWeather(host, kind) {
+    var old = host.parentNode.querySelector('.sky-wx');
+    if (old) old.parentNode.removeChild(old);
+    if (!kind || kind === 'clear') return;
+
+    var wx = document.createElement('div');
+    wx.className = 'sky-wx wx-' + kind;
+    wx.setAttribute('aria-hidden', 'true');
+    wx.style.height = host.style.height || '';
+
+    var drops = '', i;
+    if (kind === 'rain' || kind === 'drizzle' || kind === 'storm') {
+      var n = kind === 'drizzle' ? 26 : (kind === 'storm' ? 60 : 44);
+      for (i = 0; i < n; i++) {
+        drops += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;' +
+                 'animation-delay:' + (Math.random() * 2.4).toFixed(2) + 's;' +
+                 'animation-duration:' + (0.5 + Math.random() * 0.5).toFixed(2) + 's"></i>';
+      }
+    } else if (kind === 'snow') {
+      for (i = 0; i < 34; i++) {
+        drops += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;' +
+                 'animation-delay:' + (Math.random() * 8).toFixed(2) + 's;' +
+                 'animation-duration:' + (7 + Math.random() * 7).toFixed(2) + 's"></i>';
+      }
+    } else if (kind === 'cloud' || kind === 'part') {
+      for (i = 0; i < (kind === 'part' ? 2 : 4); i++) {
+        drops += '<i style="left:' + (-20 + i * 32) + '%;top:' + (8 + i * 13) + '%;' +
+                 'animation-delay:' + (i * -26) + 's"></i>';
+      }
+    }
+    wx.innerHTML = drops;
+    host.parentNode.appendChild(wx);
+  }
+
+  function mountSky() {
+    // Only where the page is the page. The garden, the moon and the crypt
+    // have skies of their own and two would be one too many.
+    if (document.body.getAttribute('data-scene')) return;
+    if (document.getElementById('sky')) return;
+
+    var host = document.createElement('div');
+    host.id = 'sky';
+    host.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(host);
+
+    function go(where) {
+      skyPaint(host, where);
+      // Once a minute. The sun moves a quarter of a degree in that time,
+      // which is less than half its own width -- nothing to see, and
+      // nothing worth a frame of work.
+      setInterval(function () {
+        if (!document.hidden) skyPaint(host, where);
+      }, 60000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) skyPaint(host, where);
+      });
+      window.addEventListener('resize', function () { skyPaint(host, where); });
+    }
+
+    /* Where they are. The weather lookup already works this out from the
+       time zone, so this costs nothing extra -- and if it cannot be found,
+       the sky falls back to somewhere sensible rather than disappearing. */
+    skyWhere(function (where) {
+      go(where);
+      if (where.kind) skyWeather(host, where.kind);
+    });
+  }
+
+  /** The visitor's lat/long, from the same lookup the weather uses. */
+  function skyWhere(once) {
+    var said = false;
+    function done(w) { if (said) return; said = true; once(w); }
+    var cached = get('wx', null);
+    if (cached && cached.lat != null && Date.now() - cached.at < WX_CACHE_MS) {
+      done(cached);
+      return;
+    }
+    weather(function (w) {
+      done(w && w.lat != null ? w : { lat: 40.7, lon: -74.0 });
+    });
+    // Never wait on the network to have a sky at all.
+    setTimeout(function () { done(cached || { lat: 40.7, lon: -74.0 }); }, 2500);
+  }
+
   function boot() {
     mountClock();
     mountSecrets();
@@ -9380,6 +9806,7 @@
     mountBin();
     mountTexture();
     mountLight();
+    mountSky();
     mountToggles();
     mountHint();
     mountNav();

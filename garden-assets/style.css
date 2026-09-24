@@ -3951,3 +3951,190 @@ body.theme-monet #monet { transition: filter 4s linear; }
   body.theme-monet #monet { transition: none; }
   body.theme-monet[data-sky="fog"] #monet { filter: saturate(.35) brightness(1.04); }
 }
+
+/* ================================================================ THE SKY
+
+   The real one, drawn over the top of the page: the sun where the sun is,
+   the moon at the phase the moon is at, and the stars that are actually up
+   over whoever is reading. See THE SKY in app.js for the arithmetic.
+
+   It sits behind everything and is transparent to the pointer. The band is
+   tall enough to hold a whole horizon-to-zenith sweep without pushing the
+   page down, because it is absolutely positioned and takes no layout room
+   at all.
+   ========================================================================= */
+
+#sky {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  /* app.js measures the real height -- down to the ticker, which becomes
+     the horizon. This is only the size before it has done so. */
+  height: 46vh;
+  min-height: 200px;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  /* Night deepens the band behind the stars. --night is written by app.js
+     from how far the sun is below the horizon, so this fades up through
+     twilight rather than switching on. */
+  /* Night is a colour, not a grey. At .55 of a near-black over cream paper
+     this came out the colour of a wet pavement; it wants to be saturated
+     and it wants to go nearly opaque at the top, so that the top of the
+     page reads as sky and not as a smudge over the page. The fade down is
+     long and eased, so there is no line where the sky stops -- it becomes
+     the paper, the way a horizon does. */
+  background:
+    linear-gradient(to bottom,
+      rgba(8, 13, 38, calc(var(--night, 0) * .96)) 0%,
+      rgba(12, 20, 52, calc(var(--night, 0) * .88)) 34%,
+      rgba(22, 34, 72, calc(var(--night, 0) * .60)) 62%,
+      rgba(40, 54, 92, calc(var(--night, 0) * .22)) 84%,
+      transparent 100%);
+  transition: background 4s linear;
+}
+#sky svg { display: block; width: 100%; height: 100%; }
+
+/* And by day the same band is a pale blue that barely announces itself --
+   enough that the sun has something to cross, not so much that the page
+   stops being paper. --day is written by app.js from the sun's height. */
+#sky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(132, 176, 220, calc(var(--day, 0) * .34)) 0%,
+      rgba(168, 202, 232, calc(var(--day, 0) * .20)) 52%,
+      transparent 100%);
+  transition: background 4s linear;
+}
+
+/* A star is a fixed point of light that the air moves in front of. Pure CSS,
+   staggered per star so they are never in step. */
+.star {
+  animation: star-twinkle var(--tw, 3.4s) ease-in-out infinite alternate;
+  animation-delay: var(--d, 0s);
+}
+@keyframes star-twinkle {
+  from { opacity: .55; }
+  to   { opacity: 1; }
+}
+
+/* the unlit part of the moon: the paper showing through, not black paint */
+.moon-dark { fill: var(--paper); }
+
+/* ------------------------------------------------------------- weather
+
+   Not a symbol in the corner. If it is raining on the person reading this,
+   it rains on the page.
+   ======================================================================= */
+
+.sky-wx {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 46vh;
+  min-height: 200px;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sky-wx i { position: absolute; display: block; }
+
+/* rain: thin strokes, and they fall at a slight angle because they always do */
+.wx-rain i, .wx-drizzle i, .wx-storm i {
+  top: -12%;
+  width: 1px;
+  height: 14%;
+  background: linear-gradient(to bottom, transparent, rgba(120, 150, 190, .5));
+  animation: rain-fall 1s linear infinite;
+  transform: rotate(9deg);
+}
+.wx-drizzle i { opacity: .55; height: 8%; }
+.wx-storm i { opacity: .8; }
+@keyframes rain-fall {
+  from { transform: translate3d(0, -20%, 0) rotate(9deg); }
+  to   { transform: translate3d(-4vw, 120vh, 0) rotate(9deg); }
+}
+
+/* snow: slower, wandering, and it does not fall in a line */
+.wx-snow i {
+  top: -4%;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(240, 245, 255, .75);
+  animation: snow-fall 10s linear infinite;
+}
+@keyframes snow-fall {
+  0%   { transform: translate3d(0, -10%, 0); }
+  50%  { transform: translate3d(2.5vw, 60%, 0); }
+  100% { transform: translate3d(-1.5vw, 130%, 0); }
+}
+
+/* cloud: enormous soft shapes crossing very slowly */
+.wx-cloud i, .wx-part i {
+  width: 46%;
+  height: 34%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(190, 196, 208, .30), transparent 72%);
+  animation: cloud-cross 70s linear infinite;
+}
+.wx-part i { opacity: .6; }
+@keyframes cloud-cross {
+  from { transform: translate3d(-30%, 0, 0); }
+  to   { transform: translate3d(180%, 0, 0); }
+}
+
+/* fog: the whole band goes to a veil */
+.wx-fog {
+  background: linear-gradient(to bottom, rgba(214, 216, 220, .5), transparent 78%);
+  backdrop-filter: blur(1.5px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star { animation: none; opacity: .85; }
+  .sky-wx i { animation: none; }
+  .wx-rain i, .wx-drizzle i, .wx-storm i, .wx-snow i { display: none; }
+}
+
+/* A phone has no room for a horizon above the folder, and the page does not
+   scroll there — so the sky is a shallower strip behind the masthead only. */
+@media (max-width: 559px) {
+  #sky, .sky-wx { min-height: 150px; }
+}
+
+/* Dark ink on a night sky cannot be read. While the band behind them is
+   dark, the few things that stand in front of it turn over — the name, the
+   sentence under it, the clock and the still. Only those: the folder below
+   is on paper, not on sky, and must not change at all. */
+body.sky-night .masthead h1,
+body.sky-night .masthead p,
+body.sky-night #visitors,
+body.sky-night #visitors b { color: #E8ECF4; }
+body.sky-night .wx-here { color: rgba(232, 236, 244, .62); }
+body.sky-night #corner { color: #DDE3EE; }
+body.sky-night #clock,
+body.sky-night #clock-date,
+body.sky-night #bucket,
+body.sky-night #cactus,
+body.sky-night #still { color: #DDE3EE; }
+body.sky-night .masthead .rule { background: rgba(232, 236, 244, .45); }
+body.sky-night .marquee { color: rgba(232, 236, 244, .55); border-color: rgba(232, 236, 244, .18); }
+
+body.sky-night .masthead h1,
+body.sky-night .masthead p,
+body.sky-night #corner,
+body.sky-night .marquee { transition: color 3s linear; }
+
+/* The clock draws its own figure and ground in their own colours, so turning
+   the wrapper's ink over left it exactly as dark as it was. These are the
+   glyphs themselves, lit for a night sky. */
+body.sky-night #clock .f,
+body.sky-night #clock-date .f { color: #F0F4FB; }
+body.sky-night #clock .g,
+body.sky-night #clock-date .g { color: #9FB6D8; opacity: .30; }
+body.sky-night #clock .s { color: #A9C0D8; opacity: .45; }
+body.sky-night #clock .s2 { color: #E7C79A; opacity: .85; }
+body.sky-night #clock .d { color: rgba(226, 233, 245, .65); }
+
+/* and the still and the prickly pear standing beside it */
+body.sky-night #bucket .f, body.sky-night #cactus .f, body.sky-night #still .f { color: #E4EAF4; }
