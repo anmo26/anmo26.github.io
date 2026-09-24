@@ -2038,9 +2038,14 @@
      is a decision, and a decision outranks the weather.
      ------------------------------------------------------------------- */
 
+  /* Seven, not six, and the extra two are both at the dark end -- because
+     that is where the day actually changes fastest. Half past seven in the
+     evening and half past ten are not the same light at all, and lumping
+     them together was what made three in the morning come out the colour of
+     a cloudy afternoon. */
   var LIGHT_BANDS = [
-    [5, 'dawn'], [8, 'morning'], [11, 'noon'],
-    [15, 'afternoon'], [18, 'dusk'], [21, 'night']
+    [5, 'dawn'], [7, 'morning'], [11, 'noon'], [15, 'afternoon'],
+    [18, 'dusk'], [20, 'evening'], [22, 'night']
   ];
 
   function lightNow() {
@@ -2057,6 +2062,45 @@
     document.body.setAttribute('data-light', band);
   }
 
+  /* ------------------------------------------------------- the real sky
+     Monet did not paint the hour, he painted the weather of that hour --
+     the same cathedral in fog and the same cathedral in sun are two
+     different buildings. So the washes take the actual sky over the person
+     looking at the page: overcast greys them down, rain turns them blue and
+     puts the lights out early, clear weather lets them burn.
+
+     Where "actual" comes from: the visitor's own time zone gives a city
+     name, the city gives a lat/long, and the lat/long gives the sky. No IP
+     lookup, no permission prompt, and nothing about where anybody is ever
+     leaves their browser -- it is not written to the wall, not sent with a
+     cursor, and not put in a URL. */
+
+  function paintSky() {
+    weather(function (w) {
+      if (!w || !w.kind) return;
+      document.body.setAttribute('data-sky', w.kind);
+      lastSky = w;
+      tellTheSky(w);
+    });
+  }
+
+  var lastSky = null;
+
+  /* And it says so, under the visitor count -- the one line on the front
+     page that is about the person reading it rather than about the site. */
+  function tellTheSky(w) {
+    var host = document.getElementById('visitors');
+    if (!host) return;
+    var line = host.querySelector('.wx-here');
+    if (!line) {
+      line = document.createElement('span');
+      line.className = 'wx-here';
+      host.appendChild(line);
+    }
+    line.textContent = ' \u00b7 ' + (WX_WORD[w.kind] || w.kind) +
+                       ' and ' + w.temp + '\u00b0 in ' + w.place;
+  }
+
   function mountLight() {
     /* The washes live on their own layer so they can never fight the paper's
        own pattern, which is painted into the body's background. It is built
@@ -2068,8 +2112,14 @@
       document.body.appendChild(wash);
     }
     paintLight();
-    // The hour turns over rarely; checking for it should cost nothing.
-    setInterval(function () { if (!document.hidden) paintLight(); }, 120000);
+    paintSky();
+    // The hour turns over rarely; checking for it should cost nothing. The
+    // sky is cached for an hour inside weather(), so this is nearly free too.
+    setInterval(function () {
+      if (document.hidden) return;
+      paintLight();
+      paintSky();
+    }, 120000);
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) paintLight();
     });

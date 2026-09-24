@@ -3743,20 +3743,25 @@ body.on-ether .forum-open:hover { color: var(--ink); border-color: var(--ochre);
    same thing.
 
    So "monet" is not a colour in the paper list beside bone and olive. It is
-   a TIME OF DAY, and it changes underneath you while the page is open: cold
-   rose before the sun is properly up, straw and cerulean through the middle
-   of the day, gold in the late afternoon, violet at dusk, indigo at night.
-   It is the visitor's own clock, so somebody opening this at two in the
-   morning somewhere else gets two in the morning.
+   a TIME OF DAY, and it changes underneath you while the page is open. It is
+   the visitor's own clock, so somebody opening this at three in the morning
+   somewhere else gets three in the morning.
 
-   How it is painted: half a dozen enormous, very soft radial washes, laid
-   over each other and drifting. That is roughly what broken colour does —
-   no stroke is the colour of the thing, and the colour of the thing only
-   happens in the eye. Nothing is an image; it is all gradients, so it costs
-   nothing to download and nothing to draw.
+   The first attempt got this badly wrong: every hour was a pale wash, so
+   three in the morning looked like an overcast afternoon. But the largest
+   thing that happens to light in a day is not its COLOUR, it is whether
+   there is any. So the series runs dark → light → dark, and at the dark end
+   the page genuinely goes dark and the ink turns over with it. Three in the
+   morning is nearly black with a little indigo in it, which is what three in
+   the morning is.
 
-   app.js writes `data-light` onto <body> from the hour. The rooms that set
-   their own light — the ether, the moon, the crypt — are left alone.
+   How it is painted: half a dozen enormous, very soft radial washes laid
+   over each other and drifting. That is roughly what broken colour does — no
+   wash is the colour of the thing, and the colour of the thing only happens
+   in the eye. All gradients, so nothing is downloaded.
+
+   app.js writes `data-light` onto <body> from the hour. Rooms that set their
+   own light — the ether, the moon, the crypt — are left alone.
    ========================================================================= */
 
 #monet {
@@ -3777,100 +3782,172 @@ body.theme-monet #monet { display: block; }
   to   { transform: translate3d(2.5%, -2%, 0)   scale(1.06); }
 }
 
-/* the paper under the washes, and the ink that has to stay readable on it */
 body.theme-monet {
   --paper:      #EFEDE6;
   --paper-deep: #E5E2D9;
   --surface:    #F8F6F1;
   --surface-2:  #FCFBF8;
-  transition: background-color 3s linear;
+  transition: background-color 3s linear, color 3s linear;
 }
 
-/* --------------------------------------------------------- before sunrise
-   Impression, soleil levant: grey-blue water, and one rose coming up. */
+/* ---------------------------------------------------------- the dark hours
+   Evening, night and the hour before dawn. The paper stops being paper and
+   becomes the room it is in, and every mark on it turns over to stay
+   readable. Same trick the ether uses. */
+body.theme-monet[data-light="evening"],
+body.theme-monet[data-light="night"],
 body.theme-monet[data-light="dawn"] {
-  --paper: #EBE4E4; --paper-deep: #E1D8DA; --surface: #F6F0F1; --surface-2: #FBF7F8;
-  --ink-faint: #6D6165;
+  --ink:       #DCE0E8;
+  --ink-soft:  #A5ABB6;
+  --ink-faint: #767C88;
+  --ochre:     #C8A87A;
+  --ochre-pale:#8A7758;
+  --olive:     #93A08C;
+  --olive-pale:#6E7A69;
+  --rule:      rgba(220, 224, 232, .17);
+  --rule-soft: rgba(220, 224, 232, .08);
+}
+body.theme-monet[data-light="evening"] .masthead h1,
+body.theme-monet[data-light="night"] .masthead h1,
+body.theme-monet[data-light="dawn"] .masthead h1,
+body.theme-monet[data-light="evening"] .masthead p,
+body.theme-monet[data-light="night"] .masthead p,
+body.theme-monet[data-light="dawn"] .masthead p { color: var(--ink); }
+
+/* ------------------------------------------------- 5–7, before the sun
+   The very end of the night, with the first rose in it. Still dark. */
+body.theme-monet[data-light="dawn"] {
+  --paper: #1A1A22; --paper-deep: #141419; --surface: #23232C; --surface-2: #2A2A34;
 }
 body.theme-monet[data-light="dawn"] #monet {
   background-image:
-    radial-gradient(60% 45% at 22% 18%, rgba(226, 150, 140, .40), transparent 70%),
-    radial-gradient(55% 40% at 78% 26%, rgba(196, 164, 196, .34), transparent 72%),
-    radial-gradient(70% 50% at 50% 82%, rgba(120, 140, 172, .26), transparent 74%),
-    radial-gradient(40% 30% at 12% 68%, rgba(236, 196, 158, .24), transparent 70%),
-    radial-gradient(45% 35% at 88% 74%, rgba(150, 160, 190, .22), transparent 72%);
+    radial-gradient(62% 46% at 22% 74%, rgba(198, 112, 108, .42), transparent 70%),
+    radial-gradient(56% 42% at 76% 80%, rgba(150, 106, 140, .34), transparent 72%),
+    radial-gradient(74% 54% at 50% 18%, rgba(40, 52, 92, .52), transparent 74%),
+    radial-gradient(40% 30% at 12% 34%, rgba(72, 84, 128, .34), transparent 70%),
+    radial-gradient(44% 34% at 90% 30%, rgba(58, 66, 104, .32), transparent 72%);
 }
 
-/* ------------------------------------------------------------- morning
-   Poplars: cool green-blue, the light still thin. */
+/* ------------------------------------------------------- 7–11, morning
+   Poplars. The light is up but still thin and cool. */
 body.theme-monet[data-light="morning"] {
-  --paper: #EAEDE8; --paper-deep: #DFE3DC; --surface: #F4F7F3; --surface-2: #FAFCF9;
+  --paper: #E9EDE9; --paper-deep: #DEE3DD; --surface: #F3F7F3; --surface-2: #FAFCFA;
 }
 body.theme-monet[data-light="morning"] #monet {
   background-image:
-    radial-gradient(58% 44% at 26% 22%, rgba(150, 186, 200, .34), transparent 70%),
+    radial-gradient(58% 44% at 26% 22%, rgba(150, 186, 200, .36), transparent 70%),
     radial-gradient(52% 40% at 74% 18%, rgba(214, 220, 178, .32), transparent 72%),
-    radial-gradient(66% 48% at 54% 80%, rgba(170, 196, 168, .26), transparent 74%),
+    radial-gradient(66% 48% at 54% 80%, rgba(170, 196, 168, .28), transparent 74%),
     radial-gradient(38% 30% at 10% 62%, rgba(226, 216, 176, .22), transparent 70%),
     radial-gradient(42% 34% at 90% 70%, rgba(160, 180, 200, .20), transparent 72%);
 }
 
-/* ---------------------------------------------------------------- noon
-   Haystacks, full summer: straw, cerulean, and the white of the light. */
+/* ---------------------------------------------------------- 11–15, noon
+   Haystacks in full summer: straw, cerulean, and the white of the light.
+   The brightest the page ever gets. */
+body.theme-monet[data-light="noon"] {
+  --paper: #F2F1EA; --paper-deep: #E9E7DE; --surface: #FAF9F5; --surface-2: #FEFDFB;
+}
 body.theme-monet[data-light="noon"] #monet {
   background-image:
-    radial-gradient(56% 42% at 24% 20%, rgba(238, 214, 146, .36), transparent 70%),
+    radial-gradient(56% 42% at 24% 20%, rgba(240, 216, 146, .38), transparent 70%),
     radial-gradient(54% 40% at 76% 22%, rgba(146, 186, 218, .30), transparent 72%),
     radial-gradient(70% 50% at 50% 84%, rgba(206, 214, 170, .26), transparent 74%),
-    radial-gradient(36% 28% at 14% 70%, rgba(248, 236, 196, .26), transparent 70%),
+    radial-gradient(36% 28% at 14% 70%, rgba(250, 240, 202, .30), transparent 70%),
     radial-gradient(40% 32% at 86% 72%, rgba(178, 204, 200, .20), transparent 72%);
 }
 
-/* ----------------------------------------------------------- afternoon
-   Late Haystacks: everything gold, the shadows gone violet. */
+/* ----------------------------------------------------- 15–18, afternoon
+   Late haystacks: everything gold, and the shadows gone violet. */
 body.theme-monet[data-light="afternoon"] {
-  --paper: #F1EBDC; --paper-deep: #E8E0CD; --surface: #FAF6EA; --surface-2: #FDFBF3;
+  --paper: #F1EADA; --paper-deep: #E8DECB; --surface: #FAF5E8; --surface-2: #FDFAF2;
 }
 body.theme-monet[data-light="afternoon"] #monet {
   background-image:
-    radial-gradient(58% 44% at 22% 24%, rgba(240, 190, 112, .40), transparent 70%),
-    radial-gradient(52% 40% at 78% 20%, rgba(232, 164, 122, .32), transparent 72%),
-    radial-gradient(68% 50% at 52% 82%, rgba(196, 174, 198, .26), transparent 74%),
-    radial-gradient(38% 30% at 12% 66%, rgba(214, 196, 132, .26), transparent 70%),
-    radial-gradient(42% 34% at 88% 76%, rgba(178, 160, 190, .22), transparent 72%);
+    radial-gradient(58% 44% at 22% 24%, rgba(240, 186, 104, .42), transparent 70%),
+    radial-gradient(52% 40% at 78% 20%, rgba(232, 160, 116, .34), transparent 72%),
+    radial-gradient(68% 50% at 52% 82%, rgba(190, 166, 194, .28), transparent 74%),
+    radial-gradient(38% 30% at 12% 66%, rgba(214, 192, 126, .26), transparent 70%),
+    radial-gradient(42% 34% at 88% 76%, rgba(172, 154, 186, .22), transparent 72%);
 }
 
-/* ---------------------------------------------------------------- dusk
-   Rouen cathedral at the end of the day: violet and magenta, one last fire. */
+/* ---------------------------------------------------------- 18–20, dusk
+   Rouen cathedral at the end of the day. Still light, but going, and the
+   last of the sun is the warmest thing that happens all day. */
 body.theme-monet[data-light="dusk"] {
-  --paper: #E9E2E7; --paper-deep: #DED5DE; --surface: #F4EFF3; --surface-2: #FAF7F9;
+  --paper: #E4DADE; --paper-deep: #D6CAD2; --surface: #EFE7EB; --surface-2: #F7F1F4;
   --ink-faint: #665C68;
 }
 body.theme-monet[data-light="dusk"] #monet {
   background-image:
-    radial-gradient(58% 44% at 24% 22%, rgba(206, 130, 168, .38), transparent 70%),
-    radial-gradient(54% 42% at 76% 26%, rgba(150, 126, 186, .36), transparent 72%),
-    radial-gradient(70% 50% at 48% 84%, rgba(110, 112, 158, .28), transparent 74%),
-    radial-gradient(40% 30% at 14% 70%, rgba(238, 156, 118, .26), transparent 70%),
-    radial-gradient(44% 34% at 88% 72%, rgba(128, 122, 172, .24), transparent 72%);
+    radial-gradient(60% 46% at 24% 70%, rgba(232, 132, 96, .40), transparent 70%),
+    radial-gradient(54% 42% at 76% 26%, rgba(150, 120, 180, .40), transparent 72%),
+    radial-gradient(70% 50% at 48% 88%, rgba(196, 118, 148, .32), transparent 74%),
+    radial-gradient(40% 30% at 14% 26%, rgba(120, 118, 168, .30), transparent 70%),
+    radial-gradient(44% 34% at 90% 74%, rgba(168, 122, 150, .26), transparent 72%);
 }
 
-/* --------------------------------------------------------------- night
-   The Thames nocturnes, and the late water lilies: indigo, and not much else. */
+/* ------------------------------------------------------- 20–22, evening
+   The sun is gone and the sky has not finished. Violet over dark. */
+body.theme-monet[data-light="evening"] {
+  --paper: #21202C; --paper-deep: #1A1923; --surface: #2A2836; --surface-2: #322F40;
+}
+body.theme-monet[data-light="evening"] #monet {
+  background-image:
+    radial-gradient(62% 46% at 26% 78%, rgba(150, 92, 138, .44), transparent 70%),
+    radial-gradient(56% 42% at 74% 84%, rgba(190, 106, 92, .30), transparent 72%),
+    radial-gradient(76% 54% at 50% 16%, rgba(48, 50, 96, .54), transparent 74%),
+    radial-gradient(40% 30% at 12% 30%, rgba(86, 74, 132, .36), transparent 70%),
+    radial-gradient(44% 34% at 90% 36%, rgba(64, 62, 112, .32), transparent 72%);
+}
+
+/* --------------------------------------------------------- 22–5, night
+   The Thames nocturnes and the late water lilies. Nearly black, with a
+   little indigo in it, which is what three in the morning is. */
 body.theme-monet[data-light="night"] {
-  --paper: #E3E5EC; --paper-deep: #D7DAE4; --surface: #F0F2F7; --surface-2: #F8F9FC;
-  --ink-faint: #5F636F;
+  --paper: #0E1016; --paper-deep: #090A0F; --surface: #171A22; --surface-2: #1D2029;
 }
 body.theme-monet[data-light="night"] #monet {
   background-image:
-    radial-gradient(60% 46% at 26% 20%, rgba(96, 116, 172, .38), transparent 70%),
-    radial-gradient(54% 42% at 74% 28%, rgba(126, 110, 164, .32), transparent 72%),
-    radial-gradient(72% 52% at 50% 84%, rgba(64, 86, 124, .30), transparent 74%),
-    radial-gradient(38% 30% at 12% 68%, rgba(150, 168, 200, .22), transparent 70%),
-    radial-gradient(42% 34% at 88% 74%, rgba(102, 124, 154, .22), transparent 72%);
+    radial-gradient(66% 50% at 28% 24%, rgba(38, 56, 108, .50), transparent 72%),
+    radial-gradient(56% 44% at 74% 30%, rgba(58, 48, 96, .40), transparent 72%),
+    radial-gradient(78% 56% at 50% 88%, rgba(22, 40, 70, .48), transparent 74%),
+    radial-gradient(38% 30% at 14% 68%, rgba(74, 90, 130, .26), transparent 70%),
+    radial-gradient(42% 34% at 88% 76%, rgba(44, 58, 92, .28), transparent 72%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   #monet { animation: none; }
   body.theme-monet { transition: none; }
+}
+
+/* Where the person reading this is, and what the sky is doing there. The one
+   line on the front page that is about them rather than about the site. */
+.wx-here { color: var(--ink-faint); }
+
+/* ------------------------------------------------------------- the sky
+
+   Monet did not paint the hour, he painted the weather of that hour: the
+   same cathedral in fog and in sun are two different buildings. So the
+   washes take the real sky over whoever is looking.
+
+   These are deliberately small corrections on top of the hour, not a
+   replacement for it — five in the afternoon in the rain is still five in
+   the afternoon. `filter` rather than another set of gradients, so the whole
+   series is adjusted at once and there is nothing extra to draw. */
+
+body.theme-monet[data-sky="cloud"] #monet   { filter: saturate(.55) brightness(.94); }
+body.theme-monet[data-sky="fog"] #monet     { filter: saturate(.35) brightness(1.04) blur(6px); }
+body.theme-monet[data-sky="drizzle"] #monet { filter: saturate(.6)  brightness(.9)  hue-rotate(-8deg); }
+body.theme-monet[data-sky="rain"] #monet    { filter: saturate(.7)  brightness(.82) hue-rotate(-14deg); }
+body.theme-monet[data-sky="storm"] #monet   { filter: saturate(.8)  brightness(.7)  hue-rotate(-18deg) contrast(1.15); }
+body.theme-monet[data-sky="snow"] #monet    { filter: saturate(.3)  brightness(1.12); }
+body.theme-monet[data-sky="clear"] #monet   { filter: saturate(1.18) brightness(1.06); }
+body.theme-monet[data-sky="part"] #monet    { filter: saturate(1.05); }
+
+body.theme-monet #monet { transition: filter 4s linear; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.theme-monet #monet { transition: none; }
+  body.theme-monet[data-sky="fog"] #monet { filter: saturate(.35) brightness(1.04); }
 }
