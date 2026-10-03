@@ -1998,6 +1998,9 @@
   ];
 
   function lightNow() {
+    if (skyCache && skyCache.sun && document.body.classList.contains('sky-whole')) {
+      return sunBand(skyCache.sun);
+    }
     var h = new Date().getHours(), band = 'night', i;
     for (i = 0; i < LIGHT_BANDS.length; i++) {
       if (h >= LIGHT_BANDS[i][0]) band = LIGHT_BANDS[i][1];
@@ -2140,6 +2143,14 @@
   window.addEventListener('resize', fitSoon);
   window.addEventListener('resize', mountHint);
   window.addEventListener('resize', fitCorner);
+  var inkFrame = 0;
+  window.addEventListener('scroll', function () {
+    if (inkFrame || !skyInkLast || !document.body.classList.contains('sky-whole')) return;
+    inkFrame = requestAnimationFrame(function () {
+      inkFrame = 0;
+      skyInk(skyInkLast.band, skyInkLast.alt);
+    });
+  }, { passive: true });
   window.addEventListener('resize', function () {
     if (typeof skyRoomCheck === 'function') skyRoomCheck();
   });
@@ -10479,6 +10490,173 @@
     return SKY_KEYS[SKY_KEYS.length - 1];
   }
 
+  /* ------------------------------------------------------- which ink
+     Daytime text was white on pale blue and could not be read. The old test
+     took the brightness of the top of the sky and multiplied it by how
+     opaque the sky was -- which treats a see-through sky as if there were
+     black behind it. There is not: there is paper, and at noon the sky is
+     only 38% opaque, so what you are actually reading against is mostly
+     paper with a blue cast. The test said "night" at noon and turned every
+     word white.
+
+     So this works out the real colour behind the writing -- the sky's
+     gradient at that height, laid over the actual paper, or the ground if
+     it is below the horizon -- and picks whichever ink, light or dark, has
+     the better WORST contrast across that stretch. Twice: once for the
+     head of the page and once for the folder below it, because at sunset
+     the top of the sky is already night and the bottom is on fire, and no
+     single ink reads against both. */
+
+  var INK_DARK = [35, 33, 29], INK_LIGHT = [232, 236, 244];
+  var paperSeen = {};
+  var skyInkLast = null;
+
+  function hexRgb(h) {
+    h = String(h || '').trim().replace('#', '');
+    if (h.length === 3) h = h.replace(/./g, function (c) { return c + c; });
+    if (!/^[0-9a-f]{6}$/i.test(h)) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+
+  function paperNow() {
+    var key = document.body.getAttribute('data-light') || '-';
+    if (!paperSeen[key]) {
+      paperSeen[key] = hexRgb(getComputedStyle(document.body).getPropertyValue('--paper')) ||
+                       [239, 237, 230];
+    }
+    return paperSeen[key];
+  }
+
+  function relLum(c) {
+    function ch(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+    return 0.2126 * ch(c[0]) + 0.7152 * ch(c[1]) + 0.0722 * ch(c[2]);
+  }
+  function contrast(a, b) {
+    var x = relLum(a), y = relLum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+
+  /** The colour really behind a point `frac` of the way down the window. */
+  function behindAt(band, frac, hzFrac, land, paper) {
+    if (frac >= hzFrac) {
+      return mix(land.top, land.low, Math.min(1, (frac - hzFrac) / Math.max(0.01, 1 - hzFrac)));
+    }
+    var st = [[0, band.top, band.a], [0.42, band.mid, band.a * 0.94],
+              [0.78, band.low, band.a * 0.66], [1, band.low, band.a * 0.5]];
+    var i = 0;
+    while (i < st.length - 2 && frac > st[i + 1][0]) i++;
+    var t = Math.max(0, Math.min(1, (frac - st[i][0]) / (st[i + 1][0] - st[i][0])));
+    var c = mix(st[i][1], st[i + 1][1], t);
+    var a = st[i][2] + (st[i + 1][2] - st[i][2]) * t;
+    return mix(paper, c, a);
+  }
+
+  function inkFor(samples) {
+    var lo = Infinity, ld = Infinity, k;
+    for (k = 0; k < samples.length; k++) {
+      lo = Math.min(lo, contrast(samples[k], INK_LIGHT));
+      ld = Math.min(ld, contrast(samples[k], INK_DARK));
+    }
+    return { light: lo > ld, best: Math.max(lo, ld) };
+  }
+  function wantsLight(samples) { return inkFor(samples).light; }
+
+  /* How hard the halo behind the writing has to work. For most of the day
+     either ink beats the sky comfortably and the halo is a whisper. For
+     ten minutes either side of sunrise and sunset the sky passes through
+     exactly the grey that neither ink can beat -- the best possible is
+     under four to one -- and then the halo thickens into something closer
+     to frosted glass, and thins away again as the sky moves on. */
+  function haloFor(best) {
+    return Math.max(0.42, Math.min(0.95, 0.42 + (6 - best) * 0.2)).toFixed(2);
+  }
+
+  function skyInk(band, alt) {
+    var b = document.body, H = window.innerHeight || 800;
+    var paper = paperNow(), land = skyLand(alt);
+    var hzFrac = skyFull ? project(0, skyLook).y / SKY_H : 2;
+
+    function span(top, bottom) {
+      var out = [], k;
+      for (k = 0; k <= 4; k++) {
+        var f = (top + (bottom - top) * k / 4) / H;
+        out.push(behindAt(band, Math.max(0, Math.min(1, f)), hzFrac, land, paper));
+      }
+      return out;
+    }
+
+    // the head of the page: the top of the window down to the ticker
+    var mq = document.querySelector('.marquee') || document.querySelector('.masthead');
+    var cut = mq && mq.getClientRects().length ? mq.getBoundingClientRect().bottom : H * 0.32;
+    cut = Math.max(H * 0.12, Math.min(H * 0.8, cut));
+    var headInk = inkFor(span(0, cut));
+    var headLight = headInk.light;
+    b.style.setProperty('--halo', haloFor(headInk.best));
+    // and the folder, from there down to the taskbar
+    var bedLight = wantsLight(span(cut, H - taskbarHeight()));
+
+    b.classList.toggle('sky-night', headLight);
+    b.classList.toggle('sky-day', !headLight);
+    b.classList.toggle('sky-low-night', bedLight);
+    b.classList.toggle('sky-low-day', !bedLight);
+
+    /* And then every thing on the page on its own, against what is behind
+       its own name. One decision for the whole folder was not enough: at
+       sunrise the top of it is bright sky and the bottom of it is dark
+       ground, and a folder near the horizon and a folder near the ticker
+       want opposite ink at the same moment. The to-do and the log are
+       panels with their own paper and are left alone. */
+    var items = document.querySelectorAll('main .item'), k, it, lab, meta, top, bot, r;
+    for (k = 0; k < items.length; k++) {
+      it = items[k];
+      if (it.classList.contains('kind-todo') || it.getAttribute('data-key') === '.garden.log') continue;
+      lab = it.querySelector('h3');
+      if (!lab || !lab.getClientRects().length) continue;
+      r = lab.getBoundingClientRect();
+      top = r.top; bot = r.bottom;
+      meta = it.querySelector('.meta');
+      if (meta && meta.getClientRects().length) bot = Math.max(bot, meta.getBoundingClientRect().bottom);
+      if (bot < 0 || top > H) continue;
+      var ink = inkFor(span(top, bot)), want = ink.light ? 'light' : 'dark';
+      if (it.getAttribute('data-ink') !== want) it.setAttribute('data-ink', want);
+      it.style.setProperty('--halo', haloFor(ink.best));
+    }
+  }
+
+  /* The paper's hour, read off the sun in the sky being shown. Clock hours
+     are wrong twice over: a winter five o'clock is dark, and once you have
+     wound the dial to noon the paper should be noon's too. */
+  function sunBand(s) {
+    var am = s.az < 180;            // still in the eastern half: not yet crossed
+    if (s.alt < -9) return 'night';
+    if (s.alt < -1) return am ? 'dawn' : 'evening';
+    if (s.alt < 9) return am ? 'morning' : 'dusk';
+    var south = skyWhereNow && skyWhereNow.lat < 0 ? 0 : 180;
+    var off = Math.abs(((s.az - south) + 540) % 360 - 180);
+    if (off < 40 && s.alt > 20) return 'noon';
+    return am ? 'morning' : 'afternoon';
+  }
+
+  /* The ground under the sky. Land at night is the darkest thing in the
+     picture -- darker than the sky, which always has some light in it --
+     and in the day it is a dim green-grey well below the sky's brightness,
+     so the line between them is always legible. `edge` is the colour of
+     the line itself, borrowed from the sky just above it. */
+  function skyLand(alt) {
+    var b = skyBands(alt);
+    var day = Math.max(0, Math.min(1, (alt + 4) / 16));
+    // hazy and distant by day, the way land a few miles off is -- not a
+    // dark bar across the bottom of a bright picture
+    var top = mix([10, 12, 20], [112, 126, 110], day);
+    var low = mix([5, 6, 11], [78, 90, 76], day);
+    return {
+      top: top,
+      low: low,
+      edge: mix(b.low, [255, 255, 255], 0.15),
+      ink: mix([150, 166, 196], [222, 230, 214], day)
+    };
+  }
+
   /* The sun's own colour. White at height, gold as it comes down, and a
      deep red right on the horizon -- which is the air, not the star: low
      sun is seen through far more atmosphere and the blue is scattered out
@@ -10505,8 +10683,11 @@
   var skyLook = 180;               // the azimuth in the middle of the view
   var skyShift = 0;                // milliseconds away from now
   var skyWhereNow = null;          // the lat/long we last drew for
-  var skyHaze = get('sky.haze', true) !== false;   // is the milky way shown
-  var skyNames = get('sky.names', true) !== false; // are the figures named
+  /* The galaxy and the constellation names are simply on. Each had a
+     switch, and the switches were in the way of the two handles people
+     actually use; both answers were "yes" anyway. */
+  var skyHaze = true;
+  var skyNames = true;
 
   /* How much sky fits. The width is the free choice and the height falls
      out of the window's shape -- EXCEPT that the height can never be more
@@ -10613,7 +10794,8 @@
       px += el.getBoundingClientRect().height + 14;
     }
     var h = window.innerHeight || 800;
-    return Math.max(0.62, Math.min(0.94, 1 - (px + 26) / h));
+    // 54px of ground below the line: the compass is written there now
+    return Math.max(0.6, Math.min(0.92, 1 - (px + 54) / h));
   }
 
   var COMPASS = [[0, 'N'], [45, 'NE'], [90, 'E'], [135, 'SE'],
@@ -10901,7 +11083,7 @@
 
     /* ---- the moon, at its real phase ---- */
     var mplace = project(mp.alt, mp.az);
-    if (mplace.on && mp.alt > -2) {
+    if (mplace.on && mp.alt > -3) {
       var elong = norm360(S.moonLam - S.sunLam);
       var lit = (1 - Math.cos(elong * RAD)) / 2;
       var waxing = elong < 180;
@@ -10951,7 +11133,7 @@
     }
 
     /* ---- the sun ---- */
-    if (sunHere.on && sp.alt > -5) {
+    if (sunHere.on && sp.alt > -3) {
       var sr = (skyFull ? 17 : 15) + Math.max(0, (10 - sp.alt)) * 0.55;
       svg.push('<circle cx="' + sunHere.x.toFixed(1) + '" cy="' + sunHere.y.toFixed(1) +
                '" r="' + (sr * 4.6).toFixed(1) + '" fill="url(#sunhaze)"/>');
@@ -10959,22 +11141,43 @@
                '" r="' + sr.toFixed(1) + '" fill="url(#sundisc)"/>');
     }
 
-    /* ---- the horizon and the compass, full screen only ----
-       The horizon has to clear the furniture standing in front of the sky:
-       the taskbar along the bottom and the dials just above it. Otherwise
-       north and west get written underneath them and you cannot read a
-       word of it. So the ground is as deep as whatever is down there, and
-       the letters go ABOVE the line, in the sky where they belong, rather
-       than below it where there is no room. */
+    /* ---- the ground, the horizon, and the compass written on it ----
+       The horizon is a thing now, not a hairline. Everything below it is
+       ground -- opaque, the colour of land at that hour -- and it is drawn
+       LAST, over the sun and the moon and the stars, so a setting sun goes
+       down behind it and is gone, the way it is from a window, instead of
+       fading out in mid-air. Its glow is still above the line, which is
+       the best part of a sunset anyway.
+
+       The compass points are written on the ground just under the line,
+       where you would read them off a real horizon. The horizon sits high
+       enough above the taskbar and the dials for them to fit (skyFloor). */
     if (skyFull) {
       var hz = project(0, skyLook).y;
-      svg.push('<line x1="0" y1="' + hz.toFixed(1) + '" x2="' + SKY_W + '" y2="' +
-               hz.toFixed(1) + '" stroke="rgba(160,180,215,.22)" stroke-width="0.7"/>');
-      for (j = 0; j < COMPASS.length; j++) {
-        var c = project(0, COMPASS[j][0]);
-        if (!c.on) continue;
-        svg.push('<text class="sky-rose" x="' + c.x.toFixed(1) + '" y="' +
-                 (hz - 9).toFixed(1) + '" text-anchor="middle">' + COMPASS[j][1] + '</text>');
+      if (hz < SKY_H + 2) {
+        var land = skyLand(sp.alt);
+        svg.push('<defs><linearGradient id="landfill" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="' + rgba(land.top, 1) + '"/>' +
+          '<stop offset="1" stop-color="' + rgba(land.low, 1) + '"/>' +
+          '</linearGradient></defs>');
+        svg.push('<rect x="0" y="' + hz.toFixed(1) + '" width="' + SKY_W + '" height="' +
+                 Math.max(0, SKY_H - hz + 2).toFixed(1) + '" fill="url(#landfill)"/>');
+        // the line itself, lit by whatever sky is just above it
+        svg.push('<line x1="0" y1="' + hz.toFixed(1) + '" x2="' + SKY_W + '" y2="' +
+                 hz.toFixed(1) + '" stroke="' + rgba(land.edge, 0.55) +
+                 '" stroke-width="1.1"/>');
+        for (j = 0; j < COMPASS.length; j++) {
+          var c = project(0, COMPASS[j][0]);
+          if (!c.on) continue;
+          var big = COMPASS[j][1].length === 1;          // N E S W, not NE
+          svg.push('<line x1="' + c.x.toFixed(1) + '" y1="' + hz.toFixed(1) +
+                   '" x2="' + c.x.toFixed(1) + '" y2="' + (hz + (big ? 6 : 3.5)).toFixed(1) +
+                   '" stroke="' + rgba(land.ink, 0.6) + '" stroke-width="1"/>');
+          svg.push('<text class="sky-rose' + (big ? ' sky-rose-main' : '') +
+                   '" x="' + c.x.toFixed(1) + '" y="' + (hz + 17).toFixed(1) +
+                   '" fill="' + rgba(land.ink, big ? 0.88 : 0.55) +
+                   '" text-anchor="middle">' + COMPASS[j][1] + '</text>');
+        }
       }
     }
 
@@ -10986,8 +11189,15 @@
        question about the SKY, not about the clock: at sunset the sun is
        still up and the top of the band is already a violet black type
        disappears into. */
-    var lum = (band.top[0] * 0.299 + band.top[1] * 0.587 + band.top[2] * 0.114) / 255;
-    document.body.classList.toggle('sky-night', lum * band.a < 0.42);
+    // the paper under the sky follows the sun in it, not the wall clock --
+    // so a drifted noon has noon's paper -- and then the ink is chosen for
+    // whatever the two of them actually add up to
+    var lightBand = sunBand(sp);
+    if (document.body.getAttribute('data-light') !== lightBand) {
+      document.body.setAttribute('data-light', lightBand);
+    }
+    skyInkLast = { band: band, alt: sp.alt };
+    skyInk(band, sp.alt);
     host.style.setProperty('--night', night.toFixed(3));
     host.style.setProperty('--day', day.toFixed(3));
   }
@@ -11043,27 +11253,40 @@
      fine, and long where you need to be long.
      ------------------------------------------------------------------- */
 
-  /* Six months of travel over one short handle meant that one pixel of it
-     was most of a week, and you could not land on a particular evening --
-     let alone a particular hour. Two months each way instead, and the
-     curve steepened from a cube to a fourth power, so the middle of the
-     handle is minutes and only the far ends are months. The handle also
-     takes smaller steps now, and arrow keys move it one step at a time,
-     which is how you actually pick a time. */
+  /* How far the handle takes you.
+
+     Six months over one short handle made a pixel of it most of a week, so
+     it came down to two months on a fourth-power curve -- and then "make it
+     slow down around now even more, about two and a half times". So it is
+     a ninth power now, with a gentle straight-line term underneath it so
+     the middle of the handle is never dead.
+
+     Measured, against the fourth-power version:
+       the first hour now takes 43% of the handle's travel  (was 16%)
+       the first day takes 63%                              (was 36%)
+       the first week 79%, and the last fifth is the month and a half after
+     The first tenth of the handle is four minutes. The ends still reach two
+     months, and the arrow keys still move it one notch at a time. */
 
   var SKY_REACH = 60 * 86400000;       // two months either way
+  var SKY_NEAR = 40 * 60000;           // the straight-line part: 40 minutes
 
   function skyDialToMs(v) {
-    var t = v / 100;                   // -1 .. 1
-    var m = t * t * t * t * SKY_REACH; // fourth power: flat here, steep there
-    return Math.round(t < 0 ? -m : m);
+    var a = Math.abs(v / 100);         // 0 .. 1
+    var m = SKY_NEAR * a + SKY_REACH * Math.pow(a, 9);
+    return Math.round(v < 0 ? -m : m);
   }
 
-  /** And back again, so that running the clock moves the handle with it. */
+  /** And back again, so that running the clock moves the handle with it.
+   *  There is no tidy inverse for that curve, so it is found by halving. */
   function skyMsToDial(ms) {
-    var t = ms / SKY_REACH;
-    var r = Math.pow(Math.abs(t), 0.25) * (t < 0 ? -1 : 1);
-    return Math.max(-100, Math.min(100, r * 100));
+    var want = Math.abs(ms), lo = 0, hi = 1, k, mid;
+    if (want >= SKY_NEAR + SKY_REACH) return ms < 0 ? -100 : 100;
+    for (k = 0; k < 40; k++) {
+      mid = (lo + hi) / 2;
+      if (SKY_NEAR * mid + SKY_REACH * Math.pow(mid, 9) < want) lo = mid; else hi = mid;
+    }
+    return (ms < 0 ? -lo : lo) * 100;
   }
 
   function skyWhen() { return Date.now() + skyShift; }
@@ -11097,25 +11320,30 @@
 
     var bar = document.createElement('div');
     bar.id = 'sky-dials';
+    /* Each handle has its reading right beside it. The compass and the
+       height handle used to sit side by side with one reading after both,
+       so you could not tell which number belonged to which -- and the
+       compass point had drifted away from the compass. */
     bar.innerHTML =
-      '<label class="sky-dial"><span class="sky-dial-key">looking</span>' +
+      '<label class="sky-dial"><span class="sky-dial-key">facing</span>' +
         '<input class="sky-az" type="range" min="0" max="359" step="1" ' +
           'aria-label="which way the sky is facing">' +
+        '<b class="sky-az-read"></b></label>' +
+      '<label class="sky-dial sky-dial-up"><span class="sky-dial-key">up</span>' +
         '<input class="sky-up" type="range" min="-8" max="86" step="1" ' +
           'aria-label="how high up the sky you are looking">' +
-        '<b class="sky-az-read"></b></label>' +
+        '<b class="sky-up-read"></b></label>' +
       '<label class="sky-dial"><span class="sky-dial-key">when</span>' +
         '<input class="sky-time" type="range" min="-100" max="100" step="0.2" value="0" ' +
           'aria-label="wind the sky forwards or back">' +
         '<b class="sky-time-read"></b></label>' +
       '<button class="sky-now" type="button">now</button>' +
-      '<button class="sky-run" type="button" aria-pressed="false">drift</button>' +
-      '<button class="sky-haze" type="button">haze</button>' +
-      '<button class="sky-shapes" type="button">names</button>';
+      '<button class="sky-run" type="button" aria-pressed="false">drift</button>';
     document.body.appendChild(bar);
 
     var az = bar.querySelector('.sky-az');
     var up = bar.querySelector('.sky-up');
+    var upRead = bar.querySelector('.sky-up-read');
     var azRead = bar.querySelector('.sky-az-read');
     var tm = bar.querySelector('.sky-time');
     var tmRead = bar.querySelector('.sky-time-read');
@@ -11134,8 +11362,8 @@
         needCompute = false;
       }
       skyDraw(host, skyCache);
-      azRead.textContent = skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) +
-        '° · up ' + Math.round(skyTiltNow()) + '°';
+      azRead.textContent = skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
+      upRead.textContent = Math.round(skyTiltNow()) + '°';
       tmRead.textContent = skyStamp(at);
     }
 
@@ -11166,24 +11394,6 @@
       play('tick');
     });
 
-    /* ---- the two things you can take out of the way ---- */
-    var hazeBtn = bar.querySelector('.sky-haze');
-    var nameBtn = bar.querySelector('.sky-shapes');
-    function marks() {
-      hazeBtn.setAttribute('aria-pressed', skyHaze ? 'true' : 'false');
-      nameBtn.setAttribute('aria-pressed', skyNames ? 'true' : 'false');
-    }
-    hazeBtn.addEventListener('click', function () {
-      skyHaze = !skyHaze;
-      set('sky.haze', skyHaze);
-      marks(); soon(false); play('tick');
-    });
-    nameBtn.addEventListener('click', function () {
-      skyNames = !skyNames;
-      set('sky.names', skyNames);
-      marks(); soon(false); play('tick');
-    });
-    marks();
 
     /* ------------------------------------------------------------- drift
        The sky really does move, all the time, and it is already redrawn
@@ -11277,8 +11487,9 @@
     var dials = document.getElementById('sky-dials');
     if (dials) {
       dials.querySelector('.sky-az-read').textContent =
-        skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) +
-        '° · up ' + Math.round(skyTiltNow()) + '°';
+        skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
+      var ur = dials.querySelector('.sky-up-read');
+      if (ur) ur.textContent = Math.round(skyTiltNow()) + '°';
       dials.querySelector('.sky-time-read').textContent = skyStamp(at);
     }
   }
@@ -11323,7 +11534,11 @@
        behind the writing", and on bone paper there is not -- a title still
        dressed for midnight disappears into it completely. */
     document.body.classList.toggle('sky-whole', on);
-    if (!on) document.body.classList.remove('sky-night');
+    if (!on) {
+      ['sky-night', 'sky-day', 'sky-low-night', 'sky-low-day'].forEach(function (c) {
+        document.body.classList.remove(c);
+      });
+    }
   }
 
   function skyRoomCheck() {

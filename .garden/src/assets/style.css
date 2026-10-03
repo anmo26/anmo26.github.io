@@ -4508,13 +4508,20 @@ body.sky-whole main > .masthead,
 body.sky-whole main > .marquee { position: relative; z-index: 1; }
 
 /* the names beside the planets, and the compass along the horizon */
-.sky-label, .sky-rose {
+.sky-label {
   font-family: var(--mono);
   font-size: 9px;
   letter-spacing: .1em;
   fill: rgba(214, 226, 248, .75);
 }
-.sky-rose { fill: rgba(176, 196, 228, .5); font-size: 10px; letter-spacing: .22em; }
+/* The compass is written on the ground. Its colour is set per hour by
+   app.js — a fill set here would beat it, so there is none. */
+.sky-rose {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .24em;
+}
+.sky-rose-main { font-size: 11px; font-weight: 600; letter-spacing: .3em; }
 
 /* The name of a figure, written across the middle of its own stars. Quieter
    and wider than a star's name, so the two never read as the same kind of
@@ -4580,6 +4587,10 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   min-width: 9.5em;
   opacity: .9;
 }
+/* each reading is sized to what it holds, so it sits right beside its own
+   handle instead of leaving a gap that makes it look like the next one's */
+.sky-az-read { min-width: 5.6em !important; }
+.sky-up-read { min-width: 2.4em !important; }
 
 /* The handles. A range input is a different animal in every browser, so
    this draws the whole thing rather than asking nicely. */
@@ -4615,7 +4626,7 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
 }
 #sky-dials input[type="range"]:focus-visible { box-shadow: 0 0 0 2px rgba(190, 215, 255, .4); }
 
-.sky-now, .sky-run, .sky-haze, .sky-shapes {
+.sky-now, .sky-run {
   font: inherit;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -4626,21 +4637,14 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   padding: .3rem .55rem;
   cursor: pointer;
 }
-.sky-now:hover, .sky-run:hover, .sky-haze:hover, .sky-shapes:hover {
+.sky-now:hover, .sky-run:hover {
   border-color: rgba(220, 235, 255, .7);
 }
 
-/* The three switches say what they are by being lit or not lit, rather than
-   by changing their word. Off is a dim outline; on is filled. */
-.sky-run[aria-pressed="false"],
-.sky-haze[aria-pressed="false"],
-.sky-shapes[aria-pressed="false"] {
-  opacity: .45;
-  border-style: dashed;
-}
-.sky-run[aria-pressed="true"],
-.sky-haze[aria-pressed="true"],
-.sky-shapes[aria-pressed="true"] {
+/* Drift is the one switch left. Off, it looks like any other button —
+   a dashed, greyed-out outline read as "not available", which is the
+   opposite of what it is. On, it fills and breathes. */
+.sky-run[aria-pressed="true"] {
   background: rgba(205, 224, 255, .14);
   border-color: rgba(222, 236, 255, .62);
 }
@@ -4667,27 +4671,90 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
    writing on it has to turn over too, not just the title. Only when the sky
    is the whole window AND actually dark: in the band, the folder is on
    paper and must not change at all. */
-body.sky-whole.sky-night .item h3 a { color: #DCE6F6; }
-body.sky-whole.sky-night .item h3 a:visited { color: #C3D2E8; }
-body.sky-whole.sky-night .item .meta { color: rgba(206, 220, 242, .62); }
-body.sky-whole.sky-night .item pre,
-body.sky-whole.sky-night .item p { color: rgba(222, 232, 246, .86); }
-body.sky-whole.sky-night a { color: #BFD2EE; }
-body.sky-whole.sky-night .marquee { color: rgba(220, 232, 248, .6); }
-body.sky-whole.sky-night .taskbar { color: rgba(224, 234, 250, .9); }
+/* Each thing on the page carries its own ink, worked out by app.js from
+   what is actually behind its name (data-ink). At sunrise a folder near
+   the ticker sits on bright sky while one near the horizon sits on dark
+   ground, and they want opposite ink at the same moment. */
+body.sky-whole .item[data-ink="light"] h3 a { color: #DCE6F6; }
+body.sky-whole .item[data-ink="light"] h3 a:visited { color: #C3D2E8; }
+body.sky-whole .item[data-ink="light"] .meta { color: rgba(214, 226, 246, .78); }
+body.sky-whole .item[data-ink="light"] pre,
+body.sky-whole .item[data-ink="light"] p { color: rgba(222, 232, 246, .86); }
+body.sky-whole .item[data-ink="light"] a { color: #BFD2EE; }
+body.sky-whole.sky-night .masthead a { color: #D6E2F4; }
+body.sky-whole.sky-night .marquee { color: rgba(220, 232, 248, .72); }
+
+/* And under a bright sky, dark — darker than on bare paper, because a sky
+   at noon is a mid blue-grey rather than cream, and the usual faint inks
+   that read fine on paper fade straight into it. */
+body.sky-whole .item[data-ink="dark"] h3 a { color: #5A421F; }
+body.sky-whole .item[data-ink="dark"] h3 a:visited { color: #4E3A1D; }
+body.sky-whole .item[data-ink="dark"] .meta { color: #47443D; }
+body.sky-whole .item[data-ink="dark"] pre,
+body.sky-whole .item[data-ink="dark"] p { color: #2C2A25; }
+
+body.sky-whole.sky-day .masthead h1,
+body.sky-whole.sky-day .masthead p,
+body.sky-whole.sky-day .masthead a,
+body.sky-whole.sky-day #visitors b { color: #23211D; }
+body.sky-whole.sky-day .wx-here { color: #3E3B35; }
+/* The counter's colour is `var(--ink-faint) !important` at its root, so it
+   is the variable that has to change, not the colour. */
+body.sky-whole.sky-day #visitors { --ink-faint: #3A3731; --ink-soft: #23211D; }
+body.sky-whole.sky-night #visitors { --ink-faint: #D3DAE8; --ink-soft: #EEF2F8; }
+body.sky-whole.sky-day .marquee { color: #3E3B35; border-color: rgba(35, 33, 29, .24); }
+body.sky-whole.sky-day .masthead .rule { background: rgba(35, 33, 29, .35); }
+body.sky-whole.sky-day #corner { --ink: #23211D; --ink-faint: #47443D; color: #23211D; }
+
+/* A faint halo of the opposite colour behind the writing in front of the
+   sky. It does nothing you would notice on a clear night or a clear noon;
+   it is there for the few minutes either side of sunset, when the sky
+   behind a word passes through exactly the grey that neither ink can
+   beat. Glass on an iPhone does the same thing for the same reason. */
+body.sky-whole.sky-day .masthead,
+body.sky-whole.sky-day .marquee,
+body.sky-whole .item[data-ink="dark"] h3,
+body.sky-whole .item[data-ink="dark"] .meta {
+  text-shadow: 0 0 5px rgba(255, 255, 255, var(--halo, .42)),
+               0 0 14px rgba(255, 255, 255, calc(var(--halo, .42) * .55));
+}
+body.sky-whole.sky-night .masthead,
+body.sky-whole.sky-night .marquee,
+body.sky-whole .item[data-ink="light"] h3,
+body.sky-whole .item[data-ink="light"] .meta {
+  text-shadow: 0 0 5px rgba(6, 8, 18, var(--halo, .5)),
+               0 0 14px rgba(6, 8, 18, calc(var(--halo, .5) * .55));
+}
+
+body.sky-whole .masthead h1,
+body.sky-whole .masthead p,
+body.sky-whole .marquee,
+body.sky-whole .item h3 a,
+body.sky-whole .item .meta { transition: color 2.4s linear, text-shadow 2.4s linear; }
 
 /* The to-do and the log are panels with their own paper; leave them be. */
-body.sky-whole.sky-night .item.kind-todo,
-body.sky-whole.sky-night .item[data-key=".garden.log"] { color: initial; }
-body.sky-whole.sky-night .item.kind-todo h3 a { color: var(--ochre); }
-body.sky-whole.sky-night .item.kind-todo p,
-body.sky-whole.sky-night .item.kind-todo li { color: var(--ink-soft); }
+body.sky-whole .item.kind-todo,
+body.sky-whole .item[data-key=".garden.log"] { text-shadow: none; }
+body.sky-whole .item.kind-todo,
+body.sky-whole .item[data-key=".garden.log"] { color: initial; }
+body.sky-whole .item.kind-todo h3 a { color: var(--ochre); }
+body.sky-whole .item.kind-todo p,
+body.sky-whole .item.kind-todo li { color: var(--ink-soft); }
 
 /* and the dials go to the corner rather than standing in the middle of the
    folder, which is where things actually are */
 #sky-dials { left: 1rem; transform: none; }
 @media (max-width: 719px) {
-  #sky-dials { left: 50%; transform: translateX(-50%); }
+  /* Centred from left:50% — which on its own only lets the box shrink-wrap
+     into the right-hand HALF of the window, so it came out 304px wide on a
+     607px screen and stacked four deep. An explicit content width, capped,
+     lets it use the room that is actually there. */
+  #sky-dials {
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 1.5rem);
+  }
 }
 
 /* A star near the horizon shivers; a star overhead is steady. --lo is how
@@ -4835,4 +4902,30 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+
+/* --------------------------------------------- the dials on a narrow window
+
+   Below about nine hundred pixels the row of handles wrapped into three
+   rows and stood in the middle of the folder — and because the horizon is
+   placed above whatever is standing at the bottom of the window, three rows
+   of dials also pushed the ground a quarter of the way up the page. Two
+   rows at most here, everything a size smaller, and the readings sized to
+   what they say rather than to a fixed column.
+   ===================================================================== */
+
+@media (max-width: 899px) and (min-width: 560px) {
+  #sky-dials {
+    gap: .35rem .85rem;
+    padding: .35rem .6rem;
+    font-size: .54rem;
+    max-width: min(34rem, calc(100vw - 1.5rem));
+  }
+  #sky-dials input[type="range"] { width: 5.4rem; }
+  #sky-dials .sky-up { width: 2.8rem !important; }
+  #sky-dials .sky-time { width: 6.2rem; }
+  .sky-dial { gap: .35rem; }
+  .sky-dial b { min-width: 0 !important; }
+  .sky-now, .sky-run { padding: .22rem .45rem; }
 }

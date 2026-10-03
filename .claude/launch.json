@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "garden-static",
+      "name": "garden-attach-only-8792",
       "url": "http://127.0.0.1:8792",
       "port": 8792
     }
