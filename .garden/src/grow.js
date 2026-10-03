@@ -755,11 +755,11 @@ function unrenderedNote(files) {
   if (exts.size === 0) return null;
 
   const list = [...exts].sort().join(', ');
-  return `this folder also holds ${list} — this site has no inline preview or reader for ` +
-    `those, so each is just a plain link to the real file (a browser may still open some of ` +
-    `them itself, a PDF for instance). what it CAN preview: images, video, audio, markdown ` +
-    `and plain-text files, and folders that are actually .epub books, packed into one real ` +
-    `file to download and read elsewhere.`;
+  // One line. This used to be five, explaining everything the site can and
+  // cannot preview, at the top of a folder somebody opened to look at books
+  // — "make it less messy". The useful half is which files here will not
+  // open in place; the rest was the site talking about itself.
+  return `${list} here — those download rather than open on the page.`;
 }
 
 /* ----------------------------------------------------------------- the page */
@@ -901,9 +901,25 @@ function recentChanges(root, rules, limit = 10) {
   return found.slice(0, limit);
 }
 
+/**
+ * The caption under an icon, kept to one short phrase.
+ *
+ * A clipping's first two hundred characters used to go under its name in
+ * full. In a sixty-nine-pixel column that is twenty lines of type, and the
+ * item grew to three hundred and fifty pixels tall while Finder went on
+ * placing it on a grid built for an icon — so the labels landed on top of
+ * each other and the shelf was unreadable. The whole snippet is still
+ * there in the preview when you open it; the caption gets the first line
+ * of it and nothing else.
+ */
+function captionSnippet(text) {
+  const first = String(text).split('\n').map(s => s.trim()).filter(Boolean)[0] || '';
+  return first.length > 46 ? first.slice(0, 46).trim() + '…' : first;
+}
+
 function renderItem(f, i, assetPrefix = '', isRoot = false) {
   const meta = f.type === 'directory' ? f.contents
-    : f.type === 'clipping' && f.contents ? `${f.size} — “${f.contents}”`
+    : f.type === 'clipping' && f.contents ? `${f.size} — “${captionSnippet(f.contents)}”`
     : (f.size ?? '');
   const body = renderBody(f, assetPrefix);
 
@@ -1310,7 +1326,7 @@ ${rules}
       <h1>${escapeHtml(title.replace(/\/$/, ''))}</h1>
 ${folderDescription ? `      <p class="folder-description" style="white-space:pre-line">${escapeHtml(folderDescription)}</p>\n` : ''}\
 ${unrendered ? `      <p class="folder-note">${escapeHtml(unrendered)}</p>\n` : ''}\
-      <p><a href="..">&larr; back to ${escapeHtml(siteName)}</a></p>
+      <p class="up"><a href="..">&larr; back to ${escapeHtml(siteName)}</a></p>
       <div class="rule"></div>
     </header>
 `;

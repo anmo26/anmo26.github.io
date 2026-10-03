@@ -11224,13 +11224,23 @@
            document.body.classList.contains('theme-universe');
   }
 
+  /** The dials, though, are only for the front page. Inside a folder they
+   *  float over whatever is in it -- in the library they were sitting on
+   *  top of the books -- and you did not open a folder to turn the sky. */
+  function dialsWanted() {
+    // the front page is the one with nothing to go back to
+    return skyWanted() && !document.querySelector('.masthead .up');
+  }
+
   /** Put the whole sky -- stars, weather, meteors, dials -- in or out of
    *  sight in one move, and take its ink with it. */
   function skyShow(on) {
-    ['sky', 'meteors', 'sky-dials'].forEach(function (id) {
+    ['sky', 'meteors'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.hidden = !on;
     });
+    var dl = document.getElementById('sky-dials');
+    if (dl) dl.hidden = !(on && dialsWanted());
     var wx = document.querySelector('.sky-wx');
     if (wx) wx.hidden = !on;
 
@@ -11317,6 +11327,7 @@
       skyFull = true;
       document.body.classList.add('sky-whole');
       mountSkyDials(host, where);
+      skyShow(true);
 
       skyRepaint(host, where, true);
 

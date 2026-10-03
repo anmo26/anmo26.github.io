@@ -4792,3 +4792,23 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
 /* An action is a thing you do, not a state you are in, so it never gets
    the little dot that the checkable rows carry. */
 .picker-option.picker-act { padding-left: 1.6em; }
+
+
+/* ------------------------------------------------- a caption stays a caption
+
+   Whatever a file turns out to be called, and whatever it has inside it, the
+   label under its icon gets three lines. Finder lays these out on a grid
+   built for an icon and a short name; one item that grows to three hundred
+   pixels puts its own caption through the one below it. The full name is
+   still on the link itself, so hovering tells you everything.
+   ===================================================================== */
+
+.item h3,
+.item .meta {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.item h3   { -webkit-line-clamp: 3; }
+.item .meta { -webkit-line-clamp: 2; }
