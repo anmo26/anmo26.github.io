@@ -4929,3 +4929,111 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
   .sky-dial b { min-width: 0 !important; }
   .sky-now, .sky-run { padding: .22rem .45rem; }
 }
+
+
+/* ================================================================== HINTS
+
+   The secrets notice you, and stir once. No words, no arrows, nothing when
+   you get there — the hint is the thing itself being alive. app.js writes
+   --near (0 far away, 1 under the hand) and --lean-x / --lean-y (which side
+   of it the hand is on) onto each of these as a pointer comes close, and
+   adds .nudge for one moment a few seconds into a visit.
+   ===================================================================== */
+
+/* ---- the sea: it leans towards your hand, and once a wave catches the
+        light. Leaning is done to the frame rather than the picture, so the
+        frame can clip the glint without clipping the lean. */
+.sea-photo > a {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  transform: perspective(900px)
+             rotateY(calc(var(--lean-x, 0) * var(--near, 0) * 5deg))
+             rotateX(calc(var(--lean-y, 0) * var(--near, 0) * -4deg));
+  transition: transform .7s cubic-bezier(.2, .7, .2, 1);
+}
+.sea-photo img {
+  filter: brightness(calc(1 + var(--near, 0) * .05))
+          saturate(calc(1 + var(--near, 0) * .2));
+  transition: filter .7s ease;
+}
+.sea-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(104deg,
+    rgba(255, 255, 255, 0) 34%,
+    rgba(255, 255, 255, .5) 50%,
+    rgba(255, 255, 255, 0) 66%);
+  transform: translateX(-110%);
+}
+.sea-photo.nudge .sea-glint { animation: sea-glint 1.6s cubic-bezier(.35, .1, .3, 1) 1; }
+.sea-photo.nudge img { animation: sea-swell 1.6s ease-in-out 1; }
+@keyframes sea-glint {
+  0%   { transform: translateX(-110%); opacity: 0; }
+  18%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { transform: translateX(110%); opacity: 0; }
+}
+@keyframes sea-swell {
+  0%, 100% { translate: 0 0; }
+  45%      { translate: 0 -3px; }
+}
+
+/* ---- the clock: the faint field of letters behind the time comes up as
+        a hand comes near, and once it rattles the way it does when you
+        are halfway to opening the library. */
+#clock-shell #clock .g {
+  opacity: calc(.32 + var(--near, 0) * .34);
+  transition: opacity .6s ease;
+}
+#clock-shell.nudge #clock { animation: cactus-nope .2s ease 3; }
+
+/* ---- the tree: the foot of it glows where the watering is done, and once
+        the whole tree shivers from the root up. */
+#adam-hit {
+  border-radius: 50%;
+  box-shadow: 0 0 calc(var(--near, 0) * 30px) calc(var(--near, 0) * 4px)
+              rgba(196, 224, 150, calc(var(--near, 0) * .45));
+  transition: box-shadow .6s ease;
+}
+#adam-art { transform-origin: 50% 100%; }
+#adam.nudge #adam-art { animation: tree-shiver 1.4s ease-in-out 1; }
+@keyframes tree-shiver {
+  0%, 100% { transform: rotate(0deg); }
+  12%      { transform: rotate(1.7deg); }
+  26%      { transform: rotate(-1.4deg); }
+  40%      { transform: rotate(1deg); }
+  54%      { transform: rotate(-.6deg); }
+  68%      { transform: rotate(.3deg); }
+}
+
+/* ---- the rocket: its button glows a little as a hand comes near, and once
+        the whole thing shudders on the pad as if something caught. */
+#rocket-hit {
+  box-shadow: 0 0 calc(var(--near, 0) * 22px) calc(var(--near, 0) * 2px)
+              rgba(255, 196, 120, calc(var(--near, 0) * .4));
+  transition: box-shadow .6s ease, color .3s ease, border-color .3s ease;
+}
+#pad.nudge #rocket { animation: rocket-shudder .9s linear 1; }
+@keyframes rocket-shudder {
+  0%, 100% { transform: translate(0, 0); }
+  10%      { transform: translate(-1px, 0); }
+  20%      { transform: translate(1px, -1px); }
+  30%      { transform: translate(-1px, 0); }
+  40%      { transform: translate(1px, 1px); }
+  50%      { transform: translate(0, -1px); }
+  60%      { transform: translate(-1px, 0); }
+  70%      { transform: translate(1px, 0); }
+  80%      { transform: translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sea-photo > a { transform: none; transition: none; }
+  .sea-photo.nudge .sea-glint,
+  .sea-photo.nudge img,
+  #clock-shell.nudge #clock,
+  #adam.nudge #adam-art,
+  #pad.nudge #rocket { animation: none; }
+}

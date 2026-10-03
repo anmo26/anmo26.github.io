@@ -3337,6 +3337,7 @@
       paintBin();
     }
     mountSeaDoor();         // three clicks on the photograph of the sea
+    mountHints();           // the secrets notice you, and stir once
     mountVisitors();        // the scratches on the wall of this room
     fitBed();
     // Pictures settle after they load, and the bed is only as big as what is
@@ -5436,6 +5437,8 @@
     hit.addEventListener('click', press);
     paint();
     if (ship.flown) openMoon(false);
+    hintWatch(hit);
+    hintNudge(hit, pad, 5500, function () { return !!ship.flown || secretOpen('moon'); });
   }
 
   /* Which storey the visitor is standing on. A scene's ground, weather and
@@ -5874,6 +5877,8 @@
     }
 
     hit.addEventListener('click', water);
+    hintWatch(hit);
+    hintNudge(hit, adam, 5000, function () { return tree.clicks >= TREE_CLICKS; });
 
     /* ----------------------------------------------------- the weather
        Whatever is going on outside the window of whoever is looking. The
@@ -8928,6 +8933,134 @@
         play('tick');
       });
     });
+  }
+
+  /* ================================================================ HINTS
+     Every secret on this site is found by doing something to a thing that
+     does not say it can be done to: click the sea, hammer the clock, keep
+     watering a sapling, fuel a toy rocket. "make the secrets more obvious"
+     -- but no labels, no arrows, no celebration when you get there. Anmo's
+     answers: the hint comes from the thing itself, and only after a few
+     seconds of being in the room.
+
+     So two things, both the thing being alive rather than explained:
+
+       it notices you   -- as a hand comes near, it leans towards it or
+                           glows a little at the place you would touch
+       it moves once    -- a few seconds after you arrive, once, on its own:
+                           a wave catches the light, the tree shivers, the
+                           rocket shudders, the clock rattles. Then never
+                           again on that visit, and never at all once the
+                           secret behind it has been found or once you have
+                           touched it yourself.
+
+     A finger has no "near", so on a phone it is only the second.
+     ------------------------------------------------------------------- */
+
+  var HINTS = [];
+  var HINT_NEAR = 170;            // pixels: how close counts as coming near
+  var hintFrame = 0, hintX = -1e5, hintY = -1e5, hintOn = false;
+
+  /** Start noticing a hand near `el`. Once per element, however many times
+   *  a page is booted around it (the clock lives in the corner and
+   *  outlives every page). */
+  function hintWatch(el) {
+    if (!el || el.hintWatched) return;
+    el.hintWatched = true;
+    HINTS.push({ el: el, last: '' });
+    el.addEventListener('pointerdown', function () { el.hintTouched = Date.now(); }, true);
+    if (hintOn) return;
+    hintOn = true;
+    document.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch') return;
+      hintX = e.clientX; hintY = e.clientY;
+      if (!hintFrame) hintFrame = requestAnimationFrame(hintPaint);
+    }, { passive: true });
+  }
+
+  function hintPaint() {
+    hintFrame = 0;
+    var keep = [], i, h, r, dx, dy, near, lx, ly, key;
+    for (i = 0; i < HINTS.length; i++) {
+      h = HINTS[i];
+      if (!h.el.isConnected) { h.el.hintWatched = false; continue; }
+      keep.push(h);
+      r = h.el.getBoundingClientRect();
+      if (!r.width) continue;
+      dx = Math.max(r.left - hintX, 0, hintX - r.right);
+      dy = Math.max(r.top - hintY, 0, hintY - r.bottom);
+      near = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / HINT_NEAR);
+      // in steps, so a hand moving about far away writes nothing at all
+      near = Math.round(near * 20) / 20;
+      lx = ly = 0;
+      if (near > 0) {
+        lx = Math.round(Math.max(-1, Math.min(1, (hintX - (r.left + r.right) / 2) /
+                                              Math.max(40, r.width / 2))) * 10) / 10;
+        ly = Math.round(Math.max(-1, Math.min(1, (hintY - (r.top + r.bottom) / 2) /
+                                              Math.max(40, r.height / 2))) * 10) / 10;
+      }
+      key = near + ',' + lx + ',' + ly;
+      if (key === h.last) continue;
+      h.last = key;
+      h.el.style.setProperty('--near', near);
+      h.el.style.setProperty('--lean-x', lx);
+      h.el.style.setProperty('--lean-y', ly);
+    }
+    HINTS = keep;
+  }
+
+  /** Once, `after` ms into this visit, `mover` does its thing -- unless the
+   *  secret is already found, or `el` has been touched since the visit
+   *  began, or the page has gone. A hidden tab waits until it is looked at
+   *  again, and then gives it a couple of seconds more. */
+  function hintNudge(el, mover, after, found) {
+    if (!el || !mover) return;
+    var born = Date.now();
+    function fire() {
+      if (!el.isConnected || !mover.isConnected) return;
+      if (found && found()) return;
+      if (el.hintTouched && el.hintTouched >= born) return;
+      if (document.hidden) {
+        var back = function () {
+          if (document.hidden) return;
+          document.removeEventListener('visibilitychange', back);
+          setTimeout(fire, 2500);
+        };
+        document.addEventListener('visibilitychange', back);
+        return;
+      }
+      mover.classList.remove('nudge');
+      void mover.offsetWidth;                  // so it can play again next visit
+      mover.classList.add('nudge');
+      setTimeout(function () { mover.classList.remove('nudge'); }, 1800);
+    }
+    setTimeout(fire, after);
+  }
+
+  /** The front page's two: the sea, and the clock. Staggered, so nothing
+   *  ever happens twice at once -- the first thing anybody sees should not
+   *  be the page fidgeting. */
+  function mountHints() {
+    var front = !document.querySelector('.masthead .up');
+
+    var sea = document.querySelector('.sea-photo');
+    if (sea) {
+      var frame = sea.querySelector('a');
+      if (frame && !frame.querySelector('.sea-glint')) {
+        var glint = document.createElement('i');
+        glint.className = 'sea-glint';
+        glint.setAttribute('aria-hidden', 'true');
+        frame.appendChild(glint);
+      }
+      hintWatch(sea);
+      hintNudge(sea, sea, 6000, function () { return secretOpen('ocean'); });
+    }
+
+    var clock = document.getElementById('clock-shell');
+    if (clock) {
+      hintWatch(clock);
+      if (front) hintNudge(clock, clock, 15000, function () { return secretOpen('library'); });
+    }
   }
 
   /* ------------------------------------------------ the sea, three clicks

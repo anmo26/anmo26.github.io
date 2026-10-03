@@ -1,12 +1,12 @@
-# 3 october 2026, 01:15
+# 3 october 2026, 14:03
 
 ## what changed
 
-- the sky only appears on universe now — bone and the other papers are plain paper again
-- sound and the music player are one menu, and so are notes and writing one
-- the background textures are gone, and a note cannot be written while the wall is down
-- every page checked on a phone, a tablet and a desktop, and fixed wherever it broke
-- the ascii moon is out from behind its title, and the library is tidy
+- daytime writing is dark again, and every label picks its own ink against the sky behind it
+- the horizon is real ground now: the sun sets behind it, and the compass is written on it
+- the time dial slows down around now about two and a half times more
+- each dial reading sits beside its own handle; haze and names are gone and both stay on
+- the secrets stir once after a few seconds, and lean or glow as your cursor comes near
 
 ## you planned
 
@@ -16,13 +16,13 @@
 
 ## i suggest
 
-- a first-visit whisper: one quiet line saying everything here can be dragged
 - tap a constellation and it tells you its story and when it is best seen
+- the cactus and the still could stir once too, the way the sea and the tree do now
 - a log pose: a needle that always points at the room you have spent least time in
 - your own handwriting, traced from a photo, as the heading font
 
 ## open questions
 
-- how obvious should the secrets be — a hint, a glow, or just better clues?
+- open the site in a private window to see the hints as a stranger would — right, or too much?
 - should strangers' hellos on the wall (stan, master yoda) stay up for good?
-- leyna's two notes came down once built — fine, or should hers stay up?
+- leyna's notes came down once built — fine, or should hers stay up?
