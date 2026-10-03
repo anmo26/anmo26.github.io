@@ -3,9 +3,44 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 03/10/2026, 00:18:34. 54 notes in the ledger.
+Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
-## new (11)
+## new (16)
+
+### 1791003056932huvh
+
+- **idea**, front page · the ticker
+- by anmo (pxo1xif0), today
+
+> i think the time scroll in universe is a little bit finicky. hard to narrow down a certain time. maybe the further u get away from today, teh faster it scrolls? idk. maybe like make it only abel to go frowared at most 2 months? think about how to fix this. 
+
+### 1791003013330o70n
+
+- **idea**, front page · THE FIELD/
+- by anmo (pxo1xif0), today
+
+> make all the secrets more obvous, like make it more obvious to grow the tree in garden, make it more obvious somehow to like click the waves. idk. help me brainstorm and ask me questions in claude about this regarding this. 
+
+### 17910024113149rgq
+
+- **idea**, /LIBRARY!!!!!/ · the masthead
+- by leyna (3a574s9i), today
+
+> make it less messy
+
+### 1791002295995j70g
+
+- **idea**, front page · the page
+- by anmo (pxo1xif0), today
+
+> make it impossible to makes note whenver you dotn have notes button open
+
+### 1791002187383yn47
+
+- **idea**, front page · todo.md
+- by leyna (3a574s9i), today
+
+> can we make it so that i can look up and down at the sky and i want to see the clouds
 
 ### 1791001093674qelw
 

@@ -371,9 +371,16 @@
     function apply(on, save) {
       shell.setAttribute('data-docked', on ? 'on' : 'off');
       document.body.classList.toggle('music-docked', on);
-      tab.hidden = !on;
+      /* The tab against the left edge is gone. There were two doors to the
+         same room -- a word stuck to the side of the screen, and `music` in
+         the drawer -- and a new arrival had to learn both. The taskbar is
+         the one door now. */
+      tab.hidden = true;
       dock.setAttribute('aria-expanded', on ? 'false' : 'true');
-      if (save) set('ipod.docked', on);
+      if (save) {
+        set('ipod.docked', on);
+        set('toggle.music', !on);      // the taskbar switch is the same switch
+      }
     }
 
     dock.addEventListener('click', function () { apply(true, true); tab.focus(); });
@@ -389,7 +396,18 @@
        standing on the site. The tab against the left edge brings it back in
        one click, it is remembered from then on, and the music itself is
        untouched either way: docking is a transform, not a stop. */
-    apply(get('ipod.docked', true), false);
+    /* One source of truth: the taskbar's `music player` switch. It used to
+       be `ipod.docked`, and with the same thing now written in two places
+       they could disagree -- the switch said on and the player was still
+       off the side of the screen. */
+    apply(!get('toggle.music', false), false);
+
+    /* so the taskbar can open and close it without knowing how it works */
+    window.GARDEN_IPOD = {
+      shown: function () { return shell.getAttribute('data-docked') !== 'on'; },
+      show: function () { apply(false, true); },
+      hide: function () { apply(true, true); }
+    };
   }
 
   /* ------------------------------------------------------- free position

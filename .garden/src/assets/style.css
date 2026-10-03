@@ -355,59 +355,6 @@ a:visited { color: var(--olive); }
 .md img { max-width: 100%; }
 .md hr { border: none; border-top: 1px solid var(--rule); margin: 1.5rem 0; }
 
-/* --------------------------------------------------------------- surface
-
-   The paper can be given a texture. Each one used to be drawn as a single
-   overlay `div`-like layer stacked ON TOP of the whole window -- above the
-   folder, above every photo in it, above the whole page. A `mix-blend-mode`
-   there reads as faint at a glance, but it is still a layer sitting over
-   the content, and on a photo especially it printed as a visible film
-   instead of texture in the paper behind it.
-
-   These are drawn into the PAGE'S OWN background instead, two more layers
-   behind the existing paper tooth (see `body` above) -- background always
-   paints under an element's content, no exceptions, so there is no z-index
-   or blend-mode setting that can ever put it over a folder or a photo
-   again. `background-blend-mode` (not `mix-blend-mode`) blends these
-   background layers with each other and with the paper colour only; it has
-   nothing to do with what is drawn on top of the page.
-
-   Every pattern is drawn in flat black and blended into whatever paper is
-   underneath, so it takes the theme's own colour and can never introduce
-   one of its own. On the dark paper that would be a no-op -- black into
-   near-black changes nothing -- so there `--tex-shade` and `--tex-blend`
-   swap to white-on-screen instead (set on body.theme-ink, above), and the
-   same four patterns come back as light on dark.
-
-   `grain` is also the class app.js already toggles, so the taskbar button
-   works as-is. The other three want a cycler; see the note in the handover.
-   ---------------------------------------------------------------------- */
-
-/* film grain — real noise, not a pattern. Fine enough to read as the stock
-   the page is printed on rather than as anything drawn on top of it. The
-   .34 opacity is baked into the svg itself (a plain CSS `opacity` would
-   fade the whole page, texture and folder together, not just this layer). */
-body.grain,
-body.tex-grain {
-  --tex-image-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.34'/%3E%3C/svg%3E");
-  --tex-size-1: 200px 200px;
-}
-
-/* weave — the tooth of laid paper: two hatchings crossing at right angles. */
-body.tex-weave {
-  --tex-image-1: repeating-linear-gradient(45deg,  rgba(var(--tex-shade), .075) 0 1px, transparent 1px 10px);
-  --tex-image-2: repeating-linear-gradient(-45deg, rgba(var(--tex-shade), .075) 0 1px, transparent 1px 10px);
-}
-
-/* dots — a newsprint screen, coarse enough that you can see it is dots. */
-/* A dot every four pixels is not a pattern, it is a moire. Every eleven,
-   and a smaller dot, so it reads as paper that has been printed on rather
-   than as a screen door. */
-body.tex-dots {
-  --tex-image-1: radial-gradient(rgba(var(--tex-shade), .26) 13%, transparent 15%);
-  --tex-size-1: 11px 11px;
-}
-
 /* ---------------------------------------------------------------- taskbar */
 
 .taskbar {
@@ -3036,31 +2983,6 @@ body.dragging { cursor: grabbing; }
   .plant.glory .plant-pot { animation: none !important; }
 }
 
-
-/* ============================================================== TEXTURE
-   The pattern used to be painted into the page's own background, which
-   meant it ran under everything -- the clock, the still, the prickly pear,
-   the name of the site. It is its own layer now, and that layer starts at
-   the rule under the masthead: below the line, where the files are.
-
-   It blends with the paper behind it rather than being drawn on top, so
-   it still cannot sit over a folder or a photograph -- only under one.
-   ------------------------------------------------------------------------ */
-
-#tex {
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: -2;
-  pointer-events: none;
-  background-image: var(--tex-image-1), var(--tex-image-2);
-  background-size: var(--tex-size-1), var(--tex-size-2);
-  background-repeat: repeat, repeat;
-  mix-blend-mode: var(--tex-blend);
-}
-/* The places that are places have weather of their own. */
-body[data-scene] #tex { display: none; }
-
 /* ================================================================ NOTES
    A pad of stickies. On the body at page coordinates, not in the bed --
    the bed is drawn scaled and its coordinates belong to Finder.
@@ -4082,9 +4004,14 @@ body.theme-universe:not([data-scene]) #monet { transition: filter 4s linear; }
    does to a real sky. Same shapes, same slow crossing, opposite sign. */
 body.sky-night .wx-cloud i,
 body.sky-night .wx-part i {
-  background: radial-gradient(closest-side, rgba(9, 12, 24, .62), transparent 74%);
+  background:
+    radial-gradient(closest-side,
+      rgba(8, 11, 22, .66) 34%,
+      rgba(132, 148, 186, .13) 68%,
+      rgba(150, 166, 204, .05) 76%,
+      transparent 80%);
 }
-body.sky-night .wx-part i { opacity: .45; }
+body.sky-night .wx-part i { opacity: .55; }
 
 /* fog after dark: a thin darkening, not a white sheet over everything */
 body.sky-night .wx-fog {
@@ -4656,6 +4583,10 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
 
 /* The handles. A range input is a different animal in every browser, so
    this draws the whole thing rather than asking nicely. */
+/* The height handle is the short one: it only has ninety degrees to cover,
+   where the compass has three hundred and sixty. */
+#sky-dials .sky-up { width: 4.2rem !important; }
+
 #sky-dials input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -4724,6 +4655,7 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
 @media (max-width: 559px) {
   #sky-dials { font-size: .54rem; gap: .5rem; padding: .4rem .5rem; }
   #sky-dials input[type="range"] { width: 5.5rem; }
+  #sky-dials .sky-up { width: 3rem !important; }
   .sky-dial b { min-width: 0; }
 }
 
@@ -4829,3 +4761,34 @@ body.sky-whole.sky-night #meteors { display: block; }
    they come off wherever it is the whole window. They are still the whole
    point of the paper on every other page. */
 body.sky-whole.theme-universe:not([data-scene]) #monet { display: none; }
+
+
+/* ---------------------------------------------- the pad with the wall down
+
+   "make it impossible to make a note whenever you don't have notes button
+   open." A note written while notes are switched off went into the shared
+   document and immediately out of sight — you could not read it, move it
+   or bin it, and everybody else could. So the pad goes dim and stops
+   answering, and the switch beside it is the way back in.
+   ===================================================================== */
+
+body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
+
+
+/* ------------------------------------------------- a row that is not ready
+
+   An action inside a menu that cannot do anything yet — "write an idea"
+   while the wall of notes is switched off. It stays in the list, because
+   taking it away would leave somebody looking for a thing they remember
+   being there; it just says plainly that it is not available, and the
+   switch that makes it available is directly above it.
+   ===================================================================== */
+
+.picker-option.dim {
+  opacity: .34;
+  cursor: default;
+}
+
+/* An action is a thing you do, not a state you are in, so it never gets
+   the little dot that the checkable rows carry. */
+.picker-option.picker-act { padding-left: 1.6em; }

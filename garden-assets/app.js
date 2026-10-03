@@ -1992,65 +1992,6 @@
 
   /* The last word in the taskbar is an instruction, and the gesture it names
      is not the same one on both. A phone was being told to drag. */
-  /* --------------------------------------------------------- the texture
-     Its own layer, starting at the rule under the masthead, so the pattern
-     is under the FILES and not under the clock, the still, the prickly
-     pear or the name of the site. The top is measured rather than guessed:
-     the masthead is a different height on every page and every window. */
-
-  function placeTexture() {
-    var tex = document.getElementById('tex');
-    if (!tex) return;
-
-    /* Below the last thing in the head of the page -- and which thing that
-       is changes with the width. The rule under the masthead is hidden on a
-       wide window, and a hidden element measures zero, which put the top of
-       the texture at the top of the document and ran the pattern straight
-       back under the clock and the name of the site. Measure everything up
-       there and take the lowest one that is actually on screen. */
-    var top = 0;
-    ['.masthead', '.masthead .rule', '.marquee'].forEach(function (sel) {
-      var el = document.querySelector(sel);
-      if (!el || !el.getClientRects().length) return;      // hidden measures nothing
-      var b = el.getBoundingClientRect().bottom + window.pageYOffset;
-      if (b > top) top = b;
-    });
-    top += 10;                                             // clear of the line itself
-
-    /* Height, not `bottom: 0`. The bed is pinned and absolute, so the body's
-       own box stops well short of the bottom of the document -- anchoring to
-       it gave the layer a height of exactly nothing. */
-    var tall = Math.max(document.documentElement.scrollHeight,
-                        document.body.scrollHeight,
-                        window.innerHeight);
-    tex.style.top = Math.round(top) + 'px';
-    tex.style.height = Math.max(0, Math.round(tall - top)) + 'px';
-  }
-
-  /* ================================================================ LIGHT
-     Monet painted the same haystack thirty times. The haystack was never
-     the point -- the light was, and the whole series exists to say that a
-     thing at six in the morning and the same thing at six in the evening
-     are not the same thing.
-
-     This is a folder on a desk, and a desk sits in a room, and a room has
-     a window. So the paper takes the hour: cold and rose before the sun is
-     properly up, plain and white through the middle of the day, gold in the
-     late afternoon, violet at dusk, and nearly blue at night. It is the
-     visitor's own hour, from their own clock, so somebody opening this at
-     two in the morning in another country gets two in the morning.
-
-     Deliberately barely there. A page that announced this would be a
-     gimmick; a page that just happens to be warmer at five is a room.
-     It only ever touches the default paper -- choosing one in the taskbar
-     is a decision, and a decision outranks the weather.
-     ------------------------------------------------------------------- */
-
-  /* Seven, not six, and the extra two are both at the dark end -- because
-     that is where the day actually changes fastest. Half past seven in the
-     evening and half past ten are not the same light at all, and lumping
-     them together was what made three in the morning come out the colour of
-     a cloudy afternoon. */
   var LIGHT_BANDS = [
     [5, 'dawn'], [7, 'morning'], [11, 'noon'], [15, 'afternoon'],
     [18, 'dusk'], [20, 'evening'], [22, 'night']
@@ -2133,21 +2074,6 @@
     });
   }
 
-  function mountTexture() {
-    if (document.getElementById('tex')) return;
-    var tex = document.createElement('div');
-    tex.id = 'tex';
-    tex.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(tex);
-    placeTexture();
-    window.addEventListener('resize', placeTexture);
-    // Pictures settle after they load and the page gets taller.
-    window.addEventListener('load', function () {
-      placeTexture();
-      setTimeout(placeTexture, 400);
-    });
-  }
-
   function mountHint() {
     var hint = document.getElementById('taskbar-clock');
     if (!hint) return;
@@ -2163,8 +2089,14 @@
      The bar had grown to thirteen things in a row -- "way too many tabs at
      the bottom", and that is right. What stays out is what somebody
      actually reaches for; what goes in is what you set once. */
-  var BAR_SWITCHES = ['sound', 'notes'];
-  var DRAWER_SWITCHES = ['plants', 'clock', 'music', 'cursors'];
+  /* Nothing is a bare switch in the bar any more. The two things people
+     actually reach for -- sound and notes -- each became a small menu,
+     because each of them was really two controls wearing one word: `sound`
+     plus a music tab stuck to the side of the screen, and `notes` plus a
+     separate `note` pad two buttons along. One word, one menu, everything
+     about that one thing inside it. */
+  var BAR_SWITCHES = [];
+  var DRAWER_SWITCHES = ['plants', 'clock', 'cursors'];
 
   var TOGGLES = [
     { id: 'sound', label: 'sound', def: true,
@@ -2206,9 +2138,19 @@
     //
     // It is a body class rather than a reach for the element, because
     // ipod.js builds #ipod-shell after this file has already run.
-    { id: 'music', label: 'music', def: true,
+    /* The player itself. This switch and the tab that used to live against
+       the left edge of the screen were two doors into the same room, and a
+       new arrival had to find both to understand either. One door now, and
+       it is in the same menu as the sound, because "is there sound on this
+       site" and "where is the music" are one question to anybody who has
+       just arrived. Off to begin with: a music player standing open over
+       the folder is the first thing you would see otherwise. */
+    { id: 'music', label: 'music player', def: false,
       only: function () { return !!(window.GARDEN_MUSIC && window.GARDEN_MUSIC.length); },
-      apply: function (on) { document.body.classList.toggle('music-off', !on); } }
+      apply: function (on) {
+        document.body.classList.toggle('music-off', false);
+        if (window.GARDEN_IPOD) { if (on) window.GARDEN_IPOD.show(); else window.GARDEN_IPOD.hide(); }
+      } }
   ];
 
   /* Four rooms, and each one is somewhere else. There used to be five, but
@@ -2223,13 +2165,12 @@
 
   // Grain used to be a single on/off, and for a long time it was wired to a
   // class the stylesheet did not define -- the button did nothing at all.
-  // There are four textures now, so it cycles like the theme button beside
-  // it. Each is drawn in plain black and multiplied into whatever paper is
-  // underneath, so none of them can introduce a colour of its own.
-  /* Scan is gone. It was a photocopy line every sixth pixel, and on a page
-     of small type it did nothing but sit on the words. */
-  var TEXTURES = ['', 'tex-grain', 'tex-weave', 'tex-dots'];
-  var TEXTURE_NAMES = ['plain', 'grain', 'weave', 'dots'];
+  /* The textures are gone -- grain, weave and dots. Four patterns printed
+     under the files, each of them a thing to find, choose and then look at
+     forever. "i think its unnecessary clutter", and that is right: it was
+     a decision asked of everybody who arrived, and the answer never
+     mattered. The paper is the paper. */
+
 
   /* ------------------------------------------------------------ a picker
      A taskbar button that had to be pressed four times to get back to
@@ -2332,6 +2273,9 @@
   function mountPicker(bar, spec) {
     var shell = menuShell(bar);
     var btn = shell.btn, menu = shell.menu, wrap = shell.wrap;
+    /* so the stylesheet can reach one particular menu -- the note pad has
+       to be able to go dim when the wall is down */
+    if (spec.label && wrap) wrap.className += ' picker-' + spec.label;
 
     var at = spec.value();
     var buttons = [];
@@ -2414,6 +2358,12 @@
 
     function paint() {
       made.forEach(function (m) {
+        if (m.row.dim) {
+          var off = !!m.row.dim();
+          m.el.classList.toggle('dim', off);
+          m.el.setAttribute('aria-disabled', String(off));
+        }
+        if (m.row.act) return;                 // an action has no on or off
         var on = m.row.check ? !!m.row.get() : !!m.row.on();
         m.el.classList.toggle('on', on);
         m.el.setAttribute('aria-checked', String(on));
@@ -2424,11 +2374,14 @@
       if (row.head) { menuHead(shell.menu, row.head); return; }
 
       var opt = document.createElement('button');
-      opt.className = 'picker-option' + (row.check ? ' picker-check' : '');
+      opt.className = 'picker-option' + (row.check ? ' picker-check' : '') +
+                      (row.act ? ' picker-act' : '');
       opt.type = 'button';
-      opt.setAttribute('role', row.check ? 'menuitemcheckbox' : 'menuitemradio');
-      opt.textContent = row.check || row.pick;
+      opt.setAttribute('role', row.check ? 'menuitemcheckbox'
+                             : row.act ? 'menuitem' : 'menuitemradio');
+      opt.textContent = row.check || row.pick || row.act;
       opt.addEventListener('click', function () {
+        if (row.dim && row.dim()) return;      // there but not available yet
         row.set();
         paint();
         play('tick');
@@ -2470,7 +2423,33 @@
       return null;
     }
 
-    BAR_SWITCHES.forEach(function (id) {
+    /* ---------------------------------------------- sound, and notes
+       Two words in the bar, two menus behind them, and everything about
+       each thing in one place. Before this, "sound" was a bare switch and
+       the music player had its own tab stuck to the side of the screen;
+       "notes" was a bare switch and writing one was a separate `note`
+       button two along. Both were the same thing twice. */
+
+    function pairMenu(label, ids, extra) {
+      var rows = [];
+      ids.forEach(function (id) {
+        var t = byId(id);
+        if (t) rows.push(switchRow(t));
+      });
+      (extra || []).forEach(function (r) { rows.push(r); });
+      if (rows.length) mountDrawer(bar, label, rows);
+    }
+
+    function wallDown() { return !get('toggle.notes', false); }
+
+    pairMenu('sound', ['sound', 'music']);
+    pairMenu('notes', ['notes'], [
+      { head: 'leave one' },
+      { act: 'an idea', dim: wallDown, set: function () { newSticky('idea'); } },
+      { act: 'a chat note', dim: wallDown, set: function () { newSticky('chat'); } }
+    ]);
+
+    [].forEach(function (id) {
       var t = byId(id);
       if (!t) return;
       var on = get('toggle.' + t.id, !!t.def);
@@ -2529,19 +2508,11 @@
       if (THEMES[i]) document.body.classList.add(THEMES[i]);
     }
 
-    function textureAt() {
-      var i = get('texture', 0);
-      return (i >= 0 && i < TEXTURES.length) ? i : 0;
-    }
-    function paintTexture() {
-      var i = textureAt();
-      TEXTURES.forEach(function (c) { if (c) document.body.classList.remove(c); });
-      if (TEXTURES[i]) document.body.classList.add(TEXTURES[i]);
-      placeTexture();
-    }
-
     paintTheme();
-    paintTexture();
+    /* and take the old pattern off anybody who had one saved */
+    ['tex-grain', 'tex-weave', 'tex-dots'].forEach(function (c) {
+      document.body.classList.remove(c);
+    });
 
     var rows = [{ head: 'on the page' }];
     DRAWER_SWITCHES.forEach(function (id) {
@@ -2558,15 +2529,6 @@
       });
     });
 
-    rows.push({ head: 'printed on it' });
-    TEXTURE_NAMES.forEach(function (name, i) {
-      rows.push({
-        pick: name,
-        on: function () { return textureAt() === i; },
-        set: function () { set('texture', i); paintTexture(); }
-      });
-    });
-
     mountDrawer(bar, 'the page', rows);
 
     /* Tidy up is the gentle one, and the one people will actually reach
@@ -2576,21 +2538,6 @@
        watching it happen. Nothing else is touched: every door stays open,
        every plant keeps growing, and anything thrown away stays thrown
        away. */
-    /* A pad of stickies. Anybody can leave one, anywhere, on any page --
-       and there are two pads. An IDEA is a note about the site itself,
-       something that ought to be different, and those are the ones that
-       get read as suggestions. CHAT is everything else: a hello, an
-       answer, a thing you noticed. They look different and they are
-       counted differently, and either can be replied to. */
-    mountPicker(bar, {
-      label: 'note',
-      names: ['idea', 'chat'],
-      action: true,
-      value: function () { return 0; },
-      save: function (i) { newSticky(KINDS[i]); },
-      apply: function () {}
-    });
-
     var tidy = document.createElement('button');
     tidy.className = 'toggle';
     tidy.type = 'button';
@@ -3311,8 +3258,6 @@
     mobilizeBed(document.querySelector('.plantbed'));
     restorePositions();
     applyTossed();          // anything thrown down the shaft is not drawn
-    placeTexture();         // the masthead is a different height on every page
-    setTimeout(placeTexture, 500);   // ...and so is the page, once it settles
     paintStickies();        // whatever anybody stuck to this page
     var theBin = binEl();
     if (theBin) {
@@ -4533,14 +4478,33 @@
         (1 - Math.cos(2 * Math.PI * p)) / 2 * 100) + '% lit';
     }
 
+    /* ---- hang it clear of the writing ----
+       The moon was pinned at nineteen percent down the window, which on a
+       narrow window is exactly where the title is. The word MOONLIGHT was
+       being drawn straight through the middle of the disc and the moon
+       stopped reading as a moon at all -- "WHERE DID THE ASCII MOON GO".
+       It was never gone, it was behind the masthead. So it hangs below
+       whatever the writing actually comes down to, measured rather than
+       guessed, because the masthead is a different height on every page
+       and at every width. */
+    function placeMoon() {
+      var head = document.querySelector('.masthead');
+      var low = head && head.getClientRects().length
+        ? head.getBoundingClientRect().bottom + window.pageYOffset : 0;
+      var top = Math.round(Math.max(low + 34, window.innerHeight * 0.16));
+      disc.style.top = top + 'px';
+      says.style.top = (top + disc.offsetHeight + 10) + 'px';
+    }
+
     // the rocket, standing on the ground under all that
     mountRocket();
 
     paintSky();
     paintMoon();
+    placeMoon();
     ambience('moonlight');
     window.addEventListener('resize', paintSky);
-    window.addEventListener('resize', paintMoon);
+    window.addEventListener('resize', function () { paintMoon(); placeMoon(); });
     sceneTimers.push(setInterval(function () {
       if (!document.hidden) paintMoon();          // the phase does move
     }, 600000));
@@ -6896,6 +6860,13 @@
   }
 
   function newSticky(kind) {
+    /* Not while the wall is down. Writing a note with notes switched off
+       put it straight into the shared document and straight out of sight:
+       you could not read it, edit it or bin it, and the next person could.
+       The pad is greyed out in the taskbar when notes are off; this is the
+       backstop in case anything else ever calls in here. */
+    if (document.body.classList.contains('notes-off')) return;
+
     /* Somewhere in the middle of what is actually on the screen, nudged a
        little each time so a second note does not land exactly on the first. */
     var many = roomNotes().length;
@@ -10477,18 +10448,27 @@
   }
   function skySpanX() { return skySpanY() * (SKY_W / SKY_H); }
 
-  /** Alt/az onto the picture, around whichever way we are facing. */
+  /** How high up you are looking: the altitude in the middle of the view.
+   *  Left alone it is whatever puts the horizon just above the taskbar and
+   *  the dials, which is where it has always sat. Move it and you tip your
+   *  head: up towards the zenith, down towards the ground. */
+  var skyTilt = null;
+
+  function skyTiltNow() {
+    if (skyTilt !== null) return skyTilt;
+    return skySpanY() * ((skyFull ? skyFloor() : 1) - 0.5);
+  }
+
+  /** Alt/az onto the picture, around whichever way we are facing and
+   *  however far back our head is tipped. */
   function project(alt, az) {
     var spanX = skySpanX(), spanY = skySpanY();
     var off = az - skyLook;
     while (off > 180) off -= 360;
     while (off < -180) off += 360;
-    // the horizon sits above whatever furniture is at the bottom of the
-    // window, so there is ground, and so the compass has somewhere to live
-    var base = skyFull ? skyFloor() : 1;
     return {
       x: SKY_W / 2 + (off / spanX) * SKY_W,
-      y: SKY_H * base - (alt / spanY) * SKY_H,
+      y: SKY_H * 0.5 - ((alt - skyTiltNow()) / spanY) * SKY_H,
       on: Math.abs(off) <= spanX / 2 + 8 && alt > -10
     };
   }
@@ -10915,7 +10895,7 @@
        the letters go ABOVE the line, in the sky where they belong, rather
        than below it where there is no room. */
     if (skyFull) {
-      var hz = SKY_H * skyFloor();
+      var hz = project(0, skyLook).y;
       svg.push('<line x1="0" y1="' + hz.toFixed(1) + '" x2="' + SKY_W + '" y2="' +
                hz.toFixed(1) + '" stroke="rgba(160,180,215,.22)" stroke-width="0.7"/>');
       for (j = 0; j < COMPASS.length; j++) {
@@ -10991,17 +10971,26 @@
      fine, and long where you need to be long.
      ------------------------------------------------------------------- */
 
-  var SKY_REACH = 183 * 86400000;      // half a year either way
+  /* Six months of travel over one short handle meant that one pixel of it
+     was most of a week, and you could not land on a particular evening --
+     let alone a particular hour. Two months each way instead, and the
+     curve steepened from a cube to a fourth power, so the middle of the
+     handle is minutes and only the far ends are months. The handle also
+     takes smaller steps now, and arrow keys move it one step at a time,
+     which is how you actually pick a time. */
+
+  var SKY_REACH = 60 * 86400000;       // two months either way
 
   function skyDialToMs(v) {
     var t = v / 100;                   // -1 .. 1
-    return Math.round(t * t * t * SKY_REACH);
+    var m = t * t * t * t * SKY_REACH; // fourth power: flat here, steep there
+    return Math.round(t < 0 ? -m : m);
   }
 
   /** And back again, so that running the clock moves the handle with it. */
   function skyMsToDial(ms) {
     var t = ms / SKY_REACH;
-    var r = Math.pow(Math.abs(t), 1 / 3) * (t < 0 ? -1 : 1);
+    var r = Math.pow(Math.abs(t), 0.25) * (t < 0 ? -1 : 1);
     return Math.max(-100, Math.min(100, r * 100));
   }
 
@@ -11040,9 +11029,11 @@
       '<label class="sky-dial"><span class="sky-dial-key">looking</span>' +
         '<input class="sky-az" type="range" min="0" max="359" step="1" ' +
           'aria-label="which way the sky is facing">' +
+        '<input class="sky-up" type="range" min="-8" max="86" step="1" ' +
+          'aria-label="how high up the sky you are looking">' +
         '<b class="sky-az-read"></b></label>' +
       '<label class="sky-dial"><span class="sky-dial-key">when</span>' +
-        '<input class="sky-time" type="range" min="-100" max="100" step="0.5" value="0" ' +
+        '<input class="sky-time" type="range" min="-100" max="100" step="0.2" value="0" ' +
           'aria-label="wind the sky forwards or back">' +
         '<b class="sky-time-read"></b></label>' +
       '<button class="sky-now" type="button">now</button>' +
@@ -11052,11 +11043,13 @@
     document.body.appendChild(bar);
 
     var az = bar.querySelector('.sky-az');
+    var up = bar.querySelector('.sky-up');
     var azRead = bar.querySelector('.sky-az-read');
     var tm = bar.querySelector('.sky-time');
     var tmRead = bar.querySelector('.sky-time-read');
 
     az.value = Math.round(skyLook);
+    up.value = Math.round(skyTiltNow());
 
     var frame = 0, needCompute = true;
 
@@ -11069,7 +11062,8 @@
         needCompute = false;
       }
       skyDraw(host, skyCache);
-      azRead.textContent = skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
+      azRead.textContent = skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) +
+        '° · up ' + Math.round(skyTiltNow()) + '°';
       tmRead.textContent = skyStamp(at);
     }
 
@@ -11083,6 +11077,10 @@
     az.addEventListener('input', function () {
       skyLook = Number(az.value);
       soon(false);                 // turning changes nothing about the sky
+    });
+    up.addEventListener('input', function () {
+      skyTilt = Number(up.value);  // nor does tipping your head back
+      soon(false);
     });
     tm.addEventListener('input', function () {
       skyShift = skyDialToMs(Number(tm.value));
@@ -11207,7 +11205,8 @@
     var dials = document.getElementById('sky-dials');
     if (dials) {
       dials.querySelector('.sky-az-read').textContent =
-        skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
+        skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) +
+        '° · up ' + Math.round(skyTiltNow()) + '°';
       dials.querySelector('.sky-time-read').textContent = skyStamp(at);
     }
   }
@@ -11216,37 +11215,62 @@
      keeps its furniture -- which meant the sky followed you down into the
      rice field and the crypt and hung a galaxy over both. Rooms that have
      a sky of their own get theirs back. */
-  function skyRoomCheck() {
-    var inRoom = !!document.body.getAttribute('data-scene');
-    ['sky', 'meteors'].forEach(function (id) {
+  /** Where the sky belongs: on the universe paper, on the page itself.
+   *  Not on bone, not on pocari, olive or ink, and not in a room -- the
+   *  garden, the moon and the crypt have skies of their own. A night sky
+   *  behind bone paper is somebody else's window left open in your room. */
+  function skyWanted() {
+    return !document.body.getAttribute('data-scene') &&
+           document.body.classList.contains('theme-universe');
+  }
+
+  /** Put the whole sky -- stars, weather, meteors, dials -- in or out of
+   *  sight in one move, and take its ink with it. */
+  function skyShow(on) {
+    ['sky', 'meteors', 'sky-dials'].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) el.hidden = inRoom;
+      if (el) el.hidden = !on;
     });
-    var dials = document.getElementById('sky-dials');
-    if (dials) dials.hidden = inRoom || !skyFull;
+    var wx = document.querySelector('.sky-wx');
+    if (wx) wx.hidden = !on;
 
     /* And the ink goes back to ink. These two say "there is a dark sky
-       behind the writing", and in a room there is not -- the rice field is
-       nearly white, and a title still dressed for midnight disappeared
-       into it completely. */
-    if (inRoom) {
-      document.body.classList.remove('sky-night');
-      document.body.classList.remove('sky-whole');
-    } else if (skyFull) {
-      document.body.classList.add('sky-whole');
-    }
+       behind the writing", and on bone paper there is not -- a title still
+       dressed for midnight disappears into it completely. */
+    document.body.classList.toggle('sky-whole', on);
+    if (!on) document.body.classList.remove('sky-night');
+  }
 
-    if (!inRoom && skyWhereNow) {
+  function skyRoomCheck() {
+    var want = skyWanted();
+    if (want && !document.getElementById('sky')) { mountSky(); return; }
+    skyShow(want);
+    if (want && skyWhereNow) {
       var host = document.getElementById('sky');
       if (host) skyRepaint(host, skyWhereNow, false);
     }
   }
 
+  /** The paper can be changed while the page is open, so something has to
+   *  be watching for it. One interval for the life of the page, whether or
+   *  not a sky was ever built. */
+  var skyWatching = false;
+  function skyWatchPaper() {
+    if (skyWatching) return;
+    skyWatching = true;
+    var was = null;
+    setInterval(function () {
+      var want = skyWanted();
+      if (want === was) return;
+      was = want;
+      skyRoomCheck();
+    }, 500);
+  }
+
   function mountSky() {
-    // Only where the page is the page. The garden, the moon and the crypt
-    // have skies of their own and two would be one too many.
-    if (document.body.getAttribute('data-scene')) return;
-    if (document.getElementById('sky')) return;
+    skyWatchPaper();                 // start watching whatever happens next
+    if (!skyWanted()) { skyShow(false); return; }
+    if (document.getElementById('sky')) { skyShow(true); return; }
 
     var host = document.createElement('div');
     host.id = 'sky';
@@ -11288,9 +11312,11 @@
       // north from the south. That is where everything happens.
       skyLook = where.lat >= 0 ? 180 : 0;
 
-      skyFull = document.body.classList.contains('theme-universe');
-      document.body.classList.toggle('sky-whole', skyFull);
-      if (skyFull) mountSkyDials(host, where);
+      /* There is no band any more. The sky is only ever drawn on the
+         universe paper, and there it is the whole window. */
+      skyFull = true;
+      document.body.classList.add('sky-whole');
+      mountSkyDials(host, where);
 
       skyRepaint(host, where, true);
 
@@ -11310,26 +11336,8 @@
 
       if (where.kind) skyWeather(host, where.kind);
 
-      /* The paper can be changed while the page is open, and the monet
-         paper is the one that takes the whole window. */
-      skyWatchPaper(host, where);
+      skyWatchPaper();
     });
-  }
-
-  /** The sky grows to fill the window when the monet paper is chosen, and
-   *  shrinks back to its band when it is not. */
-  function skyWatchPaper(host, where) {
-    var was = skyFull;
-    setInterval(function () {
-      var now = document.body.classList.contains('theme-universe');
-      if (now === was) return;
-      was = skyFull = now;
-      document.body.classList.toggle('sky-whole', now);
-      var dials = document.getElementById('sky-dials');
-      if (now && !dials) mountSkyDials(host, where);
-      else if (dials) dials.hidden = !now;
-      skyRepaint(host, where, false);
-    }, 700);
   }
 
   /** The visitor's lat/long, from the same lookup the weather uses. */
@@ -11355,7 +11363,6 @@
     mountStill();
     mountPogo();
     mountBin();
-    mountTexture();
     mountLight();
     mountSky();
     mountToggles();
