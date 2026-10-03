@@ -9706,8 +9706,9 @@
 
   /* ============================================================== THE SKY
      The real one. Not a decoration that looks like a sky -- the actual sun,
-     the actual moon at its actual phase, and the actual stars that are over
-     the person reading the page, at the hour they are reading it.
+     the actual moon at its actual phase, the five planets you can see with
+     your eyes, and the actual stars and constellations that are over the
+     person reading the page, at the hour they are reading it.
 
      Everything here is worked out from three numbers: where they are, what
      the date is, and what time it is. The first comes from their own time
@@ -9715,25 +9716,22 @@
      the rest of the site uses) -- there is no IP lookup, no permission
      prompt, and their position never leaves the browser.
 
-     From those three numbers:
+     And two of those three numbers can be moved. The compass turns the
+     whole sky to face north, east, south or west; the dial winds the clock
+     forwards and back, and everything follows -- the sun climbs and sets,
+     the constellations turn, the moon changes phase and the planets walk
+     along the ecliptic. It is a planetarium, and it is accurate.
 
-       - the sun's place in the sky, from the standard low-precision solar
-         position -- good to about a hundredth of a degree, which is far
-         better than a band of pixels can show;
-       - the moon's place AND its phase, from Meeus's short lunar theory,
-         so the crescent points the right way and is the right width;
-       - the stars, from a catalogue of the bright ones carried in this
-         file, rotated into place by the local sidereal time. Orion really
-         does rise in the autumn here and really is absent in July;
-       - the Milky Way, which is the plane of the galaxy converted out of
-         galactic coordinates -- so it hangs at the angle it actually hangs
-         at, and swings round through the year.
-
-     It is drawn as one SVG, repainted once a minute. Nothing here runs per
-     frame; the only thing that moves continuously is a CSS twinkle.
+     Drawn as one SVG. Nothing here runs per frame: it repaints when the
+     minute turns or when a dial is moved, and the only thing that moves
+     continuously is a CSS twinkle.
      ------------------------------------------------------------------- */
 
   var RAD = Math.PI / 180;
+
+  function norm360(x) { x = x % 360; return x < 0 ? x + 360 : x; }
+  function sind(x) { return Math.sin(x * RAD); }
+  function cosd(x) { return Math.cos(x * RAD); }
 
   /** Days since J2000.0, the epoch everything below is measured from. */
   function j2000(now) {
@@ -9744,8 +9742,6 @@
   function gmst(d) {
     return norm360(280.46061837 + 360.98564736629 * d);
   }
-
-  function norm360(x) { x = x % 360; return x < 0 ? x + 360 : x; }
 
   /** Right ascension and declination of the sun, in degrees. */
   function sunAt(d) {
@@ -9781,6 +9777,103 @@
     };
   }
 
+  /* ----------------------------------------------------------- the planets
+     Five of them, which is all there has ever been to see without a
+     telescope -- and the reason every culture that ever looked up named the
+     same five. Each one is an ellipse round the sun worked out from its
+     orbital elements, turned into a position seen from the Earth by adding
+     the Earth's own place in its ellipse, and then dropped onto the sky.
+
+     These are the standard low-precision elements. They are good to a few
+     arc minutes over this century, which is a great deal finer than a dot
+     on a screen can show.
+     ------------------------------------------------------------------- */
+
+  var PLANETS = [
+    { name: 'mercury', mag: -0.1, hue: '#D8CBB4',
+      N: [48.3313, 3.24587e-5], i: [7.0047, 5.00e-8], w: [29.1241, 1.01444e-5],
+      a: [0.387098, 0], e: [0.205635, 5.59e-10], M: [168.6562, 4.0923344368] },
+    { name: 'venus', mag: -4.2, hue: '#FFF3D6',
+      N: [76.6799, 2.46590e-5], i: [3.3946, 2.75e-8], w: [54.8910, 1.38374e-5],
+      a: [0.723330, 0], e: [0.006773, -1.302e-9], M: [48.0052, 1.6021302244] },
+    { name: 'mars', mag: 0.7, hue: '#E9937A',
+      N: [49.5574, 2.11081e-5], i: [1.8497, -1.78e-8], w: [286.5016, 2.92961e-5],
+      a: [1.523688, 0], e: [0.093405, 2.516e-9], M: [18.6021, 0.5240207766] },
+    { name: 'jupiter', mag: -2.2, hue: '#F4E4C2',
+      N: [100.4542, 2.76854e-5], i: [1.3030, -1.557e-7], w: [273.8777, 1.64505e-5],
+      a: [5.20256, 0], e: [0.048498, 4.469e-9], M: [19.8950, 0.0830853001] },
+    { name: 'saturn', mag: 0.6, hue: '#EFDCA8',
+      N: [113.6634, 2.38980e-5], i: [2.4886, -1.081e-7], w: [339.3939, 2.97661e-5],
+      a: [9.55475, 0], e: [0.055546, -9.499e-9], M: [316.9670, 0.0334442282] }
+  ];
+
+  /** Solve Kepler well enough for a dot: two passes is plenty at these
+   *  eccentricities, and Mercury's is the worst there is. */
+  function kepler(M, e) {
+    var E = M + (180 / Math.PI) * e * sind(M) * (1 + e * cosd(M));
+    var i, dE;
+    for (i = 0; i < 3; i++) {
+      dE = (E - (180 / Math.PI) * e * sind(E) - M) / (1 - e * cosd(E));
+      E -= dE;
+      if (Math.abs(dE) < 1e-6) break;
+    }
+    return E;
+  }
+
+  /** The sun's own place in rectangular ecliptic coordinates, which every
+   *  planet needs in order to be seen from here rather than from the sun. */
+  function sunRect(ds) {
+    var w = 282.9404 + 4.70935e-5 * ds;
+    var e = 0.016709 - 1.151e-9 * ds;
+    var M = norm360(356.0470 + 0.9856002585 * ds);
+    var E = kepler(M, e);
+    var xv = cosd(E) - e;
+    var yv = Math.sqrt(1 - e * e) * sind(E);
+    var v = Math.atan2(yv, xv) / RAD;
+    var r = Math.sqrt(xv * xv + yv * yv);
+    var lon = v + w;
+    return { x: r * cosd(lon), y: r * sind(lon), r: r, lon: lon };
+  }
+
+  function planetAt(p, d) {
+    // Schlyter's day number runs from 2000 Jan 0.0; ours from J2000.0 noon.
+    var ds = d + 1.5;
+    var N = p.N[0] + p.N[1] * ds;
+    var inc = p.i[0] + p.i[1] * ds;
+    var w = p.w[0] + p.w[1] * ds;
+    var a = p.a[0];
+    var e = p.e[0] + p.e[1] * ds;
+    var M = norm360(p.M[0] + p.M[1] * ds);
+
+    var E = kepler(M, e);
+    var xv = a * (cosd(E) - e);
+    var yv = a * Math.sqrt(1 - e * e) * sind(E);
+    var v = Math.atan2(yv, xv) / RAD;
+    var r = Math.sqrt(xv * xv + yv * yv);
+
+    // heliocentric, ecliptic
+    var xh = r * (cosd(N) * cosd(v + w) - sind(N) * sind(v + w) * cosd(inc));
+    var yh = r * (sind(N) * cosd(v + w) + cosd(N) * sind(v + w) * cosd(inc));
+    var zh = r * (sind(v + w) * sind(inc));
+
+    // seen from here instead
+    var s = sunRect(ds);
+    var xg = xh + s.x, yg = yh + s.y, zg = zh;
+
+    var ecl = 23.4393 - 3.563e-7 * ds;
+    var xe = xg;
+    var ye = yg * cosd(ecl) - zg * sind(ecl);
+    var ze = yg * sind(ecl) + zg * cosd(ecl);
+
+    return {
+      name: p.name,
+      hue: p.hue,
+      mag: p.mag,
+      ra: norm360(Math.atan2(ye, xe) / RAD),
+      dec: Math.atan2(ze, Math.sqrt(xe * xe + ye * ye)) / RAD
+    };
+  }
+
   /**
    * Where something with this right ascension and declination is in the sky
    * from here, right now: how high up, and which way round.
@@ -9798,57 +9891,157 @@
     return { alt: alt, az: norm360(az) };
   }
 
-  /* The bright stars, as [right ascension in hours, declination, magnitude,
-     name]. Enough of them that the shapes people actually know are all here
-     -- Orion, the Plough, Cassiopeia, the Summer Triangle, Scorpius, the
-     Southern Cross -- without carrying a catalogue of ten thousand. */
+  /* ------------------------------------------------------------- the stars
+     The bright ones, as [right ascension in hours, declination in degrees,
+     magnitude, name], at J2000. Enough of them that every shape people
+     actually know is here -- Orion, the Plough, Cassiopeia, the Summer
+     Triangle, Scorpius, the Southern Cross -- without carrying a catalogue
+     of ten thousand.
+
+     The first pass of this list had half a dozen stars at each other's
+     coordinates: Alnilam where Alnitak should be, Megrez labelled Phecda,
+     Castor's position wearing Pollux's name. It did not matter while they
+     were loose points, and it matters enormously now that lines are drawn
+     between them -- a constellation with two stars swapped is not a
+     constellation, it is a scribble. These are checked.
+     ------------------------------------------------------------------- */
+
   var STARS = [
-    [6.752, -16.72, -1.46, 'Sirius'], [6.399, -52.70, -0.72, 'Canopus'],
-    [14.661, -60.84, -0.27, 'Rigil Kentaurus'], [14.261, 19.18, -0.05, 'Arcturus'],
-    [18.616, 38.78, 0.03, 'Vega'], [5.278, 46.00, 0.08, 'Capella'],
-    [5.242, -8.20, 0.13, 'Rigel'], [7.655, 5.22, 0.34, 'Procyon'],
-    [1.629, -57.24, 0.46, 'Achernar'], [5.919, 7.41, 0.50, 'Betelgeuse'],
-    [14.064, -60.37, 0.61, 'Hadar'], [19.846, 8.87, 0.77, 'Altair'],
-    [4.599, 16.51, 0.85, 'Aldebaran'], [16.490, -26.43, 0.96, 'Antares'],
-    [13.420, -11.16, 0.98, 'Spica'], [10.140, 11.97, 1.35, 'Regulus'],
-    [12.443, -63.10, 1.25, 'Acrux'], [7.577, 31.89, 1.14, 'Pollux'],
-    [22.961, -29.62, 1.16, 'Fomalhaut'], [20.690, 45.28, 1.25, 'Deneb'],
-    [12.795, -59.69, 1.30, 'Mimosa'], [11.062, 61.75, 1.79, 'Dubhe'],
-    [13.792, 49.31, 1.86, 'Alkaid'], [12.900, 55.96, 1.77, 'Alioth'],
-    [12.257, 57.03, 2.27, 'Phecda'], [11.030, 56.38, 2.37, 'Merak'],
-    [12.257, 53.69, 3.31, 'Megrez'], [13.399, 54.93, 2.23, 'Mizar'],
-    [0.140, 29.09, 2.07, 'Alpheratz'], [0.945, 60.72, 2.24, 'Caph'],
-    [0.675, 56.54, 2.24, 'Schedar'], [1.430, 60.24, 2.68, 'Ruchbah'],
-    [0.153, 59.15, 2.39, 'Navi'], [1.906, 63.67, 3.35, 'Segin'],
-    [5.679, -1.94, 1.69, 'Alnilam'], [5.604, -1.20, 1.77, 'Alnitak'],
-    [5.533, -0.30, 2.23, 'Mintaka'], [5.796, -9.67, 2.07, 'Saiph'],
-    [5.418, 6.35, 1.64, 'Bellatrix'], [3.405, 49.86, 1.79, 'Mirfak'],
-    [3.136, 40.96, 2.12, 'Algol'], [2.065, 42.33, 2.07, 'Mirach'],
-    [2.120, 23.46, 2.01, 'Hamal'], [3.791, 24.11, 2.87, 'Alcyone'],
-    [16.399, -3.69, 2.08, 'Rasalhague'], [17.582, 12.56, 2.08, 'Rasalgethi'],
-    [17.943, 51.49, 2.23, 'Eltanin'], [16.691, 31.60, 2.23, 'Kornephoros'],
-    [15.578, 26.71, 2.22, 'Alphecca'], [17.560, -37.10, 1.86, 'Shaula'],
-    [17.622, -43.00, 1.62, 'Sargas'], [16.005, -22.62, 2.56, 'Dschubba'],
-    [15.981, -26.11, 2.89, 'Pi Sco'], [18.403, -34.38, 1.79, 'Kaus Australis'],
-    [19.044, -29.88, 2.05, 'Nunki'], [20.427, -56.74, 1.91, 'Peacock'],
-    [22.137, -46.96, 1.74, 'Alnair'], [9.460, -8.66, 1.98, 'Alphard'],
-    [8.158, -47.34, 1.75, 'Avior'], [9.285, -59.28, 1.67, 'Aspidiske'],
-    [10.716, -64.39, 2.21, 'Miaplacidus'], [6.378, -17.96, 1.83, 'Adhara'],
-    [7.140, -26.39, 1.84, 'Wezen'], [6.977, -28.97, 2.45, 'Aludra'],
-    [2.530, 89.26, 1.98, 'Polaris'], [14.845, 74.16, 2.08, 'Kochab'],
-    [21.309, 62.59, 2.45, 'Alderamin'], [22.096, 6.20, 2.49, 'Sadalsuud'],
-    [23.063, 28.08, 2.42, 'Scheat'], [23.079, 15.21, 2.49, 'Markab'],
-    [0.221, 15.18, 2.83, 'Algenib'], [1.163, 35.62, 2.06, 'Mirach2'],
-    [4.950, 33.17, 1.90, 'Elnath'], [6.629, 16.40, 1.93, 'Alhena'],
-    [7.335, 21.98, 3.06, 'Wasat'], [8.925, 5.95, 3.52, 'Acubens'],
-    [11.818, 14.57, 2.14, 'Denebola'], [10.333, 19.84, 2.56, 'Algieba'],
-    [11.235, 20.52, 3.34, 'Zosma'], [12.573, -17.54, 2.94, 'Gienah'],
-    [12.169, -22.62, 2.65, 'Algorab'], [17.507, -37.04, 2.29, 'Lesath'],
-    [18.110, -36.76, 2.70, 'Alnasl'], [19.923, 35.08, 2.86, 'Albireo'],
-    [20.370, 40.26, 2.46, 'Sadr'], [21.216, 30.23, 2.48, 'Gienah Cygni'],
-    [22.711, -46.88, 2.87, 'Tiaki'], [3.037, 4.09, 2.54, 'Menkar'],
-    [2.720, -40.30, 2.40, 'Acamar'], [4.238, -62.47, 2.86, 'Doradus'],
-    [12.519, -57.11, 2.79, 'Delta Cru'], [12.795, -48.96, 2.58, 'Gacrux2']
+    /* Orion */
+    [5.9195,   7.407,  0.50, 'Betelgeuse'],
+    [5.2423,  -8.202,  0.13, 'Rigel'],
+    [5.4188,   6.350,  1.64, 'Bellatrix'],
+    [5.5334,  -0.299,  2.23, 'Mintaka'],
+    [5.6036,  -1.202,  1.69, 'Alnilam'],
+    [5.6793,  -1.943,  1.77, 'Alnitak'],
+    [5.7959,  -9.670,  2.09, 'Saiph'],
+    /* the Plough */
+    [11.0622, 61.751,  1.79, 'Dubhe'],
+    [11.0307, 56.382,  2.37, 'Merak'],
+    [11.8972, 53.695,  2.44, 'Phecda'],
+    [12.2571, 57.033,  3.31, 'Megrez'],
+    [12.9005, 55.960,  1.77, 'Alioth'],
+    [13.3988, 54.925,  2.23, 'Mizar'],
+    [13.7923, 49.313,  1.86, 'Alkaid'],
+    /* Cassiopeia */
+    [0.1529,  59.150,  2.27, 'Caph'],
+    [0.6751,  56.537,  2.24, 'Schedar'],
+    [0.9451,  60.717,  2.47, 'Navi'],
+    [1.4303,  60.235,  2.68, 'Ruchbah'],
+    [1.9064,  63.670,  3.35, 'Segin'],
+    /* Cygnus, and the Summer Triangle it belongs to */
+    [20.6905, 45.280,  1.25, 'Deneb'],
+    [20.3705, 40.257,  2.23, 'Sadr'],
+    [19.5120, 27.960,  3.08, 'Albireo'],
+    [20.7702, 33.970,  2.48, 'Gienah Cygni'],
+    [19.7499, 45.131,  2.87, 'Delta Cygni'],
+    [18.6156, 38.784,  0.03, 'Vega'],
+    [19.8464,  8.868,  0.77, 'Altair'],
+    /* the spring sky */
+    [14.2610, 19.182, -0.05, 'Arcturus'],
+    [13.4199,-11.161,  0.98, 'Spica'],
+    [10.1395, 11.967,  1.35, 'Regulus'],
+    [11.8177, 14.572,  2.14, 'Denebola'],
+    [10.3329, 19.841,  2.08, 'Algieba'],
+    [11.2351, 20.524,  2.56, 'Zosma'],
+    /* the winter sky */
+    [4.5987,  16.509,  0.85, 'Aldebaran'],
+    [5.4382,  28.608,  1.65, 'Elnath'],
+    [3.7914,  24.105,  2.87, 'Alcyone'],
+    [7.5767,  31.888,  1.58, 'Castor'],
+    [7.7553,  28.026,  1.14, 'Pollux'],
+    [6.6285,  16.399,  1.93, 'Alhena'],
+    [6.7525, -16.716, -1.46, 'Sirius'],
+    [6.3783, -17.956,  1.98, 'Mirzam'],
+    [7.1399, -26.393,  1.83, 'Wezen'],
+    [6.9770, -28.972,  1.50, 'Adhara'],
+    [7.6550,   5.225,  0.34, 'Procyon'],
+    [5.2782,  45.998,  0.08, 'Capella'],
+    /* Scorpius and Sagittarius */
+    [16.4901,-26.432,  0.96, 'Antares'],
+    [16.0056,-22.622,  2.29, 'Dschubba'],
+    [16.0906,-19.805,  2.56, 'Graffias'],
+    [17.5601,-37.104,  1.62, 'Shaula'],
+    [17.5126,-37.296,  2.69, 'Lesath'],
+    [17.6221,-42.998,  1.86, 'Sargas'],
+    [18.4029,-34.385,  1.85, 'Kaus Australis'],
+    [18.9211,-26.297,  2.05, 'Nunki'],
+    /* the far south */
+    [12.4433,-63.099,  0.77, 'Acrux'],
+    [12.7953,-59.689,  1.25, 'Mimosa'],
+    [12.5194,-57.113,  1.63, 'Gacrux'],
+    [12.2525,-58.749,  2.79, 'Imai'],
+    [14.6601,-60.834, -0.27, 'Rigil Kentaurus'],
+    [14.0637,-60.373,  0.61, 'Hadar'],
+    [6.3992, -52.696, -0.72, 'Canopus'],
+    [9.2200, -69.717,  1.68, 'Miaplacidus'],
+    [8.3752, -59.510,  1.86, 'Avior'],
+    [1.6286, -57.237,  0.46, 'Achernar'],
+    [22.1372,-46.961,  1.74, 'Alnair'],
+    [20.4275,-56.735,  1.94, 'Peacock'],
+    /* autumn */
+    [22.9608,-29.622,  1.16, 'Fomalhaut'],
+    [23.0793, 15.205,  2.49, 'Markab'],
+    [23.0629, 28.083,  2.42, 'Scheat'],
+    [0.2206,  15.184,  2.83, 'Algenib'],
+    [0.1398,  29.091,  2.07, 'Alpheratz'],
+    [1.1622,  35.621,  2.07, 'Mirach'],
+    [2.0650,  42.330,  2.10, 'Almach'],
+    [3.4054,  49.861,  1.79, 'Mirfak'],
+    [3.1361,  40.956,  2.12, 'Algol'],
+    [2.1195,  23.462,  2.00, 'Hamal'],
+    /* the pole, and the rest */
+    [2.5302,  89.264,  1.98, 'Polaris'],
+    [14.8451, 74.155,  2.08, 'Kochab'],
+    [15.3455, 71.834,  3.00, 'Pherkad'],
+    [17.9434, 51.489,  2.23, 'Eltanin'],
+    [17.5822, 12.560,  2.08, 'Rasalhague'],
+    [17.2441, 14.390,  3.10, 'Rasalgethi'],
+    [16.5036, 21.490,  2.78, 'Kornephoros'],
+    [15.5781, 26.715,  2.22, 'Alphecca'],
+    [9.4597,  -8.659,  1.98, 'Alphard'],
+    [12.2634,-17.542,  2.59, 'Gienah Corvi'],
+    [12.4976,-16.515,  2.95, 'Algorab']
+  ];
+
+  /* The figures. Pairs of names, and a line is drawn between them when both
+     ends are above the horizon. These are the shapes as people actually
+     draw them in the air with a finger, not the official IAU boundaries,
+     which are rectangles of sky and would mean nothing to anybody. */
+  var FIGURES = [
+    ['Betelgeuse', 'Bellatrix'], ['Bellatrix', 'Mintaka'], ['Mintaka', 'Alnilam'],
+    ['Alnilam', 'Alnitak'], ['Alnitak', 'Betelgeuse'], ['Mintaka', 'Rigel'],
+    ['Alnitak', 'Saiph'],
+
+    ['Dubhe', 'Merak'], ['Merak', 'Phecda'], ['Phecda', 'Megrez'],
+    ['Megrez', 'Dubhe'], ['Megrez', 'Alioth'], ['Alioth', 'Mizar'],
+    ['Mizar', 'Alkaid'],
+
+    ['Caph', 'Schedar'], ['Schedar', 'Navi'], ['Navi', 'Ruchbah'],
+    ['Ruchbah', 'Segin'],
+
+    ['Deneb', 'Sadr'], ['Sadr', 'Albireo'], ['Gienah Cygni', 'Sadr'],
+    ['Sadr', 'Delta Cygni'],
+
+    ['Graffias', 'Dschubba'], ['Dschubba', 'Antares'], ['Antares', 'Sargas'],
+    ['Sargas', 'Shaula'], ['Shaula', 'Lesath'],
+
+    ['Acrux', 'Gacrux'], ['Mimosa', 'Imai'],
+    ['Rigil Kentaurus', 'Hadar'],
+
+    ['Regulus', 'Algieba'], ['Algieba', 'Zosma'], ['Zosma', 'Denebola'],
+
+    ['Castor', 'Pollux'],
+
+    ['Sirius', 'Mirzam'], ['Sirius', 'Wezen'], ['Wezen', 'Adhara'],
+    ['Adhara', 'Mirzam'],
+
+    ['Kochab', 'Pherkad'],
+
+    ['Markab', 'Scheat'], ['Scheat', 'Alpheratz'], ['Alpheratz', 'Algenib'],
+    ['Algenib', 'Markab'], ['Alpheratz', 'Mirach'], ['Mirach', 'Almach'],
+
+    ['Gienah Corvi', 'Algorab']
   ];
 
   /**
@@ -9877,42 +10070,39 @@
 
   var MILKY = null;
 
-  /* ---------------------------------------------------------- the drawing */
+  /* ------------------------------------------------------- the rest of it
+     The catalogue above is the bright stars, and the bright stars are not
+     what a sky looks like. There are nine of them in a given window on a
+     given night; a real sky has hundreds you cannot name.
 
-  var SKY_W = 1000, SKY_H = 260;   // the SVG's own coordinates; CSS scales it
+     So the gaps are filled with a faint field. Be clear about what this is:
+     these are NOT catalogued stars. They are points scattered evenly over
+     the celestial sphere by a fixed sequence, so they are the same points
+     every night, and they rise, set and wheel overhead exactly as real
+     ones do, because they are put through the same arithmetic. What they
+     are not is Gliese 581. Everything with a name, every constellation
+     figure, the planets, the sun and the moon are the real thing; this is
+     the dust between them, and without it the sky is nine dots.
+     ------------------------------------------------------------------- */
 
-  /** Alt/az onto the band. Looking south from the north, north from the south. */
-  function project(alt, az, lat) {
-    var centre = lat >= 0 ? 180 : 0;
-    var off = az - centre;
-    while (off > 180) off -= 360;
-    while (off < -180) off += 360;
-    if (lat < 0) off = -off;                 // south of the equator it runs the other way
-    return {
-      x: SKY_W / 2 + (off / 130) * (SKY_W / 2),
-      y: SKY_H - (alt / 90) * SKY_H,
-      on: Math.abs(off) <= 132 && alt > -8
-    };
-  }
+  var FAINT = null;
 
-  /* How far down the page the sky reaches. Measured, not guessed: it ends
-     at the ticker, which is the line the page already uses to separate the
-     head of the page from the folder. That makes the ticker the horizon,
-     and it means the things drawn in light ink (see body.sky-night) are
-     exactly the things standing in front of the sky and no others. */
-  function placeSky(host) {
-    var low = 0;
-    ['.masthead', '#corner'].forEach(function (sel) {
-      var el = document.querySelector(sel);
-      if (!el || !el.getClientRects().length) return;
-      var b = el.getBoundingClientRect().bottom + window.pageYOffset;
-      if (b > low) low = b;
-    });
-    var m = document.querySelector('.marquee');
-    if (m && m.getClientRects().length) {
-      low = Math.max(low, m.getBoundingClientRect().top + window.pageYOffset);
+  function faintField() {
+    var out = [], i, a = 1, b = 0;
+    // a small deterministic sequence, so the sky is the same sky every time
+    function rnd() {
+      a = (a * 1103515245 + 12345) % 2147483648;
+      b = (b * 48271 + 11) % 2147483647;
+      return ((a / 2147483648) + (b / 2147483647)) % 1;
     }
-    host.style.height = Math.round(Math.max(200, low + 18)) + 'px';
+    for (i = 0; i < 950; i++) {
+      var ra = rnd() * 360;
+      // even over the sphere, not over declination -- otherwise the poles
+      // end up crowded and the equator bare
+      var dec = Math.asin(rnd() * 2 - 1) / RAD;
+      out.push({ ra: ra, dec: dec, mag: 3.8 + rnd() * 2.2 });
+    }
+    return out;
   }
 
   /* ------------------------------------------------------ the colour of it
@@ -9935,8 +10125,6 @@
     return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a.toFixed(3) + ')';
   }
 
-  /* zenith, middle, horizon -- at a handful of sun altitudes. Between them
-     it is mixed. Degrees, from well below the horizon to high noon. */
   var SKY_KEYS = [
     { alt: -18, top: [6, 9, 26],     mid: [10, 15, 38],   low: [16, 24, 54],   a: 0.97 },
     { alt: -10, top: [10, 14, 40],   mid: [24, 30, 68],   low: [58, 48, 92],   a: 0.95 },
@@ -9977,16 +10165,122 @@
     return mix([236, 104, 66], [255, 168, 92], Math.max(0, (alt + 6) / 6));
   }
 
-  function skyPaint(host, where) {
-    placeSky(host);
-    var now = new Date();
-    var d = j2000(now);
+  /* ------------------------------------------------------- the projection
+     Which way you are facing, and how much of the sky fits.
+
+     Two shapes to serve. On most of the site it is a shallow band across
+     the top of the page, where a wide, flat slice reads best. On the monet
+     paper it is the whole window, and then it wants a real field of view:
+     the horizon near the bottom, the zenith at the top, and as much width
+     as the window's own shape allows.
+     ------------------------------------------------------------------- */
+
+  var SKY_W = 1000, SKY_H = 260;   // the SVG's own coordinates; CSS scales it
+  var skyFull = false;             // is it the whole window
+  var skyLook = 180;               // the azimuth in the middle of the view
+  var skyShift = 0;                // milliseconds away from now
+  var skyWhereNow = null;          // the lat/long we last drew for
+
+  /* How much sky fits. The width is the free choice and the height falls
+     out of the window's shape -- EXCEPT that the height can never be more
+     than a horizon-to-zenith sweep. On a tall narrow window the naive sum
+     asked for two hundred degrees of altitude, which squashed the entire
+     sky into the top inch and left nine stars on the screen. So the
+     vertical span is capped first and the horizontal span follows from it. */
+  function skySpanY() {
+    var want = (skyFull ? 150 : 260) * (SKY_H / SKY_W);
+    return Math.min(skyFull ? 96 : 70, want);
+  }
+  function skySpanX() { return skySpanY() * (SKY_W / SKY_H); }
+
+  /** Alt/az onto the picture, around whichever way we are facing. */
+  function project(alt, az) {
+    var spanX = skySpanX(), spanY = skySpanY();
+    var off = az - skyLook;
+    while (off > 180) off -= 360;
+    while (off < -180) off += 360;
+    // the horizon sits a little above the bottom edge, so there is ground
+    var base = skyFull ? 0.93 : 1;
+    return {
+      x: SKY_W / 2 + (off / spanX) * SKY_W,
+      y: SKY_H * base - (alt / spanY) * SKY_H,
+      on: Math.abs(off) <= spanX / 2 + 8 && alt > -10
+    };
+  }
+
+  /* ------------------------------------------------------ what is up there
+     Everything the sky holds, worked out once for a given place and moment.
+     Kept separate from the drawing so that turning the compass -- which
+     changes nothing about the sky itself, only about which part of it you
+     are looking at -- costs a redraw and not a recalculation.
+     ------------------------------------------------------------------- */
+
+  function skyCompute(where, at) {
+    var d = j2000(new Date(at));
     var lat = where.lat, lon = where.lon;
 
     var sun = sunAt(d);
-    var sp = altaz(sun.ra, sun.dec, lat, lon, d);
     var moon = moonAt(d);
-    var mp = altaz(moon.ra, moon.dec, lat, lon, d);
+    var out = {
+      d: d,
+      sun: altaz(sun.ra, sun.dec, lat, lon, d),
+      sunLam: sun.lam,
+      moon: altaz(moon.ra, moon.dec, lat, lon, d),
+      moonLam: moon.lam,
+      stars: [],
+      planets: [],
+      byName: {},
+      milky: []
+    };
+
+    var i, a;
+    for (i = 0; i < STARS.length; i++) {
+      a = altaz(STARS[i][0] * 15, STARS[i][1], lat, lon, d);
+      a.mag = STARS[i][2];
+      a.name = STARS[i][3];
+      out.stars.push(a);
+      out.byName[a.name] = a;
+    }
+
+    for (i = 0; i < PLANETS.length; i++) {
+      var p = planetAt(PLANETS[i], d);
+      a = altaz(p.ra, p.dec, lat, lon, d);
+      a.name = p.name;
+      a.mag = p.mag;
+      a.hue = p.hue;
+      out.planets.push(a);
+    }
+
+    if (!FAINT) FAINT = faintField();
+    out.faint = [];
+    for (i = 0; i < FAINT.length; i++) {
+      a = altaz(FAINT[i].ra, FAINT[i].dec, lat, lon, d);
+      a.mag = FAINT[i].mag;
+      out.faint.push(a);
+    }
+
+    if (!MILKY) MILKY = galacticPlane();
+    for (i = 0; i < MILKY.length; i++) {
+      a = altaz(MILKY[i].ra, MILKY[i].dec, lat, lon, d);
+      a.glow = MILKY[i].glow;
+      out.milky.push(a);
+    }
+
+    return out;
+  }
+
+  /* ------------------------------------------------------------ the drawing */
+
+  var COMPASS = [[0, 'N'], [45, 'NE'], [90, 'E'], [135, 'SE'],
+                 [180, 'S'], [225, 'SW'], [270, 'W'], [315, 'NW']];
+
+  function skyDraw(host, S) {
+    var pxW = host.clientWidth || SKY_W;
+    var pxH = host.clientHeight || SKY_H;
+    SKY_W = 1000;
+    SKY_H = Math.max(120, Math.round(1000 * pxH / Math.max(1, pxW)));
+
+    var sp = S.sun, mp = S.moon;
 
     /* How dark it is. Civil twilight ends around six degrees below the
        horizon and astronomical dark around eighteen; the stars come up
@@ -9994,34 +10288,26 @@
     var night = Math.max(0, Math.min(1, (-sp.alt - 2) / 14));
     var day = Math.max(0, Math.min(1, (sp.alt + 6) / 12));
 
+    var band = skyBands(sp.alt);
+    var sunHere = project(sp.alt, sp.az);
+    var sunCol = sunColour(sp.alt);
+
     var svg = [];
     /* The size goes on the element as attributes, in PIXELS, measured off
-       the box it is sitting in. Sized by the stylesheet -- or by attributes
-       in per cent -- the sky came out exactly the right shape and then
-       painted nothing at all: every shape inside it resolved, had a real
-       bounding box, and simply never appeared. Given two numbers it is
-       there. */
-    var pxW = host.clientWidth || SKY_W;
-    var pxH = host.clientHeight || SKY_H;
+       the box it is sitting in. Sized by the stylesheet the sky came out
+       exactly the right shape and then painted nothing at all. */
     svg.push('<svg viewBox="0 0 ' + SKY_W + ' ' + SKY_H + '" preserveAspectRatio="none" ' +
              'width="' + pxW + '" height="' + pxH + '" ' +
              'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">');
-
-    /* ---- the sky itself, mixed from how high the sun is ---- */
-    var band = skyBands(sp.alt);
-    var sunHere = project(sp.alt, sp.az, lat);
-    var sunCol = sunColour(sp.alt);
 
     svg.push('<defs>');
     svg.push('<linearGradient id="skyfill" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="' + rgba(band.top, band.a) + '"/>' +
       '<stop offset="0.42" stop-color="' + rgba(band.mid, band.a * 0.94) + '"/>' +
       '<stop offset="0.78" stop-color="' + rgba(band.low, band.a * 0.66) + '"/>' +
-      '<stop offset="1" stop-color="' + rgba(band.low, 0) + '"/>' +
+      '<stop offset="1" stop-color="' + rgba(band.low, skyFull ? band.a * 0.5 : 0) + '"/>' +
       '</linearGradient>');
 
-    /* The air around the sun. Wide, warm, and strongest when the sun is
-       low -- which is when you can actually look at it. */
     var haze = sp.alt < 14 ? Math.max(0, 1 - Math.abs(sp.alt) / 22) : 0.12;
     svg.push('<radialGradient id="sunhaze">' +
       '<stop offset="0" stop-color="' + rgba(sunCol, 0.55 * haze) + '"/>' +
@@ -10029,8 +10315,6 @@
       '<stop offset="1" stop-color="' + rgba(sunCol, 0) + '"/>' +
       '</radialGradient>');
 
-    /* and the star itself: a white core that goes to its own colour and
-       then to nothing, rather than three flat discs stacked up. */
     svg.push('<radialGradient id="sundisc">' +
       '<stop offset="0" stop-color="rgba(255,255,252,1)"/>' +
       '<stop offset="0.45" stop-color="' + rgba(sunCol, 0.98) + '"/>' +
@@ -10048,9 +10332,6 @@
     svg.push('<rect x="0" y="0" width="' + SKY_W + '" height="' + SKY_H +
              '" fill="url(#skyfill)"/>');
 
-    /* The glow the sun throws along the horizon, on the side it is on.
-       This is the thing that makes a sunset read as a sunset: the sky near
-       the sun is on fire and the far side of it is still blue. */
     if (sp.alt > -10 && sunHere.on) {
       svg.push('<ellipse cx="' + sunHere.x.toFixed(1) + '" cy="' +
                Math.min(SKY_H, sunHere.y).toFixed(1) +
@@ -10058,142 +10339,180 @@
                '" fill="url(#sunhaze)"/>');
     }
 
-    /* ---- the stars, and the galaxy behind them ---- */
+    /* ---- the galaxy, the stars, the figures ---- */
     if (night > 0.02) {
-      if (!MILKY) MILKY = galacticPlane();
-      var band = [];
-      MILKY.forEach(function (m) {
-        var a = altaz(m.ra, m.dec, lat, lon, d);
-        var p = project(a.alt, a.az, lat);
-        if (p.on) band.push({ p: p, glow: m.glow });
-      });
-      band.forEach(function (b) {
-        svg.push('<circle cx="' + b.p.x.toFixed(1) + '" cy="' + b.p.y.toFixed(1) +
-                 '" r="' + (30 * b.glow).toFixed(1) + '" fill="rgba(180,196,236,' +
-                 (0.055 * b.glow * night).toFixed(3) + ')"/>');
-      });
+      var i, p, q;
 
-      /* And the grain in it. The Milky Way IS unresolved stars -- that is
-         the whole of what it is -- so the band is dusted with faint points
-         rather than left as a smear. They are scattered deterministically
-         from their own index, so they are the same points every time the
-         sky is repainted and do not crawl about between minutes. */
-      band.forEach(function (b, n) {
-        var k, jx, jy, f;
+      for (i = 0; i < S.milky.length; i++) {
+        p = project(S.milky[i].alt, S.milky[i].az);
+        if (!p.on || S.milky[i].alt < 0) continue;
+        var g = S.milky[i].glow;
+        svg.push('<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+                 '" r="' + (34 * g).toFixed(1) + '" fill="rgba(180,196,236,' +
+                 (0.055 * g * night).toFixed(3) + ')"/>');
+        /* The Milky Way IS unresolved stars, so the band is dusted rather
+           than smeared. Scattered from its own index, so the grain is the
+           same every repaint and does not crawl. */
+        var k, jx, jy;
         for (k = 0; k < 5; k++) {
-          jx = (Math.sin((n * 7.31 + k * 2.17)) * 43758.5453) % 1;
-          jy = (Math.sin((n * 3.77 + k * 5.91)) * 12345.6789) % 1;
-          f = 0.10 + Math.abs(jy) * 0.20;
-          svg.push('<circle cx="' + (b.p.x + jx * 46).toFixed(1) +
-                   '" cy="' + (b.p.y + jy * 34).toFixed(1) +
+          jx = (Math.sin(i * 7.31 + k * 2.17) * 43758.5453) % 1;
+          jy = (Math.sin(i * 3.77 + k * 5.91) * 12345.6789) % 1;
+          svg.push('<circle cx="' + (p.x + jx * 46).toFixed(1) +
+                   '" cy="' + (p.y + jy * 34).toFixed(1) +
                    '" r="' + (0.5 + Math.abs(jx) * 0.5).toFixed(2) +
-                   '" fill="rgba(226,234,252,' + (f * b.glow * night).toFixed(3) + ')"/>');
+                   '" fill="rgba(226,234,252,' +
+                   ((0.10 + Math.abs(jy) * 0.20) * g * night).toFixed(3) + ')"/>');
         }
-      });
+      }
 
-      STARS.forEach(function (st, i) {
-        var a = altaz(st[0] * 15, st[1], lat, lon, d);
-        var p = project(a.alt, a.az, lat);
-        if (!p.on || a.alt < 0) return;
-        /* Magnitude is backwards and logarithmic -- a first-magnitude star
-           is brighter than a third. Both the size and the light come off
-           it so Sirius reads as Sirius and the rest fall away behind it. */
-        var bright = Math.max(0.22, (3.0 - st[2]) / 3.6) * night;
-        var r = Math.max(0.9, (3.1 - st[2] * 0.5));
+      /* the faint field, under everything */
+      for (i = 0; i < S.faint.length; i++) {
+        var ft = S.faint[i];
+        if (ft.alt < 0) continue;
+        p = project(ft.alt, ft.az);
+        if (!p.on) continue;
+        svg.push('<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+                 '" r="' + (1.75 - (ft.mag - 3.8) * 0.28).toFixed(2) +
+                 '" fill="rgba(228,238,255,' +
+                 ((0.18 + ((6.0 - ft.mag) / 2.2) * 0.42) * night).toFixed(3) + ')"/>');
+      }
+
+      /* the figures, under the stars so the stars sit on top of them */
+      var lines = '';
+      for (i = 0; i < FIGURES.length; i++) {
+        var A = S.byName[FIGURES[i][0]], B = S.byName[FIGURES[i][1]];
+        if (!A || !B || A.alt < 0 || B.alt < 0) continue;
+        p = project(A.alt, A.az); q = project(B.alt, B.az);
+        if (!p.on || !q.on) continue;
+        // a line that wraps the long way round the sky is not a line
+        if (Math.abs(p.x - q.x) > SKY_W * 0.5) continue;
+        lines += 'M' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) +
+                 'L' + q.x.toFixed(1) + ' ' + q.y.toFixed(1);
+      }
+      if (lines) {
+        svg.push('<path class="figure" d="' + lines + '" fill="none" stroke="rgba(176,206,252,' +
+                 (0.42 * night).toFixed(3) + ')" stroke-width="1.1"/>');
+      }
+
+      for (i = 0; i < S.stars.length; i++) {
+        var st = S.stars[i];
+        if (st.alt < 0) continue;
+        p = project(st.alt, st.az);
+        if (!p.on) continue;
+        /* Magnitude is backwards and logarithmic -- first magnitude is
+           brighter than third. Both the size and the light come off it, so
+           Sirius reads as Sirius and the rest fall away behind it. */
+        var bright = Math.max(0.40, (3.4 - st.mag) / 3.2) * night;
+        var r = Math.max(1.5, (4.0 - st.mag * 0.62));
         svg.push('<circle class="star" style="--tw:' + (2.6 + (i % 7) * 0.55) + 's;--d:' +
                  ((i % 11) * 0.31).toFixed(2) + 's" cx="' + p.x.toFixed(1) +
                  '" cy="' + p.y.toFixed(1) + '" r="' + r.toFixed(2) +
                  '" fill="rgba(238,243,255,' + bright.toFixed(3) + ')"/>');
-      });
+      }
+    }
+
+    /* ---- the planets. They are brighter than the stars and they do not
+       twinkle, which is how you tell them apart with your eyes. ---- */
+    var pl, pp, j;
+    for (j = 0; j < S.planets.length; j++) {
+      pl = S.planets[j];
+      if (pl.alt < 0) continue;
+      pp = project(pl.alt, pl.az);
+      if (!pp.on) continue;
+      // Venus and Jupiter carry a twilight; the rest want a dark sky
+      var seen = Math.max(0, Math.min(1, (night * 1.5) + (pl.mag < -2 ? 0.35 : 0) - 0.05));
+      if (seen < 0.06) continue;
+      var pr = Math.max(1.3, 2.9 - pl.mag * 0.5);
+      svg.push('<circle cx="' + pp.x.toFixed(1) + '" cy="' + pp.y.toFixed(1) +
+               '" r="' + (pr * 3.4).toFixed(1) + '" fill="' + pl.hue +
+               '" opacity="' + (0.10 * seen).toFixed(3) + '"/>');
+      svg.push('<circle class="planet" cx="' + pp.x.toFixed(1) + '" cy="' + pp.y.toFixed(1) +
+               '" r="' + pr.toFixed(2) + '" fill="' + pl.hue +
+               '" opacity="' + seen.toFixed(3) + '"/>');
+      if (skyFull && seen > 0.5) {
+        svg.push('<text class="sky-label" x="' + (pp.x + pr + 4).toFixed(1) +
+                 '" y="' + (pp.y + 3).toFixed(1) + '" opacity="' +
+                 (0.55 * seen).toFixed(2) + '">' + pl.name + '</text>');
+      }
     }
 
     /* ---- the moon, at its real phase ---- */
-    var mplace = project(mp.alt, mp.az, lat);
-    if (mplace.on && mp.alt > -2) {                  /* see `dim` below */
-      /* How much of it is lit, and which side. The terminator is drawn as a
-         second disc offset across the face -- crude next to the real
-         geometry, and indistinguishable at this size. */
-      var elong = norm360(moon.lam - sun.lam);
+    var mplace = project(mp.alt, mp.az);
+    if (mplace.on && mp.alt > -2) {
+      var elong = norm360(S.moonLam - S.sunLam);
       var lit = (1 - Math.cos(elong * RAD)) / 2;
       var waxing = elong < 180;
-      var mr = 13;
-      /* A new moon is not a dark disc in the sky, it is nothing at all --
-         it is up there in the daytime with its back to us. Drawing the
-         unlit side as a solid shape put a navy hole in the sunset. So the
-         whole moon fades out as it empties, and the last sliver goes with
-         it. */
+      var mr = skyFull ? 16 : 13;
       var dim = 0.30 + 0.70 * (1 - night * 0.55);
       dim *= Math.max(0, Math.min(1, (lit - 0.06) / 0.16));
-      if (dim < 0.03) { mplace.on = false; }
-      svg.push('<g opacity="' + dim.toFixed(2) + '">');
-      svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
-               '" r="' + (mr + 9) + '" fill="rgba(240,244,255,.07)"/>');
-      svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
-               '" r="' + mr + '" fill="url(#moondisc)"/>');
-      if (lit < 0.97) {
-        /* The shadow has to be CLIPPED to the moon. Left free it ran off
-           the side of the disc and painted a dark blob in the sky beside
-           it, which is what a half moon looked like: a bruise. */
-        /* The offset is how far the shadow has SLID OFF, so it runs with
-           the lit fraction and not against it. Inverted, a moon that was
-           ninety-six per cent full got a shadow sitting almost exactly on
-           top of it -- a full moon came out black. */
-        var shift = lit * 2 * mr * (waxing ? -1 : 1);
-        svg.push('<clipPath id="moonclip"><circle cx="' + mplace.x.toFixed(1) +
-                 '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '"/></clipPath>');
-        svg.push('<circle clip-path="url(#moonclip)" cx="' + (mplace.x + shift).toFixed(1) +
-                 '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '" class="moon-dark"/>');
+      if (dim > 0.03) {
+        svg.push('<g opacity="' + dim.toFixed(2) + '">');
+        svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
+                 '" r="' + (mr + 9) + '" fill="rgba(240,244,255,.07)"/>');
+        svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
+                 '" r="' + mr + '" fill="url(#moondisc)"/>');
+        if (lit < 0.97) {
+          var shift = lit * 2 * mr * (waxing ? -1 : 1);
+          svg.push('<clipPath id="moonclip"><circle cx="' + mplace.x.toFixed(1) +
+                   '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '"/></clipPath>');
+          svg.push('<circle clip-path="url(#moonclip)" cx="' + (mplace.x + shift).toFixed(1) +
+                   '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '" class="moon-dark"/>');
+        }
+        svg.push('</g>');
       }
-      svg.push('</g>');
     }
 
     /* ---- the sun ---- */
     if (sunHere.on && sp.alt > -5) {
-      /* It swells as it sinks. That is an illusion rather than optics, but
-         it is the illusion everybody has actually seen, and a sun that
-         stayed the same size all the way down reads as a sticker. */
-      var sr = 15 + Math.max(0, (10 - sp.alt)) * 0.55;
+      var sr = (skyFull ? 17 : 15) + Math.max(0, (10 - sp.alt)) * 0.55;
       svg.push('<circle cx="' + sunHere.x.toFixed(1) + '" cy="' + sunHere.y.toFixed(1) +
                '" r="' + (sr * 4.6).toFixed(1) + '" fill="url(#sunhaze)"/>');
       svg.push('<circle cx="' + sunHere.x.toFixed(1) + '" cy="' + sunHere.y.toFixed(1) +
                '" r="' + sr.toFixed(1) + '" fill="url(#sundisc)"/>');
     }
 
-    svg.push('</svg>');
+    /* ---- the horizon and the compass, full screen only ---- */
+    if (skyFull) {
+      var hz = SKY_H * 0.93;
+      svg.push('<line x1="0" y1="' + hz.toFixed(1) + '" x2="' + SKY_W + '" y2="' +
+               hz.toFixed(1) + '" stroke="rgba(160,180,215,.22)" stroke-width="0.7"/>');
+      for (j = 0; j < COMPASS.length; j++) {
+        var c = project(0, COMPASS[j][0]);
+        if (!c.on) continue;
+        svg.push('<text class="sky-rose" x="' + c.x.toFixed(1) + '" y="' +
+                 (hz + 16).toFixed(1) + '" text-anchor="middle">' + COMPASS[j][1] + '</text>');
+      }
+    }
 
+    svg.push('</svg>');
     host.innerHTML = svg.join('');
-    /* The things that stand in front of the sky -- the name of the site,
-       the clock, the still -- are drawn in dark ink, and dark ink on a
-       night sky cannot be read. This tells the stylesheet to turn just
-       those over while the sky behind them is dark. */
-    /* Whether the writing in front of the sky needs to turn over is a
-       question about the sky, not about the clock. At sunset the sun is
-       still up -- it is not "night" by any measure -- and the top of the
-       band is already a deep violet that black type disappears into. So
-       this asks how dark the paint actually is. */
+
+    /* The things that stand in front of the sky are drawn in dark ink, and
+       dark ink on a night sky cannot be read. Whether they turn over is a
+       question about the SKY, not about the clock: at sunset the sun is
+       still up and the top of the band is already a violet black type
+       disappears into. */
     var lum = (band.top[0] * 0.299 + band.top[1] * 0.587 + band.top[2] * 0.114) / 255;
     document.body.classList.toggle('sky-night', lum * band.a < 0.42);
-    host.setAttribute('data-night', night > 0.5 ? 'yes' : 'no');
     host.style.setProperty('--night', night.toFixed(3));
     host.style.setProperty('--day', day.toFixed(3));
   }
 
-  /* ------------------------------------------------------------ weather
+  /* ------------------------------------------------------------- weather
      Not a symbol in a corner. If it is raining on the person reading this,
-     it rains on the page: thin strokes down the sky band, faster in a
-     storm. Snow drifts instead. Fog takes the whole band down to a veil,
-     and cloud sends slow shapes across it. All CSS once it is built, so it
-     costs one element and no JavaScript at all while it runs. */
+     it rains on the page: thin strokes down the sky, faster in a storm.
+     Snow drifts instead. Fog takes the whole thing down to a veil, and
+     cloud sends slow shapes across it. All CSS once it is built, so it
+     costs one element and no javascript at all while it runs. */
 
   function skyWeather(host, kind) {
-    var old = host.parentNode.querySelector('.sky-wx');
-    if (old) old.parentNode.removeChild(old);
+    var old = document.querySelector('.sky-wx');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
     if (!kind || kind === 'clear') return;
 
     var wx = document.createElement('div');
     wx.className = 'sky-wx wx-' + kind;
     wx.setAttribute('aria-hidden', 'true');
-    wx.style.height = host.style.height || '';
 
     var drops = '', i;
     if (kind === 'rain' || kind === 'drizzle' || kind === 'storm') {
@@ -10216,7 +10535,151 @@
       }
     }
     wx.innerHTML = drops;
-    host.parentNode.appendChild(wx);
+    document.body.appendChild(wx);
+  }
+
+  /* --------------------------------------------------------- the two dials
+     One turns you round. The other winds the clock.
+
+     The clock dial is deliberately not linear. A linear slider over six
+     months cannot find tomorrow morning, and a linear slider over a day
+     cannot show you the constellations turning with the season. So the
+     handle's travel is cubed: the middle third of it is hours, the next
+     third is days, and the ends are half a year. Fine where you need to be
+     fine, and long where you need to be long.
+     ------------------------------------------------------------------- */
+
+  var SKY_REACH = 183 * 86400000;      // half a year either way
+
+  function skyDialToMs(v) {
+    var t = v / 100;                   // -1 .. 1
+    return Math.round(t * t * t * SKY_REACH);
+  }
+
+  function skyWhen() { return Date.now() + skyShift; }
+
+  function skyStamp(at) {
+    var d = new Date(at);
+    var h = d.getHours(), m = d.getMinutes();
+    var ap = h < 12 ? 'am' : 'pm';
+    h = h % 12; if (!h) h = 12;
+    var same = Math.abs(skyShift) < 60000;
+    return (same ? 'now · ' : '') +
+      d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3).toLowerCase() + ' ' +
+      d.getFullYear() + ', ' + h + ':' + (m < 10 ? '0' : '') + m + ap;
+  }
+
+  function skyFacing() {
+    /* The NEAREST point of the compass, which is not the same as the one
+       furthest from it -- the first version of this sum picked the largest
+       difference instead of the smallest and cheerfully told you that due
+       north was south. */
+    var i, best = COMPASS[0], d, bd = 999;
+    for (i = 0; i < COMPASS.length; i++) {
+      d = Math.abs(((COMPASS[i][0] - skyLook + 540) % 360) - 180);
+      if (d < bd) { bd = d; best = COMPASS[i]; }
+    }
+    return best[1];
+  }
+
+  function mountSkyDials(host, where) {
+    if (document.getElementById('sky-dials')) return;
+
+    var bar = document.createElement('div');
+    bar.id = 'sky-dials';
+    bar.innerHTML =
+      '<label class="sky-dial"><span class="sky-dial-key">looking</span>' +
+        '<input class="sky-az" type="range" min="0" max="359" step="1" ' +
+          'aria-label="which way the sky is facing">' +
+        '<b class="sky-az-read"></b></label>' +
+      '<label class="sky-dial"><span class="sky-dial-key">when</span>' +
+        '<input class="sky-time" type="range" min="-100" max="100" step="0.5" value="0" ' +
+          'aria-label="wind the sky forwards or back">' +
+        '<b class="sky-time-read"></b></label>' +
+      '<button class="sky-now" type="button">now</button>';
+    document.body.appendChild(bar);
+
+    var az = bar.querySelector('.sky-az');
+    var azRead = bar.querySelector('.sky-az-read');
+    var tm = bar.querySelector('.sky-time');
+    var tmRead = bar.querySelector('.sky-time-read');
+
+    az.value = Math.round(skyLook);
+
+    var frame = 0, needCompute = true;
+
+    function paint() {
+      frame = 0;
+      var at = skyWhen();
+      if (needCompute || !skyCache || Math.abs(skyCache.at - at) > 20000) {
+        skyCache = skyCompute(where, at);
+        skyCache.at = at;
+        needCompute = false;
+      }
+      skyDraw(host, skyCache);
+      azRead.textContent = skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
+      tmRead.textContent = skyStamp(at);
+    }
+
+    /* One repaint per frame at most, however fast the handle is dragged. */
+    function soon(recompute) {
+      if (recompute) needCompute = true;
+      if (frame) return;
+      frame = requestAnimationFrame(paint);
+    }
+
+    az.addEventListener('input', function () {
+      skyLook = Number(az.value);
+      soon(false);                 // turning changes nothing about the sky
+    });
+    tm.addEventListener('input', function () {
+      skyShift = skyDialToMs(Number(tm.value));
+      soon(true);
+    });
+    bar.querySelector('.sky-now').addEventListener('click', function () {
+      skyShift = 0;
+      tm.value = 0;
+      soon(true);
+      play('tick');
+    });
+
+    paint();
+  }
+
+  var skyCache = null;
+
+  /* --------------------------------------------------------------- mount */
+
+  function placeSky(host) {
+    if (skyFull) { host.style.height = ''; return; }
+    var low = 0;
+    ['.masthead', '#corner'].forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (!el || !el.getClientRects().length) return;
+      var b = el.getBoundingClientRect().bottom + window.pageYOffset;
+      if (b > low) low = b;
+    });
+    var m = document.querySelector('.marquee');
+    if (m && m.getClientRects().length) {
+      low = Math.max(low, m.getBoundingClientRect().top + window.pageYOffset);
+    }
+    host.style.height = Math.round(Math.max(200, low + 18)) + 'px';
+  }
+
+  function skyRepaint(host, where, recompute) {
+    placeSky(host);
+    var at = skyWhen();
+    if (recompute || !skyCache) {
+      skyCache = skyCompute(where, at);
+      skyCache.at = at;
+    }
+    skyDraw(host, skyCache);
+    var dials = document.getElementById('sky-dials');
+    if (dials) {
+      dials.querySelector('.sky-az-read').textContent =
+        skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
+      dials.querySelector('.sky-time-read').textContent = skyStamp(at);
+    }
   }
 
   function mountSky() {
@@ -10241,27 +10704,49 @@
       document.body.appendChild(halo);
     }
 
-    function go(where) {
-      skyPaint(host, where);
-      // Once a minute. The sun moves a quarter of a degree in that time,
-      // which is less than half its own width -- nothing to see, and
-      // nothing worth a frame of work.
+    skyWhere(function (where) {
+      skyWhereNow = where;
+      // Face the sun's side of the sky to begin with: south from the north,
+      // north from the south. That is where everything happens.
+      skyLook = where.lat >= 0 ? 180 : 0;
+
+      skyFull = document.body.classList.contains('theme-monet');
+      document.body.classList.toggle('sky-whole', skyFull);
+      if (skyFull) mountSkyDials(host, where);
+
+      skyRepaint(host, where, true);
+
+      // Once a minute. The sun moves a quarter of a degree in that time.
       setInterval(function () {
-        if (!document.hidden) skyPaint(host, where);
+        if (!document.hidden) skyRepaint(host, where, true);
       }, 60000);
       document.addEventListener('visibilitychange', function () {
-        if (!document.hidden) skyPaint(host, where);
+        if (!document.hidden) skyRepaint(host, where, true);
       });
-      window.addEventListener('resize', function () { skyPaint(host, where); });
-    }
+      window.addEventListener('resize', function () { skyRepaint(host, where, false); });
 
-    /* Where they are. The weather lookup already works this out from the
-       time zone, so this costs nothing extra -- and if it cannot be found,
-       the sky falls back to somewhere sensible rather than disappearing. */
-    skyWhere(function (where) {
-      go(where);
       if (where.kind) skyWeather(host, where.kind);
+
+      /* The paper can be changed while the page is open, and the monet
+         paper is the one that takes the whole window. */
+      skyWatchPaper(host, where);
     });
+  }
+
+  /** The sky grows to fill the window when the monet paper is chosen, and
+   *  shrinks back to its band when it is not. */
+  function skyWatchPaper(host, where) {
+    var was = skyFull;
+    setInterval(function () {
+      var now = document.body.classList.contains('theme-monet');
+      if (now === was) return;
+      was = skyFull = now;
+      document.body.classList.toggle('sky-whole', now);
+      var dials = document.getElementById('sky-dials');
+      if (now && !dials) mountSkyDials(host, where);
+      else if (dials) dials.hidden = !now;
+      skyRepaint(host, where, false);
+    }, 700);
   }
 
   /** The visitor's lat/long, from the same lookup the weather uses. */

@@ -3971,6 +3971,7 @@ body.theme-monet #monet { transition: filter 4s linear; }
      the horizon. This is only the size before it has done so. */
   height: 46vh;
   min-height: 200px;
+  transition: none;
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
@@ -4510,4 +4511,175 @@ body.field-listening #rice { transition: opacity 2.5s ease, filter 2.5s ease; }
 
 @media (prefers-reduced-motion: reduce) {
   body.field-listening #scene.rice, body.field-listening #rice { transition: none; }
+}
+
+/* ======================================================= THE WHOLE SKY
+
+   On the monet paper the sky stops being a band across the top of the page
+   and becomes the room the page is in: the whole window, behind everything,
+   with the horizon near the bottom and the zenith at the top.
+
+   It is `fixed` rather than `absolute` so that it does not scroll — you are
+   standing under it, and the sky does not slide up when you read further
+   down the page.
+   ===================================================================== */
+
+body.sky-whole #sky {
+  position: fixed;
+  inset: 0;
+  height: auto;
+  min-height: 0;
+}
+body.sky-whole .sky-wx {
+  position: fixed;
+  inset: 0;
+  height: auto;
+  min-height: 0;
+}
+
+/* The page has to stay readable against a whole sky, so it gets its own
+   paper under it rather than floating on the night. */
+body.sky-whole main > .masthead,
+body.sky-whole main > .marquee { position: relative; z-index: 1; }
+
+/* the names beside the planets, and the compass along the horizon */
+.sky-label, .sky-rose {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  fill: rgba(214, 226, 248, .75);
+}
+.sky-rose { fill: rgba(176, 196, 228, .5); font-size: 10px; letter-spacing: .22em; }
+
+/* A planet does not twinkle. That is how you tell one from a star with your
+   own eyes, so it must be how you tell them apart here. */
+.planet { animation: none; }
+
+/* --------------------------------------------------------- the two dials
+
+   One turns you round, the other winds the clock. They sit above the
+   taskbar, quiet until you go near them, and they are only there when the
+   sky is the whole window — on a band across the top of the page there is
+   not enough sky for either of them to mean anything.
+   ===================================================================== */
+
+#sky-dials {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--taskbar-h, 2.4rem) + .7rem);
+  transform: translateX(-50%);
+  z-index: 8200;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: .5rem .9rem;
+  border-radius: 3px;
+  background: rgba(18, 24, 44, .42);
+  border: 1px solid rgba(190, 210, 245, .16);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  font-family: var(--mono);
+  font-size: .58rem;
+  letter-spacing: .1em;
+  color: rgba(224, 234, 250, .8);
+  opacity: .42;
+  transition: opacity .3s ease;
+  max-width: calc(100vw - 2rem);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+#sky-dials:hover, #sky-dials:focus-within { opacity: 1; }
+#sky-dials[hidden] { display: none; }
+
+.sky-dial { display: flex; align-items: center; gap: .45rem; }
+.sky-dial-key {
+  text-transform: uppercase;
+  opacity: .55;
+  white-space: nowrap;
+}
+.sky-dial b {
+  font-weight: 400;
+  white-space: nowrap;
+  min-width: 9.5em;
+  opacity: .9;
+}
+
+/* The handles. A range input is a different animal in every browser, so
+   this draws the whole thing rather than asking nicely. */
+#sky-dials input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8.5rem;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(200, 218, 248, .3);
+  outline: none;
+  cursor: ew-resize;
+}
+#sky-dials input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: #EAF1FF;
+  border: 1px solid rgba(40, 60, 100, .5);
+  cursor: ew-resize;
+}
+#sky-dials input[type="range"]::-moz-range-thumb {
+  width: 11px; height: 11px;
+  border: 1px solid rgba(40, 60, 100, .5);
+  border-radius: 50%;
+  background: #EAF1FF;
+  cursor: ew-resize;
+}
+#sky-dials input[type="range"]:focus-visible { box-shadow: 0 0 0 2px rgba(190, 215, 255, .4); }
+
+.sky-now {
+  font: inherit;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: inherit;
+  background: transparent;
+  border: 1px solid rgba(190, 210, 245, .3);
+  border-radius: 2px;
+  padding: .3rem .55rem;
+  cursor: pointer;
+}
+.sky-now:hover { border-color: rgba(220, 235, 255, .7); }
+
+@media (max-width: 559px) {
+  #sky-dials { font-size: .54rem; gap: .5rem; padding: .4rem .5rem; }
+  #sky-dials input[type="range"] { width: 5.5rem; }
+  .sky-dial b { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sky-dials { transition: none; }
+}
+
+/* Under a whole dark sky, the folder is standing outside at night — so the
+   writing on it has to turn over too, not just the title. Only when the sky
+   is the whole window AND actually dark: in the band, the folder is on
+   paper and must not change at all. */
+body.sky-whole.sky-night .item h3 a { color: #DCE6F6; }
+body.sky-whole.sky-night .item h3 a:visited { color: #C3D2E8; }
+body.sky-whole.sky-night .item .meta { color: rgba(206, 220, 242, .62); }
+body.sky-whole.sky-night .item pre,
+body.sky-whole.sky-night .item p { color: rgba(222, 232, 246, .86); }
+body.sky-whole.sky-night a { color: #BFD2EE; }
+body.sky-whole.sky-night .marquee { color: rgba(220, 232, 248, .6); }
+body.sky-whole.sky-night .taskbar { color: rgba(224, 234, 250, .9); }
+
+/* The to-do and the log are panels with their own paper; leave them be. */
+body.sky-whole.sky-night .item.kind-todo,
+body.sky-whole.sky-night .item[data-key=".garden.log"] { color: initial; }
+body.sky-whole.sky-night .item.kind-todo h3 a { color: var(--ochre); }
+body.sky-whole.sky-night .item.kind-todo p,
+body.sky-whole.sky-night .item.kind-todo li { color: var(--ink-soft); }
+
+/* and the dials go to the corner rather than standing in the middle of the
+   folder, which is where things actually are */
+#sky-dials { left: 1rem; transform: none; }
+@media (max-width: 719px) {
+  #sky-dials { left: 50%; transform: translateX(-50%); }
 }
