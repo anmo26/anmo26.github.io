@@ -4812,3 +4812,27 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
 }
 .item h3   { -webkit-line-clamp: 3; }
 .item .meta { -webkit-line-clamp: 2; }
+
+
+/* --------------------------------------------- a note, at a phone's scale
+
+   12.5rem of a 375px screen is more than half the width, and a long one ran
+   most of the height as well — two notes and the folder underneath them was
+   gone. On a phone a note is narrower, set smaller, and will not grow past
+   a third of the window: past that it scrolls inside its own paper, which
+   is what a real note pinned over other things does.
+   ===================================================================== */
+
+@media (max-width: 559px) {
+  .sticky {
+    width: 9.5rem;
+    min-height: 5rem;
+    font-size: .82em;
+  }
+  .sticky .sticky-text,
+  .sticky .sticky-body {
+    max-height: 26vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

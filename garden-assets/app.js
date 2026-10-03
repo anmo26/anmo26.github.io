@@ -2074,14 +2074,75 @@
     });
   }
 
+  /* ------------------------------------------------- the corner, to size
+     The plant, the still and the character clock sit in a row across the
+     top. The clock's field has a fixed number of columns, so below a
+     certain width it simply does not fit -- it was being clipped at the
+     right-hand edge and the last two digits of the time were gone.
+
+     Dropping the font size further was the other option and 8px is below
+     reading. So it is measured and scaled instead: whatever width the
+     window turns out to be, the whole corner is shrunk by exactly as much
+     as it is too wide by, and never enlarged. */
+
+  function fitCorner() {
+    var c = document.getElementById('corner');
+    if (!c) return;
+
+    c.style.transform = '';
+    c.style.height = '';
+    c.style.transformOrigin = 'center top';
+
+    var room = c.clientWidth;
+    if (!room) return;
+
+    /* How much room the row actually asks for, which is NOT the widest
+       child: they sit side by side, so it is the distance from the left
+       edge of the first to the right edge of the last. Measured that way
+       the corner wanted 503px of a 375px phone and was being clipped at
+       both ends -- the cactus lost its left half and the clock lost its
+       last two digits. */
+    var lo = Infinity, hi = -Infinity, i, r, kids = c.children;
+    for (i = 0; i < kids.length; i++) {
+      if (!kids[i].getClientRects().length) continue;
+      r = kids[i].getBoundingClientRect();
+      if (r.left < lo) lo = r.left;
+      if (r.right > hi) hi = r.right;
+    }
+    var want = hi - lo;
+    if (!(want > 0) || want <= room) return;
+
+    var k = Math.max(0.5, room / want);
+    c.style.transform = 'scale(' + k.toFixed(3) + ')';
+    /* A scaled element still reserves its old height, which on a page with
+       nothing to scroll is a band of nothing between the ornaments and the
+       title. Hand that back to the folder. */
+    c.style.height = Math.round(c.getBoundingClientRect().height) + 'px';
+  }
+
   function mountHint() {
     var hint = document.getElementById('taskbar-clock');
     if (!hint) return;
     hint.textContent = wide() ? 'drag things around →' : 'hold to move';
+
+    /* It is a nicety, and the switches are not. On a window between a phone
+       and a desktop the bar had exactly enough room for the buttons and not
+       for this, so the last one ran off the right-hand edge. Put it back,
+       measure, and if the bar is still overflowing it is the one thing that
+       goes. */
+    hint.hidden = false;
+    var bar = hint.parentNode;
+    while (bar && bar.className !== undefined &&
+           String(bar.className).indexOf('taskbar') < 0) bar = bar.parentNode;
+    if (bar && bar.scrollWidth > bar.clientWidth + 1) hint.hidden = true;
   }
 
   window.addEventListener('resize', fitSoon);
   window.addEventListener('resize', mountHint);
+  window.addEventListener('resize', fitCorner);
+  window.addEventListener('resize', function () {
+    if (typeof skyRoomCheck === 'function') skyRoomCheck();
+  });
 
   /* ============================================================== TOGGLES */
 
@@ -4488,9 +4549,16 @@
        guessed, because the masthead is a different height on every page
        and at every width. */
     function placeMoon() {
+      /* The moon hangs inside #scene, which is position:fixed — so its
+         `top` is measured from the WINDOW. Hence getBoundingClientRect and
+         no pageYOffset: offsetTop would be measured from <main>, which
+         starts a hundred pixels down, and the moon landed back through the
+         title. This also has to be run again once the page has settled:
+         measured too early the masthead has not got its final height yet,
+         and the moon takes a position meant for a shorter heading. */
       var head = document.querySelector('.masthead');
       var low = head && head.getClientRects().length
-        ? head.getBoundingClientRect().bottom + window.pageYOffset : 0;
+        ? head.getBoundingClientRect().bottom : 0;
       var top = Math.round(Math.max(low + 34, window.innerHeight * 0.16));
       disc.style.top = top + 'px';
       says.style.top = (top + disc.offsetHeight + 10) + 'px';
@@ -4502,6 +4570,10 @@
     paintSky();
     paintMoon();
     placeMoon();
+    // the heading settles a frame or two after the fonts arrive
+    setTimeout(placeMoon, 120);
+    setTimeout(placeMoon, 600);
+    window.addEventListener('load', placeMoon);
     ambience('moonlight');
     window.addEventListener('resize', paintSky);
     window.addEventListener('resize', function () { paintMoon(); placeMoon(); });
@@ -11228,8 +11300,11 @@
    *  float over whatever is in it -- in the library they were sitting on
    *  top of the books -- and you did not open a folder to turn the sky. */
   function dialsWanted() {
-    // the front page is the one with nothing to go back to
-    return skyWanted() && !document.querySelector('.masthead .up');
+    // the front page is the one with nothing to go back to -- and a phone
+    // has no room for two sliders, four buttons and a readout, so there
+    // they simply are not there. The sky itself still is.
+    return skyWanted() && window.innerWidth > 559 &&
+           !document.querySelector('.masthead .up');
   }
 
   /** Put the whole sky -- stars, weather, meteors, dials -- in or out of
@@ -11378,6 +11453,8 @@
     mountSky();
     mountToggles();
     mountHint();
+    fitCorner();
+    setTimeout(fitCorner, 300);   // the clock settles a frame or two later
     mountNav();
     mountViewers();
     mountTicker();
