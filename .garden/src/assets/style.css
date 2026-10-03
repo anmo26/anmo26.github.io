@@ -4072,6 +4072,31 @@ body.theme-universe:not([data-scene]) #monet { transition: filter 4s linear; }
   to   { transform: translate3d(180%, 0, 0); }
 }
 
+/* A cloud at night is not a pale thing. In daylight it is the brightest
+   object in the sky, which is why the wash above is light -- but after dark
+   the same wash sits on top of the stars as a grey blob, and a grey blob
+   over Orion is the single most effective way to make Orion unfindable.
+
+   So after dark the cloud inverts: it goes DARKER than the sky and takes
+   the stars behind it down with it, which is exactly what a real cloud
+   does to a real sky. Same shapes, same slow crossing, opposite sign. */
+body.sky-night .wx-cloud i,
+body.sky-night .wx-part i {
+  background: radial-gradient(closest-side, rgba(9, 12, 24, .62), transparent 74%);
+}
+body.sky-night .wx-part i { opacity: .45; }
+
+/* fog after dark: a thin darkening, not a white sheet over everything */
+body.sky-night .wx-fog {
+  background: linear-gradient(to bottom, rgba(10, 13, 26, .55), transparent 80%);
+}
+
+/* and the rain lightens off, so the strokes do not read as scratches
+   across the constellations */
+body.sky-night .wx-rain i,
+body.sky-night .wx-drizzle i,
+body.sky-night .wx-storm i { opacity: .4; }
+
 /* fog: the whole band goes to a veil */
 .wx-fog {
   background: linear-gradient(to bottom, rgba(214, 216, 220, .5), transparent 78%);
@@ -4564,6 +4589,18 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
 }
 .sky-rose { fill: rgba(176, 196, 228, .5); font-size: 10px; letter-spacing: .22em; }
 
+/* The name of a figure, written across the middle of its own stars. Quieter
+   and wider than a star's name, so the two never read as the same kind of
+   thing: a star is a point with a name, a constellation is a region. */
+.sky-shape {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  fill: rgba(188, 208, 242, .72);
+  pointer-events: none;
+}
+
 /* A planet does not twinkle. That is how you tell one from a star with your
    own eyes, so it must be how you tell them apart here. */
 .planet { animation: none; }
@@ -4647,7 +4684,7 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
 }
 #sky-dials input[type="range"]:focus-visible { box-shadow: 0 0 0 2px rgba(190, 215, 255, .4); }
 
-.sky-now {
+.sky-now, .sky-run, .sky-haze, .sky-shapes {
   font: inherit;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -4658,7 +4695,31 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   padding: .3rem .55rem;
   cursor: pointer;
 }
-.sky-now:hover { border-color: rgba(220, 235, 255, .7); }
+.sky-now:hover, .sky-run:hover, .sky-haze:hover, .sky-shapes:hover {
+  border-color: rgba(220, 235, 255, .7);
+}
+
+/* The three switches say what they are by being lit or not lit, rather than
+   by changing their word. Off is a dim outline; on is filled. */
+.sky-run[aria-pressed="false"],
+.sky-haze[aria-pressed="false"],
+.sky-shapes[aria-pressed="false"] {
+  opacity: .45;
+  border-style: dashed;
+}
+.sky-run[aria-pressed="true"],
+.sky-haze[aria-pressed="true"],
+.sky-shapes[aria-pressed="true"] {
+  background: rgba(205, 224, 255, .14);
+  border-color: rgba(222, 236, 255, .62);
+}
+
+/* While the sky is running, the button itself keeps time. */
+.sky-run[aria-pressed="true"] { animation: skyrun 1.6s ease-in-out infinite; }
+@keyframes skyrun {
+  0%, 100% { background: rgba(205, 224, 255, .10); }
+  50%      { background: rgba(205, 224, 255, .26); }
+}
 
 @media (max-width: 559px) {
   #sky-dials { font-size: .54rem; gap: .5rem; padding: .4rem .5rem; }

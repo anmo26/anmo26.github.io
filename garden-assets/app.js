@@ -10011,7 +10011,97 @@
     [15.5781, 26.715,  2.22, 'Alphecca'],
     [9.4597,  -8.659,  1.98, 'Alphard'],
     [12.2634,-17.542,  2.59, 'Gienah Corvi'],
-    [12.4976,-16.515,  2.95, 'Algorab']
+    [12.4976,-16.515,  2.95, 'Algorab'],
+    /* ---- added so the figures have enough of themselves to be read ----
+       Everything below is a real, catalogued, named star, at its real
+       J2000 position. They were put in when the invented field came out:
+       a sky of eleven dots is not a sky, and the honest way to fill it is
+       with the stars that are actually there rather than with dust. ---- */
+
+  // --- lyra, aquila, cygnus, delphinus ---
+  [18.834,  33.363, 3.52, 'Sheliak'],   [18.982,  32.690, 3.24, 'Sulafat'],
+  [19.771,  10.613, 2.72, 'Tarazed'],   [19.921,   6.407, 3.71, 'Alshain'],
+  [19.425,   3.115, 3.36, 'Deneb el Okab'], [20.188, -0.821, 3.23, 'Theta Aquilae'],
+  [19.090,  13.863, 2.99, 'Okab'],      [21.215,  30.227, 3.20, 'Zeta Cygni'],
+  // --- sagittarius, the teapot ---
+  [18.350, -29.828, 2.70, 'Kaus Media'],[18.466, -25.422, 2.81, 'Kaus Borealis'],
+  [19.044, -29.880, 2.60, 'Ascella'],   [18.761, -26.991, 3.17, 'Phi Sagittarii'],
+  [19.117, -27.670, 3.32, 'Tau Sagittarii'],
+  // --- ursa minor's tail, draco, cepheus ---
+  [17.537,  86.586, 4.36, 'Yildun'],    [16.766,  82.037, 4.21, 'Urodelus'],
+  [15.734,  77.794, 4.29, 'Zeta Ursae Minoris'],
+  [17.507,  52.301, 2.79, 'Rastaban'],  [19.209,  67.661, 3.07, 'Altais'],
+  [17.146,  65.715, 3.17, 'Aldhibah'],  [15.416,  58.966, 3.29, 'Edasich'],
+  [14.073,  64.376, 3.65, 'Thuban'],    [17.892,  56.873, 3.75, 'Grumium'],
+  [21.310,  62.586, 2.45, 'Alderamin'], [21.477,  70.561, 3.23, 'Alfirk'],
+  [23.656,  77.632, 3.21, 'Errai'],     [22.181,  58.201, 3.35, 'Zeta Cephei'],
+  // --- perseus, auriga, andromeda ---
+  [3.902,   31.884, 2.85, 'Atik'],      [3.964,   40.011, 2.90, 'Adid'],
+  [3.715,   47.788, 3.01, 'Delta Persei'], [3.080, 53.506, 2.93, 'Misam'],
+  [5.992,   44.947, 1.90, 'Menkalinan'],[5.995,   37.213, 2.62, 'Mahasim'],
+  [4.950,   33.166, 2.69, 'Hassaleh'],
+  // --- bootes, corona borealis, hercules, serpens, ophiuchus ---
+  [14.750,  27.074, 2.37, 'Izar'],      [14.535,  38.308, 3.03, 'Seginus'],
+  [15.032,  40.390, 3.49, 'Nekkar'],    [13.911,  18.398, 2.68, 'Muphrid'],
+  [15.258,  33.315, 3.47, 'Delta Bootis'],
+  [15.464,  29.106, 3.66, 'Nusakan'],   [15.711,  26.296, 3.81, 'Gamma CrB'],
+  [16.688,  31.603, 2.81, 'Zeta Herculis'], [17.251, 36.809, 3.16, 'Pi Herculis'],
+  [16.715,  38.922, 3.53, 'Eta Herculis'],  [17.250, 24.839, 3.12, 'Sarin'],
+  [15.738,   6.426, 2.63, 'Unukalhai'],
+  [17.724,   4.567, 2.76, 'Cebalrai'],  [17.173, -15.725, 2.43, 'Sabik'],
+  [16.620, -10.567, 2.56, 'Zeta Ophiuchi'], [16.239, -3.694, 2.73, 'Yed Prior'],
+  [16.304,  -4.692, 3.23, 'Yed Posterior'],
+  // --- virgo, libra, corvus, hydra ---
+  [12.694,  -1.449, 2.74, 'Porrima'],   [13.036,  10.959, 2.83, 'Vindemiatrix'],
+  [13.579,  -0.596, 3.38, 'Heze'],      [12.927,   3.397, 3.38, 'Auva'],
+  [11.845,   1.765, 3.59, 'Zavijava'],
+  [14.848, -16.042, 2.75, 'Zubenelgenubi'], [15.283, -9.383, 2.61, 'Zubeneschamali'],
+  [12.573, -23.397, 2.65, 'Kraz'],      [12.168, -22.620, 3.02, 'Epsilon Corvi'],
+  [13.315, -23.172, 2.99, 'Gamma Hydrae'], [8.925,  5.946, 3.11, 'Zeta Hydrae'],
+  // --- leo, cancer, gemini, canis minor, orion, taurus ---
+  [11.237,  15.430, 3.33, 'Chertan'],   [10.278,  23.417, 3.44, 'Adhafera'],
+  [9.764,   23.774, 2.98, 'Algenubi'],  [9.880,   26.007, 3.88, 'Rasalas'],
+  [8.275,    9.186, 3.52, 'Altarf'],
+  [7.335,   21.982, 3.53, 'Wasat'],     [6.732,   25.131, 2.98, 'Mebsuta'],
+  [6.383,   22.514, 2.87, 'Tejat'],     [6.248,   22.507, 3.28, 'Propus'],
+  [6.755,   12.896, 3.35, 'Alzirr'],
+  [7.453,    8.289, 2.89, 'Gomeisa'],
+  [5.586,    9.934, 3.39, 'Meissa'],
+  [5.627,   21.143, 3.00, 'Tianguan'],  [4.477,  15.871, 3.40, 'Theta Tauri'],
+  [4.477,   19.180, 3.53, 'Ain'],       [4.330,  15.628, 3.65, 'Hyadum II'],
+  [4.011,   12.490, 3.47, 'Lambda Tauri'],
+  // --- canis major, lepus, columba, puppis, vela ---
+  [7.402,  -29.303, 2.45, 'Aludra'],    [6.339, -30.063, 3.02, 'Furud'],
+  [5.546,  -17.822, 2.58, 'Arneb'],     [5.471, -20.759, 2.84, 'Nihal'],
+  [5.661,  -34.074, 2.65, 'Phact'],
+  [8.060,  -40.003, 2.25, 'Naos'],      [8.158, -47.337, 1.78, 'Regor'],
+  [8.745,  -54.709, 1.96, 'Alsephina'], [9.133, -43.433, 2.21, 'Suhail'],
+  [9.368,  -55.011, 2.47, 'Markeb'],
+  // --- centaurus, lupus, triangulum australe, ara ---
+  [14.111, -36.370, 2.06, 'Menkent'],   [12.692, -48.960, 2.17, 'Muhlifain'],
+  [13.665, -53.466, 2.30, 'Epsilon Centauri'], [14.594, -42.158, 2.31, 'Eta Centauri'],
+  [13.926, -47.288, 2.55, 'Zeta Centauri'],    [12.139, -50.722, 2.58, 'Delta Centauri'],
+  [14.699, -47.388, 2.30, 'Alpha Lupi'], [14.975, -43.134, 2.68, 'Beta Lupi'],
+  [16.811, -69.028, 1.91, 'Atria'],     [15.919, -63.431, 2.85, 'Beta TrA'],
+  // --- scorpius filled out ---
+  [16.836, -34.293, 2.29, 'Larawag'],   [17.708, -39.030, 2.39, 'Girtab'],
+  [17.794, -40.127, 2.99, 'Iota Scorpii'], [16.598, -28.216, 2.82, 'Paikauhale'],
+  [16.353, -25.593, 2.89, 'Alniyat'],   [15.981, -26.114, 2.89, 'Fang'],
+  [17.202, -43.239, 3.33, 'Eta Scorpii'],
+  // --- pegasus, aquarius, capricornus, pisces, cetus, eridanus ---
+  [21.736,   9.875, 2.39, 'Enif'],      [22.717,  30.221, 2.94, 'Matar'],
+  [22.691,  10.831, 3.40, 'Homam'],     [22.170,   6.198, 3.52, 'Biham'],
+  [22.835,  24.602, 3.48, 'Sadalbari'],
+  [21.526,  -5.571, 2.90, 'Sadalsuud'], [22.096,  -0.320, 2.95, 'Sadalmelik'],
+  [22.911, -15.821, 3.27, 'Skat'],
+  [21.784, -16.127, 2.85, 'Deneb Algedi'], [20.351, -14.781, 3.05, 'Dabih'],
+  [0.726,  -17.987, 2.04, 'Diphda'],    [3.038,    4.090, 2.53, 'Menkar'],
+  [5.131,   -5.086, 2.79, 'Cursa'],     [2.971,  -40.305, 2.88, 'Acamar'],
+  [3.967,  -13.509, 2.95, 'Zaurak'],
+  // --- aries, phoenix, grus ---
+  [1.911,   20.808, 2.64, 'Sheratan'],  [1.884,   19.294, 3.86, 'Mesarthim'],
+  [0.438,  -42.306, 2.40, 'Ankaa'],
+  [22.711, -46.885, 2.15, 'Beta Gruis'],[21.899, -37.365, 3.00, 'Aldhanab']
   ];
 
   /* The figures. Pairs of names, and a line is drawn between them when both
@@ -10051,7 +10141,134 @@
     ['Markab', 'Scheat'], ['Scheat', 'Alpheratz'], ['Alpheratz', 'Algenib'],
     ['Algenib', 'Markab'], ['Alpheratz', 'Mirach'], ['Mirach', 'Almach'],
 
-    ['Gienah Corvi', 'Algorab']
+    ['Gienah Corvi', 'Algorab'], ['Algorab', 'Kraz'], ['Kraz', 'Epsilon Corvi'],
+    ['Epsilon Corvi', 'Gienah Corvi'],
+
+    /* ---- and the figures the new stars made possible ---- */
+
+    ['Vega', 'Sheliak'], ['Sheliak', 'Sulafat'], ['Sulafat', 'Vega'],
+
+    ['Tarazed', 'Altair'], ['Altair', 'Alshain'], ['Tarazed', 'Okab'],
+    ['Okab', 'Deneb el Okab'], ['Deneb el Okab', 'Theta Aquilae'],
+    ['Alshain', 'Theta Aquilae'],
+
+    ['Kaus Borealis', 'Kaus Media'], ['Kaus Media', 'Kaus Australis'],
+    ['Kaus Australis', 'Ascella'], ['Ascella', 'Tau Sagittarii'],
+    ['Tau Sagittarii', 'Nunki'], ['Nunki', 'Phi Sagittarii'],
+    ['Phi Sagittarii', 'Kaus Borealis'], ['Phi Sagittarii', 'Kaus Media'],
+
+    ['Eltanin', 'Rastaban'], ['Rastaban', 'Grumium'], ['Grumium', 'Eltanin'],
+    ['Grumium', 'Altais'], ['Altais', 'Aldhibah'], ['Aldhibah', 'Edasich'],
+    ['Edasich', 'Thuban'],
+
+    ['Alderamin', 'Zeta Cephei'], ['Zeta Cephei', 'Errai'],
+    ['Errai', 'Alfirk'], ['Alfirk', 'Alderamin'],
+
+    ['Polaris', 'Yildun'], ['Yildun', 'Urodelus'],
+    ['Urodelus', 'Zeta Ursae Minoris'], ['Zeta Ursae Minoris', 'Kochab'],
+
+    ['Misam', 'Mirfak'], ['Mirfak', 'Delta Persei'], ['Delta Persei', 'Adid'],
+    ['Adid', 'Atik'], ['Mirfak', 'Algol'],
+
+    ['Capella', 'Menkalinan'], ['Menkalinan', 'Mahasim'],
+    ['Mahasim', 'Elnath'], ['Elnath', 'Hassaleh'], ['Hassaleh', 'Capella'],
+
+    ['Arcturus', 'Muphrid'], ['Arcturus', 'Izar'], ['Izar', 'Delta Bootis'],
+    ['Delta Bootis', 'Nekkar'], ['Nekkar', 'Seginus'], ['Seginus', 'Arcturus'],
+
+    ['Nusakan', 'Alphecca'], ['Alphecca', 'Gamma CrB'],
+
+    ['Eta Herculis', 'Zeta Herculis'], ['Zeta Herculis', 'Sarin'],
+    ['Sarin', 'Pi Herculis'], ['Pi Herculis', 'Eta Herculis'],
+    ['Zeta Herculis', 'Kornephoros'], ['Kornephoros', 'Rasalgethi'],
+
+    ['Rasalhague', 'Cebalrai'], ['Rasalhague', 'Yed Prior'],
+    ['Yed Prior', 'Yed Posterior'], ['Yed Posterior', 'Zeta Ophiuchi'],
+    ['Zeta Ophiuchi', 'Sabik'], ['Sabik', 'Cebalrai'],
+
+    ['Spica', 'Heze'], ['Heze', 'Porrima'], ['Porrima', 'Auva'],
+    ['Auva', 'Vindemiatrix'], ['Porrima', 'Zavijava'],
+
+    ['Zubenelgenubi', 'Zubeneschamali'],
+
+    ['Algieba', 'Adhafera'], ['Adhafera', 'Rasalas'],
+    ['Rasalas', 'Algenubi'], ['Zosma', 'Chertan'], ['Chertan', 'Denebola'],
+    ['Chertan', 'Regulus'],
+
+    ['Castor', 'Mebsuta'], ['Mebsuta', 'Tejat'], ['Tejat', 'Propus'],
+    ['Pollux', 'Wasat'], ['Wasat', 'Alhena'], ['Wasat', 'Alzirr'],
+
+    ['Aldebaran', 'Ain'], ['Ain', 'Elnath'], ['Aldebaran', 'Theta Tauri'],
+    ['Theta Tauri', 'Hyadum II'], ['Hyadum II', 'Lambda Tauri'],
+    ['Aldebaran', 'Tianguan'],
+
+    ['Wezen', 'Aludra'], ['Adhara', 'Furud'], ['Furud', 'Mirzam'],
+
+    ['Regor', 'Alsephina'], ['Alsephina', 'Markeb'], ['Markeb', 'Suhail'],
+    ['Suhail', 'Regor'], ['Regor', 'Naos'],
+
+    ['Hadar', 'Epsilon Centauri'], ['Epsilon Centauri', 'Zeta Centauri'],
+    ['Zeta Centauri', 'Muhlifain'], ['Muhlifain', 'Delta Centauri'],
+    ['Hadar', 'Eta Centauri'], ['Eta Centauri', 'Menkent'],
+    ['Menkent', 'Zeta Centauri'],
+
+    ['Fang', 'Dschubba'], ['Antares', 'Alniyat'], ['Alniyat', 'Dschubba'],
+    ['Antares', 'Paikauhale'], ['Paikauhale', 'Larawag'],
+    ['Larawag', 'Eta Scorpii'], ['Eta Scorpii', 'Sargas'],
+    ['Sargas', 'Girtab'], ['Girtab', 'Shaula'], ['Girtab', 'Iota Scorpii'],
+
+    ['Markab', 'Homam'], ['Homam', 'Biham'], ['Biham', 'Enif'],
+    ['Scheat', 'Matar'], ['Matar', 'Sadalbari'],
+
+    ['Sadalmelik', 'Sadalsuud'], ['Sadalmelik', 'Skat'],
+
+    ['Hamal', 'Sheratan'], ['Sheratan', 'Mesarthim'],
+
+    ['Arneb', 'Nihal'],
+
+    ['Procyon', 'Gomeisa'],
+
+    ['Cursa', 'Rigel']
+  ];
+
+  /* --------------------------------------------------- what they are called
+     The lines above draw the figures. A figure you cannot name is a shape,
+     so the ones with enough stars up to actually read as themselves get
+     their name written across the middle of them.
+
+     Three stars is the threshold. Lyra is one star and Boötes is one star
+     from here -- Vega and Arcturus already carry their own names, and
+     writing a second word beside them is clutter, not help. */
+
+  var SHAPES = [
+    ['orion',        ['Betelgeuse', 'Rigel', 'Bellatrix', 'Mintaka', 'Alnilam', 'Alnitak', 'Saiph']],
+    ['ursa major',   ['Dubhe', 'Merak', 'Phecda', 'Megrez', 'Alioth', 'Mizar', 'Alkaid']],
+    ['ursa minor',   ['Polaris', 'Kochab', 'Pherkad']],
+    ['cassiopeia',   ['Caph', 'Schedar', 'Navi', 'Ruchbah', 'Segin']],
+    ['cygnus',       ['Deneb', 'Sadr', 'Albireo', 'Gienah Cygni', 'Delta Cygni']],
+    ['leo',          ['Regulus', 'Algieba', 'Zosma', 'Denebola']],
+    ['taurus',       ['Aldebaran', 'Elnath', 'Alcyone']],
+    ['gemini',       ['Castor', 'Pollux', 'Alhena']],
+    ['canis major',  ['Sirius', 'Mirzam', 'Wezen', 'Adhara']],
+    ['scorpius',     ['Antares', 'Dschubba', 'Graffias', 'Shaula', 'Lesath', 'Sargas']],
+    ['pegasus',      ['Markab', 'Scheat', 'Algenib', 'Alpheratz']],
+    ['crux',         ['Acrux', 'Mimosa', 'Gacrux', 'Imai']],
+    ['carina',       ['Canopus', 'Miaplacidus', 'Avior']],
+    ['andromeda',    ['Alpheratz', 'Mirach', 'Almach']],
+    ['lyra',         ['Vega', 'Sheliak', 'Sulafat']],
+    ['aquila',       ['Altair', 'Tarazed', 'Alshain', 'Okab', 'Deneb el Okab', 'Theta Aquilae']],
+    ['sagittarius',  ['Kaus Australis', 'Nunki', 'Kaus Media', 'Kaus Borealis', 'Ascella', 'Phi Sagittarii', 'Tau Sagittarii']],
+    ['draco',        ['Eltanin', 'Rastaban', 'Altais', 'Aldhibah', 'Edasich', 'Thuban', 'Grumium']],
+    ['cepheus',      ['Alderamin', 'Alfirk', 'Errai', 'Zeta Cephei']],
+    ['perseus',      ['Mirfak', 'Algol', 'Atik', 'Adid', 'Delta Persei', 'Misam']],
+    ['auriga',       ['Capella', 'Menkalinan', 'Mahasim', 'Hassaleh', 'Elnath']],
+    ['bootes',       ['Arcturus', 'Izar', 'Seginus', 'Nekkar', 'Muphrid', 'Delta Bootis']],
+    ['hercules',     ['Rasalgethi', 'Kornephoros', 'Zeta Herculis', 'Pi Herculis', 'Eta Herculis', 'Sarin']],
+    ['ophiuchus',    ['Rasalhague', 'Cebalrai', 'Sabik', 'Zeta Ophiuchi', 'Yed Prior', 'Yed Posterior']],
+    ['virgo',        ['Spica', 'Porrima', 'Vindemiatrix', 'Heze', 'Auva', 'Zavijava']],
+    ['corvus',       ['Gienah Corvi', 'Algorab', 'Kraz', 'Epsilon Corvi']],
+    ['vela',         ['Naos', 'Regor', 'Alsephina', 'Suhail', 'Markeb']],
+    ['centaurus',    ['Rigil Kentaurus', 'Hadar', 'Menkent', 'Muhlifain', 'Epsilon Centauri', 'Eta Centauri', 'Zeta Centauri', 'Delta Centauri']]
   ];
 
   /**
@@ -10162,41 +10379,13 @@
   }
 
   /* ------------------------------------------------------- the rest of it
-     The catalogue above is the bright stars, and the bright stars are not
-     what a sky looks like. There are nine of them in a given window on a
-     given night; a real sky has hundreds you cannot name.
-
-     So the gaps are filled with a faint field. Be clear about what this is:
-     these are NOT catalogued stars. They are points scattered evenly over
-     the celestial sphere by a fixed sequence, so they are the same points
-     every night, and they rise, set and wheel overhead exactly as real
-     ones do, because they are put through the same arithmetic. What they
-     are not is Gliese 581. Everything with a name, every constellation
-     figure, the planets, the sun and the moon are the real thing; this is
-     the dust between them, and without it the sky is nine dots.
+     There used to be nine hundred invented points scattered between the
+     real stars here, to stop the sky reading as nine dots. They went, and
+     they went on purpose: they were not catalogued stars, and a field of
+     plausible dust sitting on top of Orion makes Orion harder to find.
+     Everything drawn now is the real thing and in the real place.
      ------------------------------------------------------------------- */
 
-  var FAINT = null;
-
-  function faintField() {
-    var out = [], i, a = 1, b = 0;
-    // a small deterministic sequence, so the sky is the same sky every time
-    function rnd() {
-      a = (a * 1103515245 + 12345) % 2147483648;
-      b = (b * 48271 + 11) % 2147483647;
-      return ((a / 2147483648) + (b / 2147483647)) % 1;
-    }
-    for (i = 0; i < 950; i++) {
-      var ra = rnd() * 360;
-      // even over the sphere, not over declination -- otherwise the poles
-      // end up crowded and the equator bare
-      var dec = Math.asin(rnd() * 2 - 1) / RAD;
-      out.push({ ra: ra, dec: dec, mag: 3.8 + rnd() * 2.2,
-                 // real populations skew blue-white with a red tail
-                 bv: -0.2 + rnd() * rnd() * 2.1 });
-    }
-    return out;
-  }
 
   /* ------------------------------------------------------ the colour of it
      A sky is not a blue rectangle. It is a gradient that runs from deep at
@@ -10273,6 +10462,8 @@
   var skyLook = 180;               // the azimuth in the middle of the view
   var skyShift = 0;                // milliseconds away from now
   var skyWhereNow = null;          // the lat/long we last drew for
+  var skyHaze = get('sky.haze', true) !== false;   // is the milky way shown
+  var skyNames = get('sky.names', true) !== false; // are the figures named
 
   /* How much sky fits. The width is the free choice and the height falls
      out of the window's shape -- EXCEPT that the height can never be more
@@ -10292,8 +10483,9 @@
     var off = az - skyLook;
     while (off > 180) off -= 360;
     while (off < -180) off += 360;
-    // the horizon sits a little above the bottom edge, so there is ground
-    var base = skyFull ? 0.93 : 1;
+    // the horizon sits above whatever furniture is at the bottom of the
+    // window, so there is ground, and so the compass has somewhere to live
+    var base = skyFull ? skyFloor() : 1;
     return {
       x: SKY_W / 2 + (off / spanX) * SKY_W,
       y: SKY_H * base - (alt / spanY) * SKY_H,
@@ -10346,15 +10538,6 @@
       out.planets.push(a);
     }
 
-    if (!FAINT) FAINT = faintField();
-    out.faint = [];
-    for (i = 0; i < FAINT.length; i++) {
-      a = altaz(FAINT[i].ra, FAINT[i].dec, lat, lon, d);
-      a.mag = FAINT[i].mag;
-      a.bv = FAINT[i].bv;
-      out.faint.push(a);
-    }
-
     if (!MILKY) MILKY = galacticPlane();
     for (i = 0; i < MILKY.length; i++) {
       a = altaz(MILKY[i].ra, MILKY[i].dec, lat, lon, d);
@@ -10366,6 +10549,20 @@
   }
 
   /* ------------------------------------------------------------ the drawing */
+
+  /** Where the horizon goes, as a fraction of the picture's height: high
+   *  enough that the taskbar and the dials stand on the ground rather than
+   *  in the sky. Measured, not guessed, because the taskbar wraps on a
+   *  narrow window and the dials are taller on a phone. */
+  function skyFloor() {
+    var px = taskbarHeight(), el;
+    el = document.getElementById('sky-dials');
+    if (el && !el.hidden && el.getBoundingClientRect) {
+      px += el.getBoundingClientRect().height + 14;
+    }
+    var h = window.innerHeight || 800;
+    return Math.max(0.62, Math.min(0.94, 1 - (px + 26) / h));
+  }
 
   var COMPASS = [[0, 'N'], [45, 'NE'], [90, 'E'], [135, 'SE'],
                  [180, 'S'], [225, 'SW'], [270, 'W'], [315, 'NW']];
@@ -10473,8 +10670,8 @@
          So it is a stroked path now -- the plane itself, followed round,
          drawn three times at falling widths and rising opacity, and the
          whole group put through a blur. One shape, no seams. */
-      var seg = [], segs = [], last = null, g;
-      for (i = 0; i < S.milky.length; i++) {
+      var seg = [], segs = [], last = null, g, j2;
+      for (i = 0; skyHaze && i < S.milky.length; i++) {
         p = project(S.milky[i].alt, S.milky[i].az);
         if (!p.on || S.milky[i].alt < -4) { if (seg.length > 1) segs.push(seg); seg = []; last = null; continue; }
         // the plane can leave one side of the screen and arrive at the other
@@ -10487,12 +10684,12 @@
       }
       if (seg.length > 1) segs.push(seg);
 
-      if (segs.length) {
+      if (skyHaze && segs.length) {
         svg.push('<filter id="mwblur" x="-25%" y="-25%" width="150%" height="150%">' +
                  '<feGaussianBlur stdDeviation="' + (SKY_W / 90).toFixed(1) + '"/></filter>');
         svg.push('<g filter="url(#mwblur)">');
-        var pass = [[46, 0.030], [26, 0.038], [12, 0.045]];
-        var pi, si, j2, d2;
+        var pass = [[46, 0.017], [26, 0.021], [12, 0.026]];
+        var pi, si, d2;
         for (pi = 0; pi < pass.length; pi++) {
           for (si = 0; si < segs.length; si++) {
             d2 = '';
@@ -10523,24 +10720,10 @@
                        '" cy="' + (segs[si][j2].p.y + jy * 30).toFixed(1) +
                        '" r="' + (0.45 + Math.abs(jx) * 0.5).toFixed(2) +
                        '" fill="rgba(226,234,252,' +
-                       ((0.09 + Math.abs(jy) * 0.17) * g * night).toFixed(3) + ')"/>');
+                       ((0.05 + Math.abs(jy) * 0.10) * g * night).toFixed(3) + ')"/>');
             }
           }
         }
-      }
-
-      /* the faint field, under everything */
-      for (i = 0; i < S.faint.length; i++) {
-        var ft = S.faint[i];
-        if (ft.alt < 0) continue;
-        p = project(ft.alt, ft.az);
-        if (!p.on) continue;
-        var fa = throughAir(ft.alt, bvColour(ft.bv));
-        var fl = (0.18 + ((6.0 - ft.mag) / 2.2) * 0.42) * night * fa.dim;
-        if (fl < 0.015) continue;
-        svg.push('<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
-                 '" r="' + (1.75 - (ft.mag - 3.8) * 0.28).toFixed(2) +
-                 '" fill="' + rgba(fa.colour, fl) + '"/>');
       }
 
       /* the figures, under the stars so the stars sit on top of them */
@@ -10607,6 +10790,34 @@
                    '" y="' + (p.y + 3.5).toFixed(1) + '" opacity="' +
                    (0.62 * Math.min(1, bright * 1.3)).toFixed(2) + '">' +
                    escapeText(st.name) + '</text>');
+        }
+      }
+
+      /* ---- and the name of the figure itself ----
+         Written across the middle of its own stars, so it belongs to the
+         shape rather than to any one star in it. Only when at least three
+         of its stars are up and on the screen: two stars is not a figure,
+         it is a pair, and a name floating over a pair is a guess. */
+      if (skyNames && night > 0.35) {
+        var sh, mem, cx2, cy2, nup, lo, hi, q2;
+        for (i = 0; i < SHAPES.length; i++) {
+          sh = SHAPES[i]; cx2 = 0; cy2 = 0; nup = 0; lo = 1e9; hi = -1e9;
+          for (j2 = 0; j2 < sh[1].length; j2++) {
+            mem = S.byName[sh[1][j2]];
+            if (!mem || mem.alt < 3) continue;
+            q2 = project(mem.alt, mem.az);
+            if (!q2.on) continue;
+            cx2 += q2.x; cy2 += q2.y; nup++;
+            if (q2.x < lo) lo = q2.x;
+            if (q2.x > hi) hi = q2.x;
+          }
+          // a figure split across the wrap has no middle worth writing in
+          if (nup < 3 || hi - lo > SKY_W * 0.5) continue;
+          cx2 /= nup; cy2 /= nup;
+          if (cx2 < 54 || cx2 > SKY_W - 54) continue;
+          svg.push('<text class="sky-shape" x="' + cx2.toFixed(1) + '" y="' +
+                   cy2.toFixed(1) + '" text-anchor="middle" opacity="' +
+                   (0.40 * night).toFixed(2) + '">' + sh[0] + '</text>');
         }
       }
     }
@@ -10696,16 +10907,22 @@
                '" r="' + sr.toFixed(1) + '" fill="url(#sundisc)"/>');
     }
 
-    /* ---- the horizon and the compass, full screen only ---- */
+    /* ---- the horizon and the compass, full screen only ----
+       The horizon has to clear the furniture standing in front of the sky:
+       the taskbar along the bottom and the dials just above it. Otherwise
+       north and west get written underneath them and you cannot read a
+       word of it. So the ground is as deep as whatever is down there, and
+       the letters go ABOVE the line, in the sky where they belong, rather
+       than below it where there is no room. */
     if (skyFull) {
-      var hz = SKY_H * 0.93;
+      var hz = SKY_H * skyFloor();
       svg.push('<line x1="0" y1="' + hz.toFixed(1) + '" x2="' + SKY_W + '" y2="' +
                hz.toFixed(1) + '" stroke="rgba(160,180,215,.22)" stroke-width="0.7"/>');
       for (j = 0; j < COMPASS.length; j++) {
         var c = project(0, COMPASS[j][0]);
         if (!c.on) continue;
         svg.push('<text class="sky-rose" x="' + c.x.toFixed(1) + '" y="' +
-                 (hz + 16).toFixed(1) + '" text-anchor="middle">' + COMPASS[j][1] + '</text>');
+                 (hz - 9).toFixed(1) + '" text-anchor="middle">' + COMPASS[j][1] + '</text>');
       }
     }
 
@@ -10781,6 +10998,13 @@
     return Math.round(t * t * t * SKY_REACH);
   }
 
+  /** And back again, so that running the clock moves the handle with it. */
+  function skyMsToDial(ms) {
+    var t = ms / SKY_REACH;
+    var r = Math.pow(Math.abs(t), 1 / 3) * (t < 0 ? -1 : 1);
+    return Math.max(-100, Math.min(100, r * 100));
+  }
+
   function skyWhen() { return Date.now() + skyShift; }
 
   function skyStamp(at) {
@@ -10821,7 +11045,10 @@
         '<input class="sky-time" type="range" min="-100" max="100" step="0.5" value="0" ' +
           'aria-label="wind the sky forwards or back">' +
         '<b class="sky-time-read"></b></label>' +
-      '<button class="sky-now" type="button">now</button>';
+      '<button class="sky-now" type="button">now</button>' +
+      '<button class="sky-run" type="button" aria-pressed="false">drift</button>' +
+      '<button class="sky-haze" type="button">haze</button>' +
+      '<button class="sky-shapes" type="button">names</button>';
     document.body.appendChild(bar);
 
     var az = bar.querySelector('.sky-az');
@@ -10864,12 +11091,90 @@
     bar.querySelector('.sky-now').addEventListener('click', function () {
       skyShift = 0;
       tm.value = 0;
+      stopDrift();
       soon(true);
       play('tick');
     });
 
+    /* ---- the two things you can take out of the way ---- */
+    var hazeBtn = bar.querySelector('.sky-haze');
+    var nameBtn = bar.querySelector('.sky-shapes');
+    function marks() {
+      hazeBtn.setAttribute('aria-pressed', skyHaze ? 'true' : 'false');
+      nameBtn.setAttribute('aria-pressed', skyNames ? 'true' : 'false');
+    }
+    hazeBtn.addEventListener('click', function () {
+      skyHaze = !skyHaze;
+      set('sky.haze', skyHaze);
+      marks(); soon(false); play('tick');
+    });
+    nameBtn.addEventListener('click', function () {
+      skyNames = !skyNames;
+      set('sky.names', skyNames);
+      marks(); soon(false); play('tick');
+    });
+    marks();
+
+    /* ------------------------------------------------------------- drift
+       The sky really does move, all the time, and it is already redrawn
+       every twenty seconds. But the real rate is fifteen degrees an hour,
+       which across this window is about half a pixel in those twenty
+       seconds -- true, and completely invisible. You cannot watch the sun
+       cross the sky in real time any more than you can watch a clock's
+       hour hand.
+
+       So: hold the button down on time itself. Drift runs the clock at
+       nine hundred times, which is a quarter of an hour every second -- a
+       day and a night in about a minute and a half. The sun climbs, goes
+       over, reddens, sets; the stars come up behind it in the right order
+       and wheel; the moon rises late and fills out over the following
+       nights. Everything is the same arithmetic, just asked faster.
+       ------------------------------------------------------------------ */
+
+    var runBtn = bar.querySelector('.sky-run');
+
+    function driftStep(ts) {
+      if (!skyRun) return;
+      if (!skyRunLast) skyRunLast = ts;
+      skyShift += (ts - skyRunLast) * SKY_RUN_RATE;
+      skyRunLast = ts;
+      if (skyShift > SKY_REACH) skyShift = -SKY_REACH;
+      tm.value = skyMsToDial(skyShift);
+      /* A whole sky is rebuilt from scratch on every paint, so it is drawn
+         at about twenty a second rather than at sixty. Smooth enough that
+         the sun slides, cheap enough that the page stays warm. */
+      if (ts - skyRunDrawn > 46) { skyRunDrawn = ts; paint(); }
+      skyRun = requestAnimationFrame(driftStep);
+    }
+    function stopDrift() {
+      if (skyRun) cancelAnimationFrame(skyRun);
+      skyRun = 0; skyRunLast = 0;
+      if (runBtn) runBtn.setAttribute('aria-pressed', 'false');
+      document.body.classList.remove('sky-running');
+    }
+    function startDrift() {
+      if (skyRun) return;
+      skyRunLast = 0;
+      runBtn.setAttribute('aria-pressed', 'true');
+      document.body.classList.add('sky-running');
+      skyRun = requestAnimationFrame(driftStep);
+    }
+    runBtn.addEventListener('click', function () {
+      if (skyRun) stopDrift(); else startDrift();
+      play('tick');
+    });
+    // winding the clock by hand means you have stopped watching it run
+    tm.addEventListener('pointerdown', stopDrift);
+    // and nothing should run on in a tab nobody is looking at
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stopDrift();
+    });
+
     paint();
   }
+
+  var skyRun = 0, skyRunLast = 0, skyRunDrawn = 0;
+  var SKY_RUN_RATE = 900;          // a quarter of an hour of sky per second
 
   var skyCache = null;
 
@@ -10989,10 +11294,15 @@
 
       skyRepaint(host, where, true);
 
-      // Once a minute. The sun moves a quarter of a degree in that time.
+      /* Every twenty seconds. The sky turns fifteen degrees an hour, so in
+         twenty seconds it has moved a twelfth of a degree -- about half a
+         pixel across this window. Nobody sees that happen. What it means
+         is that the sky is never stale: look back after ten minutes and
+         the sun has genuinely moved, because it has. The `drift` button is
+         there for when you want to actually watch it go. */
       setInterval(function () {
-        if (!document.hidden) skyRepaint(host, where, true);
-      }, 60000);
+        if (!document.hidden && !skyRun) skyRepaint(host, where, true);
+      }, 20000);
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden) skyRepaint(host, where, true);
       });

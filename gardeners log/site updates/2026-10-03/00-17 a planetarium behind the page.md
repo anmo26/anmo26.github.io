@@ -1,12 +1,12 @@
-# 3 october 2026, 00:48
+# 3 october 2026, 00:17
 
 ## what changed
 
-- the invented star dust is gone; 125 real named stars went in, 210 in the catalogue now
-- 28 constellations now write their own name across themselves, and can be switched off
-- the milky way stayed because it does move, but it is faint now and has its own switch
-- the compass letters moved above the horizon, so the taskbar stops cutting them in half
-- clouds go dark at night instead of washing pale grey over orion
+- the universe paper puts the real sky behind the whole page — sun, moon, planets, constellations
+- two dials: one turns you north, east, south or west, one winds the clock months either way
+- the forum is the ether, and THE FIELD is a room where everybody hears the same second of the same record
+- the folder is organised: photos, films, every record renamed, every subfolder laid out
+- while music plays the whole site blooms and goes soft, the way it does with headphones on
 
 ## you planned
 
@@ -17,12 +17,12 @@
 ## i suggest
 
 - a log pose: a needle that always points at the room you have spent least time in
-- tap a constellation and it tells you what it is and when it is best seen
+- a bounty poster per visitor, worth more the more of the site they have found
 - the days-in-a-row this garden has been tended, on the front page, for you not them
 - your own handwriting, traced from a photo, as the heading font
 
 ## open questions
 
-- the sky dial cannot find a time of day once you wind it past a month — worth fixing?
+- which mini fig still looks wrong — the pogo, the runner, or the cloud?
 - should the other papers keep a plain sky band, or no sky at all?
 - somebody left a one-word rude note on the front page — bin it, or leave it up?
