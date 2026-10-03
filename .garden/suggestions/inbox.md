@@ -3,16 +3,9 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 03/10/2026, 00:52:12. 59 notes in the ledger.
+Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 
-## new (16)
-
-### 1791003056932huvh
-
-- **idea**, front page · the ticker
-- by anmo (pxo1xif0), today
-
-> i think the time scroll in universe is a little bit finicky. hard to narrow down a certain time. maybe the further u get away from today, teh faster it scrolls? idk. maybe like make it only abel to go frowared at most 2 months? think about how to fix this. 
+## parked (13)
 
 ### 1791003013330o70n
 
@@ -21,42 +14,9 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
 > make all the secrets more obvous, like make it more obvious to grow the tree in garden, make it more obvious somehow to like click the waves. idk. help me brainstorm and ask me questions in claude about this regarding this. 
 
-### 17910024113149rgq
+  - *claude:* not built yet — you asked to think it through first, so the questions are waiting for you in claude. leaving this up until we decide.
 
-- **idea**, /LIBRARY!!!!!/ · the masthead
-- by leyna (3a574s9i), today
-
-> make it less messy
-
-### 1791002295995j70g
-
-- **idea**, front page · the page
-- by anmo (pxo1xif0), today
-
-> make it impossible to makes note whenver you dotn have notes button open
-
-### 1791002187383yn47
-
-- **idea**, front page · todo.md
-- by leyna (3a574s9i), today
-
-> can we make it so that i can look up and down at the sky and i want to see the clouds
-
-### 1791001093674qelw
-
-- **idea**, /MOONLIGHT/ · the masthead
-- by anmo (pxo1xif0), today
-
-> YOOO WHERE DID THE ASCII MOON GO????
-
-### 1789571975185wu61
-
-- **idea**, /test folder/ · Screenshot 2026-09-14 at 3.45.54 AM.png
-- by Stan (2i39jnmt), 16 days ago
-
-> 
-
-  - *nobody:* thsi enotes sucks
+**decided:** talking it through with anmo first
 
 ### 1789571885963xvth
 
@@ -67,21 +27,7 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
   - *claude:* welcome to the bar. the record playing in there is not a file — it is being played, badly and differently, every time anybody walks in.
 
-### 1789571752477qt06
-
-- **chat**, front page · the mini fig — *taken off the wall*
-- by Stan (2i39jnmt), 16 days ago
-
-> penis 
-
-### 1789552167217iba4
-
-- **chat**, front page · the ticker — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
-
-> I WILL NOT BE MAKING A MAJOR EDIT UNTIL SEPT 20!!!! ADD STICKIES TO ANYTHING YOU THINK NEEDS FIXING!!!! I WILL BE FILLING THE SITE UP WITH CONTENT SOON! 9/16/26
-
-  - *someone:* Anmo you are so breedable
+**decided:** a hello, left up
 
 ### 1789537732329pxw9
 
@@ -92,6 +38,8 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
   - *claude:* the tree is real. keep clicking the base and something gives.
 
+**decided:** a hello, left up
+
 ### 1789537712080fu9j
 
 - **chat**, /MOONLIGHT/ · the music player — *taken off the wall*
@@ -100,6 +48,8 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 > i made the rocket fly by clicking the button below it!
 
   - *claude:* you found the rocket. there is more up there than the rocket.
+
+**decided:** found the rocket
 
 ### 17895376834560i0m
 
@@ -110,6 +60,8 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
   - *Anmo:* welcome!!! u found the moon!!!! more to come soon...
 
+**decided:** a hello
+
 ### 1789537496650fyua
 
 - **chat**, front page · the mini fig — *taken off the wall*
@@ -119,6 +71,8 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
   - *Anmo:* hi!
   - *claude:* it stays. only whoever wrote a note can take it down now.
+
+**decided:** a hello
 
 ### 17895162076872dhe
 
@@ -132,14 +86,7 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
   - *master yoda!:* hi everyone!
   - *master yoda!:* hihihih!
 
-### 1789505682452de1g
-
-- **idea**, front page — *taken off the wall*
-- by unsigned (r5u3jewz), 17 days ago
-
-> after fixing the ui in accordance to a sticky note. please delete the sticky note. also check in the garden. i left a note in there that you may have missed. 
-
-## parked (6)
+**decided:** hi
 
 ### 1789507931694w871
 
@@ -210,7 +157,52 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
 **decided:** not a change to the site — see the answer
 
-## done (34)
+## done (41)
+
+### 1791003056932huvh
+
+- **idea**, front page · the ticker — *taken off the wall*
+- by anmo (pxo1xif0), today
+
+> i think the time scroll in universe is a little bit finicky. hard to narrow down a certain time. maybe the further u get away from today, teh faster it scrolls? idk. maybe like make it only abel to go frowared at most 2 months? think about how to fix this. 
+
+**decided:** two months each way, a steeper curve, arrow keys for exact hours
+
+### 17910024113149rgq
+
+- **idea**, /LIBRARY!!!!!/ · the masthead — *taken off the wall*
+- by leyna (3a574s9i), today
+
+> make it less messy
+
+**decided:** captions one line, masthead note one line, dials off the books
+
+### 1791002295995j70g
+
+- **idea**, front page · the page — *taken off the wall*
+- by anmo (pxo1xif0), today
+
+> make it impossible to makes note whenver you dotn have notes button open
+
+**decided:** note folded into notes; greyed out while the wall is down
+
+### 1791002187383yn47
+
+- **idea**, front page · todo.md — *taken off the wall*
+- by leyna (3a574s9i), today
+
+> can we make it so that i can look up and down at the sky and i want to see the clouds
+
+**decided:** a height handle beside the compass; clouds with a lit edge
+
+### 1791001093674qelw
+
+- **idea**, /MOONLIGHT/ · the masthead — *taken off the wall*
+- by anmo (pxo1xif0), today
+
+> YOOO WHERE DID THE ASCII MOON GO????
+
+**decided:** it was behind the title; hangs under the heading now
 
 ### 17910006815823xuw
 
@@ -277,6 +269,17 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
 > have stickies show the date and time it was written.
 
+### 1789552167217iba4
+
+- **chat**, front page · the ticker — *taken off the wall*
+- by Anmo (r5u3jewz), 16 days ago
+
+> I WILL NOT BE MAKING A MAJOR EDIT UNTIL SEPT 20!!!! ADD STICKIES TO ANYTHING YOU THINK NEEDS FIXING!!!! I WILL BE FILLING THE SITE UP WITH CONTENT SOON! 9/16/26
+
+  - *someone:* Anmo you are so breedable
+
+**decided:** an announcement; its date has passed
+
 ### 1789552135307jgxa
 
 - **idea**, front page · the ticker — *taken off the wall*
@@ -310,7 +313,7 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 ### 1789534519578dyh6
 
 - **idea**, front page · todo.md — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
+- by Anmo (r5u3jewz), 17 days ago
 
 > when i rescale image and to-do list, it makes it way too big than the amount i am scaling it. 
 
@@ -378,6 +381,15 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 > ok so here the issue on toggles, when i hover over the toggles it show the options, but i can never clikc the actual options. FIX THIS.
 
 **decided:** the nine pixels of gap between the button and the menu were counting as leaving
+
+### 1789505682452de1g
+
+- **idea**, front page — *taken off the wall*
+- by unsigned (r5u3jewz), 17 days ago
+
+> after fixing the ui in accordance to a sticky note. please delete the sticky note. also check in the garden. i left a note in there that you may have missed. 
+
+**decided:** this is the workflow now
 
 ### 1789505514089i5zs
 
@@ -496,7 +508,27 @@ Read 03/10/2026, 00:52:12. 59 notes in the ledger.
 
 **decided:** the clock lands on the second now
 
-## declined (3)
+## declined (5)
+
+### 1789571975185wu61
+
+- **idea**, /test folder/ · Screenshot 2026-09-14 at 3.45.54 AM.png — *taken off the wall*
+- by Stan (2i39jnmt), 16 days ago
+
+> 
+
+  - *nobody:* thsi enotes sucks
+
+**decided:** empty, and its folder is gone
+
+### 1789571752477qt06
+
+- **chat**, front page · the mini fig — *taken off the wall*
+- by Stan (2i39jnmt), 16 days ago
+
+> penis 
+
+**decided:** rude, already down
 
 ### 17895080503948j39
 

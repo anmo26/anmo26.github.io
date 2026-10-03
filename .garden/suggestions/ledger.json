@@ -354,10 +354,11 @@
     },
     "1789505682452de1g": {
       "id": "1789505682452de1g",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-15T20:58:07.873Z",
       "history": [
-        "2026-09-15T20:58:57.714Z taken off the wall"
+        "2026-09-15T20:58:57.714Z taken off the wall",
+        "2026-10-03T05:14:48.280Z new -> done"
       ],
       "room": "/",
       "text": "after fixing the ui in accordance to a sticky note. please delete the sticky note. also check in the garden. i left a note in there that you may have missed. ",
@@ -368,7 +369,8 @@
       "at": 1789505682452,
       "replies": [],
       "gone": true,
-      "flags": []
+      "flags": [],
+      "why": "this is the workflow now"
     },
     "1789506848670b2fy": {
       "id": "1789506848670b2fy",
@@ -652,10 +654,11 @@
     },
     "17895162076872dhe": {
       "id": "17895162076872dhe",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-16T09:33:45.304Z",
       "history": [
-        "2026-09-16T09:38:49.006Z taken off the wall"
+        "2026-09-16T09:38:49.006Z taken off the wall",
+        "2026-10-03T05:14:48.213Z new -> parked"
       ],
       "room": "/",
       "text": "hi",
@@ -687,7 +690,8 @@
         }
       ],
       "gone": true,
-      "flags": []
+      "flags": [],
+      "why": "hi"
     },
     "1789534519578dyh6": {
       "id": "1789534519578dyh6",
@@ -711,10 +715,11 @@
     },
     "1789537496650fyua": {
       "id": "1789537496650fyua",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-16T09:33:45.309Z",
       "history": [
-        "2026-09-23T08:22:36.030Z taken off the wall"
+        "2026-09-23T08:22:36.030Z taken off the wall",
+        "2026-10-03T05:14:48.149Z new -> parked"
       ],
       "room": "/",
       "text": "hi! i like this site a lot. please dont delete this note!",
@@ -736,14 +741,16 @@
         }
       ],
       "gone": true,
-      "flags": []
+      "flags": [],
+      "why": "a hello"
     },
     "17895376834560i0m": {
       "id": "17895376834560i0m",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-16T09:33:45.309Z",
       "history": [
-        "2026-09-24T07:12:44.966Z taken off the wall"
+        "2026-09-24T07:12:44.966Z taken off the wall",
+        "2026-10-03T05:14:48.080Z new -> parked"
       ],
       "room": "/MOONLIGHT/",
       "text": "am i the only one who has found this place? leave a comment if u found it too!!",
@@ -760,14 +767,16 @@
         }
       ],
       "gone": true,
-      "flags": []
+      "flags": [],
+      "why": "a hello"
     },
     "1789537712080fu9j": {
       "id": "1789537712080fu9j",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-16T09:33:45.309Z",
       "history": [
-        "2026-09-24T07:12:44.977Z taken off the wall"
+        "2026-09-24T07:12:44.977Z taken off the wall",
+        "2026-10-03T05:14:48.009Z new -> parked"
       ],
       "room": "/MOONLIGHT/",
       "text": "i made the rocket fly by clicking the button below it!",
@@ -784,13 +793,16 @@
         }
       ],
       "gone": true,
-      "flags": []
+      "flags": [],
+      "why": "found the rocket"
     },
     "1789537732329pxw9": {
       "id": "1789537732329pxw9",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-16T09:33:45.309Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.937Z new -> parked"
+      ],
       "room": "/THE GARDEN/",
       "text": "who else found this garden? its kinda cool! try growing the tree!!!!! click it multiple times at the base.",
       "kind": "chat",
@@ -806,7 +818,8 @@
         }
       ],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "a hello, left up"
     },
     "1789538121072ktcp": {
       "id": "1789538121072ktcp",
@@ -887,10 +900,11 @@
     },
     "1789552167217iba4": {
       "id": "1789552167217iba4",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-09-23T08:22:36.030Z",
       "history": [
-        "2026-09-24T07:05:26.117Z taken off the wall"
+        "2026-09-24T07:05:26.117Z taken off the wall",
+        "2026-10-03T05:14:47.865Z new -> done"
       ],
       "room": "/",
       "text": "I WILL NOT BE MAKING A MAJOR EDIT UNTIL SEPT 20!!!! ADD STICKIES TO ANYTHING YOU THINK NEEDS FIXING!!!! I WILL BE FILLING THE SITE UP WITH CONTENT SOON! 9/16/26",
@@ -907,7 +921,8 @@
         }
       ],
       "gone": true,
-      "flags": []
+      "flags": [],
+      "why": "an announcement; its date has passed"
     },
     "1789552212506i7kj": {
       "id": "1789552212506i7kj",
@@ -930,10 +945,11 @@
     },
     "1789571752477qt06": {
       "id": "1789571752477qt06",
-      "status": "new",
+      "status": "declined",
       "firstSeen": "2026-09-23T08:22:36.030Z",
       "history": [
-        "2026-09-24T07:05:26.117Z taken off the wall"
+        "2026-09-24T07:05:26.117Z taken off the wall",
+        "2026-10-03T05:14:47.797Z new -> declined"
       ],
       "room": "/",
       "text": "penis\n\n",
@@ -944,7 +960,8 @@
       "at": 1789571752478,
       "replies": [],
       "gone": true,
-      "flags": []
+      "flags": [],
+      "why": "rude, already down"
     },
     "1789691532128hzex": {
       "id": "1789691532128hzex",
@@ -986,9 +1003,11 @@
     },
     "1789571885963xvth": {
       "id": "1789571885963xvth",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-09-23T08:22:36.030Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.728Z new -> parked"
+      ],
       "room": "/THE BAR/",
       "text": "i found!",
       "kind": "chat",
@@ -1004,13 +1023,17 @@
         }
       ],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "a hello, left up"
     },
     "1789571975185wu61": {
       "id": "1789571975185wu61",
-      "status": "new",
+      "status": "declined",
       "firstSeen": "2026-09-23T08:22:36.030Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.659Z new -> declined",
+        "2026-10-03T05:14:48.888Z taken off the wall"
+      ],
       "room": "/test folder/",
       "text": "",
       "kind": "idea",
@@ -1025,8 +1048,9 @@
           "at": 1789781589827
         }
       ],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "empty, and its folder is gone"
     },
     "179017677576677oj": {
       "id": "179017677576677oj",
@@ -1150,9 +1174,12 @@
     },
     "1791001093674qelw": {
       "id": "1791001093674qelw",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-10-03T04:18:34.088Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.517Z new -> done",
+        "2026-10-03T05:14:48.889Z taken off the wall"
+      ],
       "room": "/MOONLIGHT/",
       "text": "YOOO WHERE DID THE ASCII MOON GO????",
       "kind": "idea",
@@ -1161,14 +1188,18 @@
       "near": "the masthead",
       "at": 1791001093675,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "it was behind the title; hangs under the heading now"
     },
     "1791002187383yn47": {
       "id": "1791002187383yn47",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-10-03T04:52:12.382Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.451Z new -> done",
+        "2026-10-03T05:14:48.889Z taken off the wall"
+      ],
       "room": "/",
       "text": "can we make it so that i can look up and down at the sky and i want to see the clouds",
       "kind": "idea",
@@ -1177,14 +1208,18 @@
       "near": "todo.md",
       "at": 1791002187384,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "a height handle beside the compass; clouds with a lit edge"
     },
     "1791002295995j70g": {
       "id": "1791002295995j70g",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-10-03T04:52:12.389Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.385Z new -> done",
+        "2026-10-03T05:14:48.889Z taken off the wall"
+      ],
       "room": "/",
       "text": "make it impossible to makes note whenver you dotn have notes button open",
       "kind": "idea",
@@ -1193,14 +1228,17 @@
       "near": "the page",
       "at": 1791002295996,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "note folded into notes; greyed out while the wall is down"
     },
     "1791003013330o70n": {
       "id": "1791003013330o70n",
-      "status": "new",
+      "status": "parked",
       "firstSeen": "2026-10-03T04:52:12.390Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.590Z new -> parked"
+      ],
       "room": "/",
       "text": "make all the secrets more obvous, like make it more obvious to grow the tree in garden, make it more obvious somehow to like click the waves. idk. help me brainstorm and ask me questions in claude about this regarding this. ",
       "kind": "idea",
@@ -1208,15 +1246,25 @@
       "name": "anmo",
       "near": "THE FIELD/",
       "at": 1791003013330,
-      "replies": [],
+      "replies": [
+        {
+          "name": "claude",
+          "text": "not built yet — you asked to think it through first, so the questions are waiting for you in claude. leaving this up until we decide.",
+          "at": 1791004476354
+        }
+      ],
       "gone": false,
-      "flags": []
+      "flags": [],
+      "why": "talking it through with anmo first"
     },
     "1791003056932huvh": {
       "id": "1791003056932huvh",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-10-03T04:52:12.390Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.218Z new -> done",
+        "2026-10-03T05:14:48.889Z taken off the wall"
+      ],
       "room": "/",
       "text": "i think the time scroll in universe is a little bit finicky. hard to narrow down a certain time. maybe the further u get away from today, teh faster it scrolls? idk. maybe like make it only abel to go frowared at most 2 months? think about how to fix this. ",
       "kind": "idea",
@@ -1225,14 +1273,18 @@
       "near": "the ticker",
       "at": 1791003056932,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "two months each way, a steeper curve, arrow keys for exact hours"
     },
     "17910024113149rgq": {
       "id": "17910024113149rgq",
-      "status": "new",
+      "status": "done",
       "firstSeen": "2026-10-03T04:52:12.390Z",
-      "history": [],
+      "history": [
+        "2026-10-03T05:14:47.318Z new -> done",
+        "2026-10-03T05:14:48.889Z taken off the wall"
+      ],
       "room": "/LIBRARY!!!!!/",
       "text": "make it less messy",
       "kind": "idea",
@@ -1241,9 +1293,10 @@
       "near": "the masthead",
       "at": 1791002411314,
       "replies": [],
-      "gone": false,
-      "flags": []
+      "gone": true,
+      "flags": [],
+      "why": "captions one line, masthead note one line, dials off the books"
     }
   },
-  "updated": "2026-10-03T04:52:12.390Z"
+  "updated": "2026-10-03T05:14:48.889Z"
 }

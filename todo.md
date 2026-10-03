@@ -1,12 +1,12 @@
-# 3 october 2026, 00:48
+# 3 october 2026, 01:15
 
 ## what changed
 
-- the invented star dust is gone; 125 real named stars went in, 210 in the catalogue now
-- 28 constellations now write their own name across themselves, and can be switched off
-- the milky way stayed because it does move, but it is faint now and has its own switch
-- the compass letters moved above the horizon, so the taskbar stops cutting them in half
-- clouds go dark at night instead of washing pale grey over orion
+- the sky only appears on universe now — bone and the other papers are plain paper again
+- sound and the music player are one menu, and so are notes and writing one
+- the background textures are gone, and a note cannot be written while the wall is down
+- every page checked on a phone, a tablet and a desktop, and fixed wherever it broke
+- the ascii moon is out from behind its title, and the library is tidy
 
 ## you planned
 
@@ -16,13 +16,13 @@
 
 ## i suggest
 
+- a first-visit whisper: one quiet line saying everything here can be dragged
+- tap a constellation and it tells you its story and when it is best seen
 - a log pose: a needle that always points at the room you have spent least time in
-- tap a constellation and it tells you what it is and when it is best seen
-- the days-in-a-row this garden has been tended, on the front page, for you not them
 - your own handwriting, traced from a photo, as the heading font
 
 ## open questions
 
-- the sky dial cannot find a time of day once you wind it past a month — worth fixing?
-- should the other papers keep a plain sky band, or no sky at all?
-- somebody left a one-word rude note on the front page — bin it, or leave it up?
+- how obvious should the secrets be — a hint, a glow, or just better clues?
+- should strangers' hellos on the wall (stan, master yoda) stay up for good?
+- leyna's two notes came down once built — fine, or should hers stay up?
