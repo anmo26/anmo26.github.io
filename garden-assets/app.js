@@ -10464,25 +10464,68 @@
     if (skyFull && night > 0.02) {
       var i, p, q;
 
+      /* ---- the milky way ----
+         It was a row of enormous translucent discs laid along the galactic
+         plane, and from close up that is exactly what it looked like: a
+         line of pale blobs. A galaxy seen edge-on is not a row of anything,
+         it is one continuous band with no edge you can point at.
+
+         So it is a stroked path now -- the plane itself, followed round,
+         drawn three times at falling widths and rising opacity, and the
+         whole group put through a blur. One shape, no seams. */
+      var seg = [], segs = [], last = null, g;
       for (i = 0; i < S.milky.length; i++) {
         p = project(S.milky[i].alt, S.milky[i].az);
-        if (!p.on || S.milky[i].alt < 0) continue;
-        var g = S.milky[i].glow;
-        svg.push('<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
-                 '" r="' + (34 * g).toFixed(1) + '" fill="rgba(180,196,236,' +
-                 (0.055 * g * night).toFixed(3) + ')"/>');
-        /* The Milky Way IS unresolved stars, so the band is dusted rather
-           than smeared. Scattered from its own index, so the grain is the
-           same every repaint and does not crawl. */
-        var k, jx, jy;
-        for (k = 0; k < 5; k++) {
-          jx = (Math.sin(i * 7.31 + k * 2.17) * 43758.5453) % 1;
-          jy = (Math.sin(i * 3.77 + k * 5.91) * 12345.6789) % 1;
-          svg.push('<circle cx="' + (p.x + jx * 46).toFixed(1) +
-                   '" cy="' + (p.y + jy * 34).toFixed(1) +
-                   '" r="' + (0.5 + Math.abs(jx) * 0.5).toFixed(2) +
-                   '" fill="rgba(226,234,252,' +
-                   ((0.10 + Math.abs(jy) * 0.20) * g * night).toFixed(3) + ')"/>');
+        if (!p.on || S.milky[i].alt < -4) { if (seg.length > 1) segs.push(seg); seg = []; last = null; continue; }
+        // the plane can leave one side of the screen and arrive at the other
+        if (last && Math.abs(p.x - last.x) > SKY_W * 0.4) {
+          if (seg.length > 1) segs.push(seg);
+          seg = [];
+        }
+        seg.push({ p: p, g: S.milky[i].glow });
+        last = p;
+      }
+      if (seg.length > 1) segs.push(seg);
+
+      if (segs.length) {
+        svg.push('<filter id="mwblur" x="-25%" y="-25%" width="150%" height="150%">' +
+                 '<feGaussianBlur stdDeviation="' + (SKY_W / 90).toFixed(1) + '"/></filter>');
+        svg.push('<g filter="url(#mwblur)">');
+        var pass = [[46, 0.030], [26, 0.038], [12, 0.045]];
+        var pi, si, j2, d2;
+        for (pi = 0; pi < pass.length; pi++) {
+          for (si = 0; si < segs.length; si++) {
+            d2 = '';
+            for (j2 = 0; j2 < segs[si].length; j2++) {
+              d2 += (j2 ? 'L' : 'M') + segs[si][j2].p.x.toFixed(1) + ' ' +
+                    segs[si][j2].p.y.toFixed(1);
+            }
+            svg.push('<path d="' + d2 + '" fill="none" stroke="rgba(176,194,238,' +
+                     (pass[pi][1] * night).toFixed(3) + ')" stroke-width="' +
+                     (pass[pi][0] * (SKY_W / 1000)).toFixed(1) +
+                     '" stroke-linecap="round" stroke-linejoin="round"/>');
+          }
+        }
+        svg.push('</g>');
+
+        /* and the grain in it. The Milky Way IS unresolved stars -- that is
+           the whole of what it is -- so the band is dusted rather than left
+           as a smear. Scattered from its own index, so it is the same dust
+           every repaint and does not crawl between minutes. */
+        for (si = 0; si < segs.length; si++) {
+          for (j2 = 0; j2 < segs[si].length; j2++) {
+            g = segs[si][j2].g;
+            var k, jx, jy;
+            for (k = 0; k < 6; k++) {
+              jx = (Math.sin(si * 11.7 + j2 * 7.31 + k * 2.17) * 43758.5453) % 1;
+              jy = (Math.sin(si * 5.3 + j2 * 3.77 + k * 5.91) * 12345.6789) % 1;
+              svg.push('<circle cx="' + (segs[si][j2].p.x + jx * 40).toFixed(1) +
+                       '" cy="' + (segs[si][j2].p.y + jy * 30).toFixed(1) +
+                       '" r="' + (0.45 + Math.abs(jx) * 0.5).toFixed(2) +
+                       '" fill="rgba(226,234,252,' +
+                       ((0.09 + Math.abs(jy) * 0.17) * g * night).toFixed(3) + ')"/>');
+            }
+          }
         }
       }
 
@@ -10553,6 +10596,18 @@
                  '" cx="' + p.x.toFixed(1) +
                  '" cy="' + p.y.toFixed(1) + '" r="' + r.toFixed(2) +
                  '" fill="' + rgba(air.colour, bright) + '"/>');
+
+        /* The ones worth knowing get their name. Only the bright ones --
+           label every star in the catalogue and you have made a diagram
+           rather than a sky -- and only once they are properly up, because
+           a name sitting on the horizon haze cannot be read anyway. */
+        if (st.mag < 1.6 && st.alt > 6 && bright > 0.3 &&
+            p.x > 30 && p.x < SKY_W - 110) {
+          svg.push('<text class="sky-star-name" x="' + (p.x + r + 5).toFixed(1) +
+                   '" y="' + (p.y + 3.5).toFixed(1) + '" opacity="' +
+                   (0.62 * Math.min(1, bright * 1.3)).toFixed(2) + '">' +
+                   escapeText(st.name) + '</text>');
+        }
       }
     }
 
@@ -10574,7 +10629,7 @@
       svg.push('<circle class="planet" cx="' + pp.x.toFixed(1) + '" cy="' + pp.y.toFixed(1) +
                '" r="' + pr.toFixed(2) + '" fill="' + pl.hue +
                '" opacity="' + seen.toFixed(3) + '"/>');
-      if (skyFull && seen > 0.5) {
+      if (skyFull && seen > 0.5 && pp.x > 30 && pp.x < SKY_W - 110) {
         svg.push('<text class="sky-label" x="' + (pp.x + pr + 4).toFixed(1) +
                  '" y="' + (pp.y + 3).toFixed(1) + '" opacity="' +
                  (0.55 * seen).toFixed(2) + '">' + pl.name + '</text>');

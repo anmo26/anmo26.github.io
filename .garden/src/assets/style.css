@@ -4746,3 +4746,25 @@ body.sky-whole.sky-night #meteors { display: block; }
 @media (prefers-reduced-motion: reduce) {
   #meteors { display: none !important; }
 }
+
+/* The names of the bright stars. Small, set well away from the star itself,
+   and only on the ones worth knowing — label the whole catalogue and you
+   have drawn a diagram rather than a sky. */
+.sky-star-name {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: .09em;
+  fill: rgba(206, 222, 248, .85);
+  paint-order: stroke fill;
+  stroke: rgba(10, 16, 34, .55);
+  stroke-width: 2.2px;
+  stroke-linejoin: round;
+}
+
+/* The painterly washes were made for a PAPER: half a dozen enormous soft
+   colours drifting behind the writing. Behind a whole sky they are nothing
+   of the kind — they read as pale smudges floating in front of the stars,
+   which is what they were asked about. The sky is the background now, so
+   they come off wherever it is the whole window. They are still the whole
+   point of the paper on every other page. */
+body.sky-whole.theme-universe:not([data-scene]) #monet { display: none; }
