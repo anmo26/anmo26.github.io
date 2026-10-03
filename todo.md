@@ -1,12 +1,12 @@
-# 23 september 2026, 04:55
+# 3 october 2026, 00:17
 
 ## what changed
 
-- a phone never scrolls now: the folder is a canvas you slide with one finger
-- you can watch other people's cursors move while they are on the same page
-- the to-do keeps the size you pulled it to after you move it, and always did not
-- double-click an open photo, film or page to shut it; double-click a resized one to put it back
-- the sound switch works on the front page, the folders are bigger, the log stopped shouting
+- the universe paper puts the real sky behind the whole page — sun, moon, planets, constellations
+- two dials: one turns you north, east, south or west, one winds the clock months either way
+- the forum is the ether, and THE FIELD is a room where everybody hears the same second of the same record
+- the folder is organised: photos, films, every record renamed, every subfolder laid out
+- while music plays the whole site blooms and goes soft, the way it does with headphones on
 
 ## you planned
 
@@ -16,13 +16,13 @@
 
 ## i suggest
 
-- a phone layout built around what you do on a phone, rather than the desk made small
+- a log pose: a needle that always points at the room you have spent least time in
+- a bounty poster per visitor, worth more the more of the site they have found
+- the days-in-a-row this garden has been tended, on the front page, for you not them
 - your own handwriting, traced from a photo, as the heading font
-- the mini fig sleeping where you left him instead of where the page ends
-- let a note carry a photo, so somebody can point at the thing rather than describe it
 
 ## open questions
 
-- which figure still looks wrong — the pogo, the runner, or the cloud?
+- which mini fig still looks wrong — the pogo, the runner, or the cloud?
+- should the other papers keep a plain sky band, or no sky at all?
 - somebody left a one-word rude note on the front page — bin it, or leave it up?
-- reclaim about 7gb of old camera dumps from the repository?

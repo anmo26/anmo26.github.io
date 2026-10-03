@@ -3775,14 +3775,19 @@ body.on-ether .forum-open:hover { color: var(--ink); border-color: var(--ochre);
   animation: monet-drift 90s ease-in-out infinite alternate;
 }
 
-body.theme-monet #monet { display: block; }
+body.theme-universe:not([data-scene]) #monet { display: block; }
 
 @keyframes monet-drift {
   from { transform: translate3d(0, 0, 0)        scale(1);    }
   to   { transform: translate3d(2.5%, -2%, 0)   scale(1.06); }
 }
 
-body.theme-monet {
+/* A room sets its own light. The rice field is nearly white and the crypt
+   is nearly black, and a paper chosen out in the open has no business
+   reaching down into either of them -- the universe paper's midnight ink
+   was turning the field's title to pale grey on pale green. Hence the
+   :not([data-scene]) on every one of these. */
+body.theme-universe:not([data-scene]) {
   --paper:      #EFEDE6;
   --paper-deep: #E5E2D9;
   --surface:    #F8F6F1;
@@ -3794,9 +3799,9 @@ body.theme-monet {
    Evening, night and the hour before dawn. The paper stops being paper and
    becomes the room it is in, and every mark on it turns over to stay
    readable. Same trick the ether uses. */
-body.theme-monet[data-light="evening"],
-body.theme-monet[data-light="night"],
-body.theme-monet[data-light="dawn"] {
+body.theme-universe:not([data-scene])[data-light="evening"],
+body.theme-universe:not([data-scene])[data-light="night"],
+body.theme-universe:not([data-scene])[data-light="dawn"] {
   --ink:       #DCE0E8;
   --ink-soft:  #A5ABB6;
   --ink-faint: #767C88;
@@ -3807,19 +3812,19 @@ body.theme-monet[data-light="dawn"] {
   --rule:      rgba(220, 224, 232, .17);
   --rule-soft: rgba(220, 224, 232, .08);
 }
-body.theme-monet[data-light="evening"] .masthead h1,
-body.theme-monet[data-light="night"] .masthead h1,
-body.theme-monet[data-light="dawn"] .masthead h1,
-body.theme-monet[data-light="evening"] .masthead p,
-body.theme-monet[data-light="night"] .masthead p,
-body.theme-monet[data-light="dawn"] .masthead p { color: var(--ink); }
+body.theme-universe:not([data-scene])[data-light="evening"] .masthead h1,
+body.theme-universe:not([data-scene])[data-light="night"] .masthead h1,
+body.theme-universe:not([data-scene])[data-light="dawn"] .masthead h1,
+body.theme-universe:not([data-scene])[data-light="evening"] .masthead p,
+body.theme-universe:not([data-scene])[data-light="night"] .masthead p,
+body.theme-universe:not([data-scene])[data-light="dawn"] .masthead p { color: var(--ink); }
 
 /* ------------------------------------------------- 5–7, before the sun
    The very end of the night, with the first rose in it. Still dark. */
-body.theme-monet[data-light="dawn"] {
+body.theme-universe:not([data-scene])[data-light="dawn"] {
   --paper: #1A1A22; --paper-deep: #141419; --surface: #23232C; --surface-2: #2A2A34;
 }
-body.theme-monet[data-light="dawn"] #monet {
+body.theme-universe:not([data-scene])[data-light="dawn"] #monet {
   background-image:
     radial-gradient(62% 46% at 22% 74%, rgba(198, 112, 108, .42), transparent 70%),
     radial-gradient(56% 42% at 76% 80%, rgba(150, 106, 140, .34), transparent 72%),
@@ -3830,10 +3835,10 @@ body.theme-monet[data-light="dawn"] #monet {
 
 /* ------------------------------------------------------- 7–11, morning
    Poplars. The light is up but still thin and cool. */
-body.theme-monet[data-light="morning"] {
+body.theme-universe:not([data-scene])[data-light="morning"] {
   --paper: #E9EDE9; --paper-deep: #DEE3DD; --surface: #F3F7F3; --surface-2: #FAFCFA;
 }
-body.theme-monet[data-light="morning"] #monet {
+body.theme-universe:not([data-scene])[data-light="morning"] #monet {
   background-image:
     radial-gradient(58% 44% at 26% 22%, rgba(150, 186, 200, .36), transparent 70%),
     radial-gradient(52% 40% at 74% 18%, rgba(214, 220, 178, .32), transparent 72%),
@@ -3845,10 +3850,10 @@ body.theme-monet[data-light="morning"] #monet {
 /* ---------------------------------------------------------- 11–15, noon
    Haystacks in full summer: straw, cerulean, and the white of the light.
    The brightest the page ever gets. */
-body.theme-monet[data-light="noon"] {
+body.theme-universe:not([data-scene])[data-light="noon"] {
   --paper: #F2F1EA; --paper-deep: #E9E7DE; --surface: #FAF9F5; --surface-2: #FEFDFB;
 }
-body.theme-monet[data-light="noon"] #monet {
+body.theme-universe:not([data-scene])[data-light="noon"] #monet {
   background-image:
     radial-gradient(56% 42% at 24% 20%, rgba(240, 216, 146, .38), transparent 70%),
     radial-gradient(54% 40% at 76% 22%, rgba(146, 186, 218, .30), transparent 72%),
@@ -3859,10 +3864,10 @@ body.theme-monet[data-light="noon"] #monet {
 
 /* ----------------------------------------------------- 15–18, afternoon
    Late haystacks: everything gold, and the shadows gone violet. */
-body.theme-monet[data-light="afternoon"] {
+body.theme-universe:not([data-scene])[data-light="afternoon"] {
   --paper: #F1EADA; --paper-deep: #E8DECB; --surface: #FAF5E8; --surface-2: #FDFAF2;
 }
-body.theme-monet[data-light="afternoon"] #monet {
+body.theme-universe:not([data-scene])[data-light="afternoon"] #monet {
   background-image:
     radial-gradient(58% 44% at 22% 24%, rgba(240, 186, 104, .42), transparent 70%),
     radial-gradient(52% 40% at 78% 20%, rgba(232, 160, 116, .34), transparent 72%),
@@ -3874,11 +3879,11 @@ body.theme-monet[data-light="afternoon"] #monet {
 /* ---------------------------------------------------------- 18–20, dusk
    Rouen cathedral at the end of the day. Still light, but going, and the
    last of the sun is the warmest thing that happens all day. */
-body.theme-monet[data-light="dusk"] {
+body.theme-universe:not([data-scene])[data-light="dusk"] {
   --paper: #E4DADE; --paper-deep: #D6CAD2; --surface: #EFE7EB; --surface-2: #F7F1F4;
   --ink-faint: #665C68;
 }
-body.theme-monet[data-light="dusk"] #monet {
+body.theme-universe:not([data-scene])[data-light="dusk"] #monet {
   background-image:
     radial-gradient(60% 46% at 24% 70%, rgba(232, 132, 96, .40), transparent 70%),
     radial-gradient(54% 42% at 76% 26%, rgba(150, 120, 180, .40), transparent 72%),
@@ -3889,10 +3894,10 @@ body.theme-monet[data-light="dusk"] #monet {
 
 /* ------------------------------------------------------- 20–22, evening
    The sun is gone and the sky has not finished. Violet over dark. */
-body.theme-monet[data-light="evening"] {
+body.theme-universe:not([data-scene])[data-light="evening"] {
   --paper: #21202C; --paper-deep: #1A1923; --surface: #2A2836; --surface-2: #322F40;
 }
-body.theme-monet[data-light="evening"] #monet {
+body.theme-universe:not([data-scene])[data-light="evening"] #monet {
   background-image:
     radial-gradient(62% 46% at 26% 78%, rgba(150, 92, 138, .44), transparent 70%),
     radial-gradient(56% 42% at 74% 84%, rgba(190, 106, 92, .30), transparent 72%),
@@ -3904,10 +3909,10 @@ body.theme-monet[data-light="evening"] #monet {
 /* --------------------------------------------------------- 22–5, night
    The Thames nocturnes and the late water lilies. Nearly black, with a
    little indigo in it, which is what three in the morning is. */
-body.theme-monet[data-light="night"] {
+body.theme-universe:not([data-scene])[data-light="night"] {
   --paper: #0E1016; --paper-deep: #090A0F; --surface: #171A22; --surface-2: #1D2029;
 }
-body.theme-monet[data-light="night"] #monet {
+body.theme-universe:not([data-scene])[data-light="night"] #monet {
   background-image:
     radial-gradient(66% 50% at 28% 24%, rgba(38, 56, 108, .50), transparent 72%),
     radial-gradient(56% 44% at 74% 30%, rgba(58, 48, 96, .40), transparent 72%),
@@ -3918,7 +3923,7 @@ body.theme-monet[data-light="night"] #monet {
 
 @media (prefers-reduced-motion: reduce) {
   #monet { animation: none; }
-  body.theme-monet { transition: none; }
+  body.theme-universe { transition: none; }
 }
 
 /* Where the person reading this is, and what the sky is doing there. The one
@@ -3936,20 +3941,20 @@ body.theme-monet[data-light="night"] #monet {
    the afternoon. `filter` rather than another set of gradients, so the whole
    series is adjusted at once and there is nothing extra to draw. */
 
-body.theme-monet[data-sky="cloud"] #monet   { filter: saturate(.55) brightness(.94); }
-body.theme-monet[data-sky="fog"] #monet     { filter: saturate(.35) brightness(1.04) blur(6px); }
-body.theme-monet[data-sky="drizzle"] #monet { filter: saturate(.6)  brightness(.9)  hue-rotate(-8deg); }
-body.theme-monet[data-sky="rain"] #monet    { filter: saturate(.7)  brightness(.82) hue-rotate(-14deg); }
-body.theme-monet[data-sky="storm"] #monet   { filter: saturate(.8)  brightness(.7)  hue-rotate(-18deg) contrast(1.15); }
-body.theme-monet[data-sky="snow"] #monet    { filter: saturate(.3)  brightness(1.12); }
-body.theme-monet[data-sky="clear"] #monet   { filter: saturate(1.18) brightness(1.06); }
-body.theme-monet[data-sky="part"] #monet    { filter: saturate(1.05); }
+body.theme-universe[data-sky="cloud"] #monet   { filter: saturate(.55) brightness(.94); }
+body.theme-universe[data-sky="fog"] #monet     { filter: saturate(.35) brightness(1.04) blur(6px); }
+body.theme-universe[data-sky="drizzle"] #monet { filter: saturate(.6)  brightness(.9)  hue-rotate(-8deg); }
+body.theme-universe[data-sky="rain"] #monet    { filter: saturate(.7)  brightness(.82) hue-rotate(-14deg); }
+body.theme-universe[data-sky="storm"] #monet   { filter: saturate(.8)  brightness(.7)  hue-rotate(-18deg) contrast(1.15); }
+body.theme-universe[data-sky="snow"] #monet    { filter: saturate(.3)  brightness(1.12); }
+body.theme-universe[data-sky="clear"] #monet   { filter: saturate(1.18) brightness(1.06); }
+body.theme-universe[data-sky="part"] #monet    { filter: saturate(1.05); }
 
-body.theme-monet #monet { transition: filter 4s linear; }
+body.theme-universe:not([data-scene]) #monet { transition: filter 4s linear; }
 
 @media (prefers-reduced-motion: reduce) {
-  body.theme-monet #monet { transition: none; }
-  body.theme-monet[data-sky="fog"] #monet { filter: saturate(.35) brightness(1.04); }
+  body.theme-universe:not([data-scene]) #monet { transition: none; }
+  body.theme-universe[data-sky="fog"] #monet { filter: saturate(.35) brightness(1.04); }
 }
 
 /* ================================================================ THE SKY
@@ -4101,12 +4106,20 @@ body.sky-night #bucket,
 body.sky-night #cactus,
 body.sky-night #still { color: #DDE3EE; }
 body.sky-night .masthead .rule { background: rgba(232, 236, 244, .45); }
-body.sky-night .marquee { color: rgba(232, 236, 244, .55); border-color: rgba(232, 236, 244, .18); }
+
+/* NOT the ticker. In band mode the sky stops AT the ticker -- it is the
+   horizon -- so the ticker itself is already on paper, and lightening it
+   put pale grey letters on cream and made them vanish. It only turns over
+   when the sky is the whole window and the ticker really is in front of
+   it. */
+body.sky-whole.sky-night .marquee {
+  color: rgba(226, 236, 250, .62);
+  border-color: rgba(226, 236, 250, .16);
+}
 
 body.sky-night .masthead h1,
 body.sky-night .masthead p,
-body.sky-night #corner,
-body.sky-night .marquee { transition: color 3s linear; }
+body.sky-night #corner { transition: color 3s linear; }
 
 /* The clock draws its own figure and ground in their own colours, so turning
    the wrapper's ink over left it exactly as dark as it was. These are the
@@ -4239,9 +4252,9 @@ body.music-playing[data-scene="moonlight"] #halo::after,
 body.music-playing[data-scene="bar"] #halo::after,
 body.music-playing.on-ether #halo::after,
 /* and the monet paper after dark, which is a dark room like any other */
-body.music-playing.theme-monet[data-light="night"] #halo::after,
-body.music-playing.theme-monet[data-light="evening"] #halo::after,
-body.music-playing.theme-monet[data-light="dawn"] #halo::after { opacity: .28; }
+body.music-playing.theme-universe[data-light="night"] #halo::after,
+body.music-playing.theme-universe[data-light="evening"] #halo::after,
+body.music-playing.theme-universe[data-light="dawn"] #halo::after { opacity: .28; }
 
 /* A photograph keeps a little more of itself than the paper does. The
    highlights are still meant to go -- that is the whole look -- but you
@@ -4358,8 +4371,8 @@ body[data-scene="field"] .item .meta {
 /* The room is overexposed all the time, which is what the walkman layer
    above already knows how to do -- so it is the same one element, on for a
    second reason. In here with a song on, it is simply both. */
-body[data-scene="field"]::after {
-  opacity: .9;
+body[data-scene="field"] #halo::after {
+  opacity: .62;
   visibility: visible;
   transition: opacity 3s ease, visibility 0s;
   animation: held 71s ease-in-out infinite alternate;
@@ -4682,4 +4695,54 @@ body.sky-whole.sky-night .item.kind-todo li { color: var(--ink-soft); }
 #sky-dials { left: 1rem; transform: none; }
 @media (max-width: 719px) {
   #sky-dials { left: 50%; transform: translateX(-50%); }
+}
+
+/* A star near the horizon shivers; a star overhead is steady. --lo is how
+   far down the twinkle dips, written per star by app.js from how much air
+   its light came through. */
+@keyframes star-twinkle {
+  from { opacity: var(--lo, .55); }
+  to   { opacity: 1; }
+}
+
+/* ------------------------------------------------------------- meteors
+
+   Only on the whole sky, only at night, and rarely enough that catching one
+   feels like catching one. Pure CSS: four elements on very long delays.
+   ===================================================================== */
+
+#meteors {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  display: none;
+}
+body.sky-whole.sky-night #meteors { display: block; }
+
+#meteors i {
+  position: absolute;
+  width: 110px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(226,238,255,.85));
+  border-radius: 1px;
+  opacity: 0;
+  transform: rotate(28deg);
+  animation-name: meteor;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* The whole streak happens in about one per cent of the cycle, which at a
+   fifty-second cycle is half a second of meteor and a long wait. */
+@keyframes meteor {
+  0%     { opacity: 0; transform: translate3d(0,0,0) rotate(28deg) scaleX(.2); }
+  0.6%   { opacity: .9; }
+  2.2%   { opacity: 0; transform: translate3d(32vw,17vw,0) rotate(28deg) scaleX(1); }
+  100%   { opacity: 0; transform: translate3d(32vw,17vw,0) rotate(28deg) scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #meteors { display: none !important; }
 }

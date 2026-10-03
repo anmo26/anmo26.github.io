@@ -724,7 +724,15 @@
     // Without dividing, the item would lag behind the pointer -- but only
     // things actually lying on the bed are scaled. See makeDraggable.
     var k = drag.scale || 1;
-    var x = Math.max(0, drag.originX + (e.clientX - drag.startX) / k);
+    /* The bed starts inside the page's margin, so clamping at zero put an
+       invisible wall a few centimetres in from the left of every folder
+       and nothing could be dragged past it. The real edge is the window,
+       so the floor is however far the bed is inset -- which lets a thing
+       be put right against the side of the screen, and no further. */
+    var bed = drag.el.parentNode;
+    var inset = bed && bed.getBoundingClientRect ? bed.getBoundingClientRect().left : 0;
+    var minX = -Math.max(0, inset / k);
+    var x = Math.max(minX, drag.originX + (e.clientX - drag.startX) / k);
     var y = Math.max(0, drag.originY + (e.clientY - drag.startY) / k);
 
     // A phone cannot pan sideways to go and fetch something back, so nothing
@@ -2210,8 +2218,8 @@
   /* Monet sits second because it is the one worth finding. It is not a
      colour like the others -- it is a time of day, and it changes while you
      are looking at it. See the LIGHT section in style.css. */
-  var THEMES = ['', 'theme-monet', 'theme-pocari', 'theme-olive', 'theme-ink'];
-  var THEME_NAMES = ['bone', 'monet', 'pocari', 'olive', 'ink'];
+  var THEMES = ['', 'theme-universe', 'theme-pocari', 'theme-olive', 'theme-ink'];
+  var THEME_NAMES = ['bone', 'universe', 'pocari', 'olive', 'ink'];
 
   // Grain used to be a single on/off, and for a long time it was wired to a
   // class the stylesheet did not define -- the button did nothing at all.
@@ -3290,6 +3298,8 @@
 
   function bootPage() {
     syncScene();            // a folder can be a place; see GARDEN SCENE
+    mountSky();             // builds once; after that it only checks itself
+    skyRoomCheck();
     cactusVisit();          // a new page is a new chance to water the plant
     mountItems();
     mountGuestbook();
@@ -10070,6 +10080,87 @@
 
   var MILKY = null;
 
+  /* --------------------------------------------------------- star colour
+     Stars are not white. Rigel is blue, Betelgeuse is properly red, Capella
+     is the yellow of our own sun and Arcturus is amber -- and once you have
+     seen that on a page you cannot unsee it.
+
+     The number is the colour index: how much brighter a star is in blue
+     light than in yellow. Negative is hot and blue, positive is cool and
+     red, and it is one of the oldest measurements in astronomy. These are
+     the real ones. Anything not listed is left near white.
+     ------------------------------------------------------------------- */
+
+  var STAR_BV = {
+    Betelgeuse: 1.85, Antares: 1.83, Aldebaran: 1.54, Arcturus: 1.23,
+    Pollux: 1.00, Hamal: 1.15, Alphard: 1.44, Mirach: 1.57, Almach: 1.37,
+    Rasalgethi: 1.45, Eltanin: 1.52, Kochab: 1.47, Dubhe: 1.07, Gacrux: 1.59,
+    Scheat: 1.67, Algieba: 1.13, Avior: 1.19, Schedar: 1.17, Albireo: 1.09,
+    'Gienah Cygni': 1.03, Kornephoros: 0.94, Capella: 0.80, Wezen: 0.67,
+    Sadr: 0.67, 'Rigil Kentaurus': 0.71, Polaris: 0.60, Mirfak: 0.48,
+    Procyon: 0.42, Sargas: 0.41, Caph: 0.34, Altair: 0.22, Rasalhague: 0.16,
+    Canopus: 0.15, Zosma: 0.13, Ruchbah: 0.13, Fomalhaut: 0.09,
+    Denebola: 0.09, Deneb: 0.09, Megrez: 0.08, Miaplacidus: 0.07,
+    Mizar: 0.06, Pherkad: 0.05, Phecda: 0.04, Castor: 0.03, Merak: 0.03,
+    Vega: 0.00, Sirius: 0.00, Alhena: 0.00, Alioth: -0.02, Alphecca: -0.02,
+    Rigel: -0.03, 'Kaus Australis': -0.03, Markab: -0.04, Algol: -0.05,
+    'Delta Cygni': -0.05, Algorab: -0.05, 'Alnair': -0.07, Graffias: -0.07,
+    Alcyone: -0.09, Alkaid: -0.10, Regulus: -0.11, Alpheratz: -0.11,
+    'Gienah Corvi': -0.11, Peacock: -0.12, Elnath: -0.13, Navi: -0.15,
+    Segin: -0.15, Achernar: -0.16, Mintaka: -0.17, Saiph: -0.17,
+    Alnilam: -0.18, Algenib: -0.19, Imai: -0.19, Alnitak: -0.20,
+    Adhara: -0.21, Bellatrix: -0.22, Lesath: -0.22, Nunki: -0.22,
+    Shaula: -0.23, Spica: -0.23, Mimosa: -0.23, Hadar: -0.23,
+    Acrux: -0.24, Mirzam: -0.24, Dschubba: -0.12
+  };
+
+  /* Colour index to something you can paint with. Interpolated through the
+     colours these temperatures actually look like to the eye -- which is
+     much less saturated than the photographs, because at night your colour
+     vision has mostly gone home. */
+  var BV_SCALE = [
+    [-0.33, [155, 176, 255]], [0.00, [202, 215, 255]], [0.30, [248, 247, 255]],
+    [0.60, [255, 244, 232]], [0.80, [255, 236, 206]], [1.20, [255, 218, 178]],
+    [1.60, [255, 196, 152]], [2.00, [255, 170, 126]]
+  ];
+
+  function bvColour(bv) {
+    var i;
+    if (bv <= BV_SCALE[0][0]) return BV_SCALE[0][1];
+    for (i = 0; i < BV_SCALE.length - 1; i++) {
+      if (bv <= BV_SCALE[i + 1][0]) {
+        var t = (bv - BV_SCALE[i][0]) / (BV_SCALE[i + 1][0] - BV_SCALE[i][0]);
+        return mix(BV_SCALE[i][1], BV_SCALE[i + 1][1], t);
+      }
+    }
+    return BV_SCALE[BV_SCALE.length - 1][1];
+  }
+
+  /* ------------------------------------------------------ the air in between
+     Nothing low in the sky is as bright as it would be overhead, because
+     you are looking at it through more air -- and the air takes the blue
+     out first, which is the same reason the sun goes red as it sets.
+
+     `airmass` is how many atmospheres deep the line of sight is: one
+     straight up, about two at thirty degrees, forty at the horizon. It is
+     Pickering's formula, which unlike the schoolbook sec(z) does not go to
+     infinity at the horizon.
+     ------------------------------------------------------------------- */
+
+  function airmass(alt) {
+    if (alt < -2) return 40;
+    var h = Math.max(alt, -1.5);
+    return 1 / (sind(h + 244 / (165 + 47 * Math.pow(h, 1.1))));
+  }
+
+  /** What the air does to a star: dims it, and reddens what is left. */
+  function throughAir(alt, colour) {
+    var X = airmass(alt);
+    var dim = Math.exp(-0.20 * (X - 1));
+    var red = Math.min(0.72, Math.max(0, (X - 1.2) / 13));
+    return { dim: dim, colour: mix(colour, [255, 148, 92], red) };
+  }
+
   /* ------------------------------------------------------- the rest of it
      The catalogue above is the bright stars, and the bright stars are not
      what a sky looks like. There are nine of them in a given window on a
@@ -10100,7 +10191,9 @@
       // even over the sphere, not over declination -- otherwise the poles
       // end up crowded and the equator bare
       var dec = Math.asin(rnd() * 2 - 1) / RAD;
-      out.push({ ra: ra, dec: dec, mag: 3.8 + rnd() * 2.2 });
+      out.push({ ra: ra, dec: dec, mag: 3.8 + rnd() * 2.2,
+                 // real populations skew blue-white with a red tail
+                 bv: -0.2 + rnd() * rnd() * 2.1 });
     }
     return out;
   }
@@ -10238,6 +10331,8 @@
       a = altaz(STARS[i][0] * 15, STARS[i][1], lat, lon, d);
       a.mag = STARS[i][2];
       a.name = STARS[i][3];
+      a.bv = STAR_BV[a.name];
+      if (a.bv === undefined) a.bv = 0.3;
       out.stars.push(a);
       out.byName[a.name] = a;
     }
@@ -10256,6 +10351,7 @@
     for (i = 0; i < FAINT.length; i++) {
       a = altaz(FAINT[i].ra, FAINT[i].dec, lat, lon, d);
       a.mag = FAINT[i].mag;
+      a.bv = FAINT[i].bv;
       out.faint.push(a);
     }
 
@@ -10339,8 +10435,33 @@
                '" fill="url(#sunhaze)"/>');
     }
 
-    /* ---- the galaxy, the stars, the figures ---- */
-    if (night > 0.02) {
+    /* ---- the belt of venus, and the earth's shadow under it ----
+       The half hour after sunset, opposite the sun: a band of pink sitting
+       on a band of blue-grey. The pink is sunlight still catching the high
+       air; the grey below it is the shadow of the Earth itself, rising as
+       the sun goes down and visible from anywhere with a clear horizon.
+       Almost nobody knows it has a name, and everybody has seen it. */
+    if (sp.alt < 2 && sp.alt > -8) {
+      var anti = project(Math.max(0, -sp.alt * 0.6), norm360(sp.az + 180));
+      if (anti.on) {
+        var belt = Math.max(0, Math.min(1, (2 - sp.alt) / 8));
+        var baseY = SKY_H * (skyFull ? 0.93 : 1);
+        var beltY = baseY - SKY_H * 0.085;
+        svg.push('<ellipse cx="' + anti.x.toFixed(1) + '" cy="' + beltY.toFixed(1) +
+                 '" rx="' + (SKY_W * 0.62) + '" ry="' + (SKY_H * 0.11) +
+                 '" fill="rgba(236,164,176,' + (0.26 * belt).toFixed(3) + ')"/>');
+        svg.push('<ellipse cx="' + anti.x.toFixed(1) + '" cy="' + baseY.toFixed(1) +
+                 '" rx="' + (SKY_W * 0.66) + '" ry="' + (SKY_H * 0.075) +
+                 '" fill="rgba(58,66,104,' + (0.34 * belt).toFixed(3) + ')"/>');
+      }
+    }
+
+    /* ---- the galaxy, the stars, the figures ----
+       Only on the universe paper. Asked for directly: on every other paper
+       the band across the top is weather and an horizon -- the sky you are
+       standing under -- and the stars belong to the one paper that is
+       about being out in it. */
+    if (skyFull && night > 0.02) {
       var i, p, q;
 
       for (i = 0; i < S.milky.length; i++) {
@@ -10371,10 +10492,12 @@
         if (ft.alt < 0) continue;
         p = project(ft.alt, ft.az);
         if (!p.on) continue;
+        var fa = throughAir(ft.alt, bvColour(ft.bv));
+        var fl = (0.18 + ((6.0 - ft.mag) / 2.2) * 0.42) * night * fa.dim;
+        if (fl < 0.015) continue;
         svg.push('<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
                  '" r="' + (1.75 - (ft.mag - 3.8) * 0.28).toFixed(2) +
-                 '" fill="rgba(228,238,255,' +
-                 ((0.18 + ((6.0 - ft.mag) / 2.2) * 0.42) * night).toFixed(3) + ')"/>');
+                 '" fill="' + rgba(fa.colour, fl) + '"/>');
       }
 
       /* the figures, under the stars so the stars sit on top of them */
@@ -10402,19 +10525,41 @@
         /* Magnitude is backwards and logarithmic -- first magnitude is
            brighter than third. Both the size and the light come off it, so
            Sirius reads as Sirius and the rest fall away behind it. */
-        var bright = Math.max(0.40, (3.4 - st.mag) / 3.2) * night;
+        var air = throughAir(st.alt, bvColour(st.bv));
+        var bright = Math.max(0.40, (3.4 - st.mag) / 3.2) * night * air.dim;
+        if (bright < 0.02) continue;
         var r = Math.max(1.5, (4.0 - st.mag * 0.62));
-        svg.push('<circle class="star" style="--tw:' + (2.6 + (i % 7) * 0.55) + 's;--d:' +
-                 ((i % 11) * 0.31).toFixed(2) + 's" cx="' + p.x.toFixed(1) +
+
+        /* The brightest few are not points. A first-magnitude star spills,
+           in the eye as much as in a lens, and drawing Sirius the same size
+           as Megrez with more opacity is the one thing that makes a star
+           field look printed rather than seen. */
+        if (st.mag < 1.3) {
+          svg.push('<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+                   '" r="' + (r * 5.2).toFixed(1) + '" fill="' +
+                   rgba(air.colour, 0.10 * bright) + '"/>');
+          svg.push('<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+                   '" r="' + (r * 2.3).toFixed(1) + '" fill="' +
+                   rgba(air.colour, 0.20 * bright) + '"/>');
+        }
+
+        /* Twinkling is the air moving, so it is strongest where there is
+           most air to move: a star overhead is steady, one near the horizon
+           shivers. Same reason it dims and reddens down there. */
+        var shimmer = Math.min(0.55, (airmass(st.alt) - 1) * 0.14);
+
+        svg.push('<circle class="star" style="--tw:' + (2.2 + (i % 7) * 0.5) + 's;--d:' +
+                 ((i % 11) * 0.31).toFixed(2) + 's;--lo:' + (1 - shimmer).toFixed(2) +
+                 '" cx="' + p.x.toFixed(1) +
                  '" cy="' + p.y.toFixed(1) + '" r="' + r.toFixed(2) +
-                 '" fill="rgba(238,243,255,' + bright.toFixed(3) + ')"/>');
+                 '" fill="' + rgba(air.colour, bright) + '"/>');
       }
     }
 
     /* ---- the planets. They are brighter than the stars and they do not
        twinkle, which is how you tell them apart with your eyes. ---- */
     var pl, pp, j;
-    for (j = 0; j < S.planets.length; j++) {
+    for (j = 0; skyFull && j < S.planets.length; j++) {
       pl = S.planets[j];
       if (pl.alt < 0) continue;
       pp = project(pl.alt, pl.az);
@@ -10446,17 +10591,42 @@
       var dim = 0.30 + 0.70 * (1 - night * 0.55);
       dim *= Math.max(0, Math.min(1, (lit - 0.06) / 0.16));
       if (dim > 0.03) {
+        var mx = mplace.x, my = mplace.y;
         svg.push('<g opacity="' + dim.toFixed(2) + '">');
-        svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
-                 '" r="' + (mr + 9) + '" fill="rgba(240,244,255,.07)"/>');
-        svg.push('<circle cx="' + mplace.x.toFixed(1) + '" cy="' + mplace.y.toFixed(1) +
-                 '" r="' + mr + '" fill="url(#moondisc)"/>');
-        if (lit < 0.97) {
-          var shift = lit * 2 * mr * (waxing ? -1 : 1);
-          svg.push('<clipPath id="moonclip"><circle cx="' + mplace.x.toFixed(1) +
-                   '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '"/></clipPath>');
-          svg.push('<circle clip-path="url(#moonclip)" cx="' + (mplace.x + shift).toFixed(1) +
-                   '" cy="' + mplace.y.toFixed(1) + '" r="' + mr + '" class="moon-dark"/>');
+
+        // the halo the air puts round it
+        svg.push('<circle cx="' + mx.toFixed(1) + '" cy="' + my.toFixed(1) +
+                 '" r="' + (mr * 3.4).toFixed(1) + '" fill="rgba(226,236,255,.055)"/>');
+        svg.push('<circle cx="' + mx.toFixed(1) + '" cy="' + my.toFixed(1) +
+                 '" r="' + (mr + 7) + '" fill="rgba(240,244,255,.10)"/>');
+
+        /* Earthshine. The dark part of a young moon is not black -- it is
+           lit by a full Earth hanging in its sky, and you can see it with
+           your own eyes on any decent crescent. It is strongest when the
+           crescent is thinnest, because that is when the Earth is fullest. */
+        svg.push('<circle cx="' + mx.toFixed(1) + '" cy="' + my.toFixed(1) +
+                 '" r="' + mr + '" fill="rgba(150,168,205,' +
+                 (0.30 * (1 - lit)).toFixed(3) + ')"/>');
+
+        /* The lit part, drawn as it actually is: a half-disc on the sunward
+           side, closed by the terminator -- which is a circle seen at an
+           angle, so it is an ELLIPSE whose width goes to nothing at half
+           moon and then opens the other way. An offset disc was close
+           enough at gibbous and quite wrong at a crescent. */
+        if (lit > 0.985) {
+          svg.push('<circle cx="' + mx.toFixed(1) + '" cy="' + my.toFixed(1) +
+                   '" r="' + mr + '" fill="url(#moondisc)"/>');
+        } else {
+          var side = waxing ? 1 : -1;            // which limb catches the sun
+          var rx = (mr * Math.abs(2 * lit - 1)).toFixed(2);
+          var sweepLimb = side > 0 ? 1 : 0;
+          var sweepTerm = (lit > 0.5) === (side > 0) ? 1 : 0;
+          svg.push('<path fill="url(#moondisc)" d="' +
+            'M' + mx.toFixed(1) + ' ' + (my - mr).toFixed(1) +
+            'A' + mr + ' ' + mr + ' 0 0 ' + sweepLimb + ' ' +
+                  mx.toFixed(1) + ' ' + (my + mr).toFixed(1) +
+            'A' + rx + ' ' + mr + ' 0 0 ' + sweepTerm + ' ' +
+                  mx.toFixed(1) + ' ' + (my - mr).toFixed(1) + 'Z"/>');
         }
         svg.push('</g>');
       }
@@ -10682,6 +10852,36 @@
     }
   }
 
+  /* Walking into a room is not a reload. <main> is swapped and the body
+     keeps its furniture -- which meant the sky followed you down into the
+     rice field and the crypt and hung a galaxy over both. Rooms that have
+     a sky of their own get theirs back. */
+  function skyRoomCheck() {
+    var inRoom = !!document.body.getAttribute('data-scene');
+    ['sky', 'meteors'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.hidden = inRoom;
+    });
+    var dials = document.getElementById('sky-dials');
+    if (dials) dials.hidden = inRoom || !skyFull;
+
+    /* And the ink goes back to ink. These two say "there is a dark sky
+       behind the writing", and in a room there is not -- the rice field is
+       nearly white, and a title still dressed for midnight disappeared
+       into it completely. */
+    if (inRoom) {
+      document.body.classList.remove('sky-night');
+      document.body.classList.remove('sky-whole');
+    } else if (skyFull) {
+      document.body.classList.add('sky-whole');
+    }
+
+    if (!inRoom && skyWhereNow) {
+      var host = document.getElementById('sky');
+      if (host) skyRepaint(host, skyWhereNow, false);
+    }
+  }
+
   function mountSky() {
     // Only where the page is the page. The garden, the moon and the crypt
     // have skies of their own and two would be one too many.
@@ -10704,13 +10904,31 @@
       document.body.appendChild(halo);
     }
 
+    /* ------------------------------------------------------- meteors
+       Nothing on an average night is as good as looking up at the exact
+       moment one goes. So: four of them, on very long CSS delays, which
+       means one streaks across every half minute or so and you will
+       usually miss it. That is the correct frequency. No javascript runs
+       for this at all. */
+    var rain = document.createElement('div');
+    rain.id = 'meteors';
+    rain.setAttribute('aria-hidden', 'true');
+    var mi, mh = '';
+    for (mi = 0; mi < 4; mi++) {
+      mh += '<i style="left:' + (8 + mi * 23) + '%;top:' + (4 + mi * 9) + '%;' +
+            'animation-delay:' + (mi * 17 + 6) + 's;' +
+            'animation-duration:' + (52 + mi * 11) + 's"></i>';
+    }
+    rain.innerHTML = mh;
+    document.body.appendChild(rain);
+
     skyWhere(function (where) {
       skyWhereNow = where;
       // Face the sun's side of the sky to begin with: south from the north,
       // north from the south. That is where everything happens.
       skyLook = where.lat >= 0 ? 180 : 0;
 
-      skyFull = document.body.classList.contains('theme-monet');
+      skyFull = document.body.classList.contains('theme-universe');
       document.body.classList.toggle('sky-whole', skyFull);
       if (skyFull) mountSkyDials(host, where);
 
@@ -10738,7 +10956,7 @@
   function skyWatchPaper(host, where) {
     var was = skyFull;
     setInterval(function () {
-      var now = document.body.classList.contains('theme-monet');
+      var now = document.body.classList.contains('theme-universe');
       if (now === was) return;
       was = skyFull = now;
       document.body.classList.toggle('sky-whole', now);

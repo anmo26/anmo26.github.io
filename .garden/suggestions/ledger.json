@@ -165,7 +165,8 @@
       "status": "parked",
       "firstSeen": "2026-09-15T20:44:16.254Z",
       "history": [
-        "2026-09-15T20:58:08.630Z new -> parked"
+        "2026-09-15T20:58:08.630Z new -> parked",
+        "2026-10-03T04:12:37.953Z taken off the wall"
       ],
       "room": "/",
       "text": "i want an easy way to upload things to this site from my iphone. i dont want to always like upload photos to my computer, then drag them into the garden folder from there. any easy way to streamline this process? connect the garden folder into my iphone??? DO THIS IN A FUTURE UPDATE",
@@ -181,7 +182,7 @@
           "at": 1789515654393
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "not a change to the site — see the answer"
     },
@@ -230,7 +231,8 @@
       "status": "parked",
       "firstSeen": "2026-09-15T20:53:01.030Z",
       "history": [
-        "2026-09-15T20:58:08.828Z new -> parked"
+        "2026-09-15T20:58:08.828Z new -> parked",
+        "2026-10-03T04:12:37.953Z taken off the wall"
       ],
       "room": "/",
       "text": "the iphone version of this site IS BUTTCHEEKS!!!!! NEED MASSIVE UI OVERHAUL!!!!! might have to operate completely from desktop. DONT FIX THIS RN. WE DONT HAVE ENOUGH USAGE LEFT ON CLAUDE!!!!",
@@ -246,7 +248,7 @@
           "at": 1789515654393
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "needs a session of its own and your eye on it"
     },
@@ -413,7 +415,8 @@
       "status": "parked",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.048Z new -> parked"
+        "2026-09-15T22:06:42.048Z new -> parked",
+        "2026-10-03T04:12:37.953Z taken off the wall"
       ],
       "room": "/",
       "text": "Def need to host on cloudflare or a personal domain soon so i can upload more thigns and also make things run smoother (less lag) and also so that people can't easily find all the files to this project.",
@@ -429,7 +432,7 @@
           "at": 1789515654393
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "your account, your card — i will not touch either"
     },
@@ -626,7 +629,8 @@
       "status": "parked",
       "firstSeen": "2026-09-15T22:00:29.321Z",
       "history": [
-        "2026-09-15T22:06:42.669Z new -> parked"
+        "2026-09-15T22:06:42.669Z new -> parked",
+        "2026-10-03T04:12:37.953Z taken off the wall"
       ],
       "room": "/THE FORUM/",
       "text": "is this forum page broken? i just posted something but nobody is responding",
@@ -642,7 +646,7 @@
           "at": 1789515654393
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": [],
       "why": "not broken, just empty"
     },
@@ -1067,7 +1071,99 @@
       ],
       "gone": true,
       "flags": []
+    },
+    "1790616957727gtti": {
+      "id": "1790616957727gtti",
+      "status": "done",
+      "firstSeen": "2026-10-03T04:12:37.946Z",
+      "history": [
+        "2026-10-03T04:18:34.095Z taken off the wall",
+        "2026-10-03T04:18:34.407Z new -> done"
+      ],
+      "room": "/",
+      "text": "in individual subfolders, why can't i drag files all the way to the left, there are invisible walls",
+      "kind": "idea",
+      "by": "pxo1xif0",
+      "name": "anmo",
+      "near": "the taskbar",
+      "at": 1790616957728,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1790617020000cd3s": {
+      "id": "1790617020000cd3s",
+      "status": "done",
+      "firstSeen": "2026-10-03T04:12:37.953Z",
+      "history": [
+        "2026-10-03T04:18:34.095Z taken off the wall",
+        "2026-10-03T04:18:34.340Z new -> done"
+      ],
+      "room": "/",
+      "text": "in certain backgorund colors, text can be hard to read. ",
+      "kind": "idea",
+      "by": "pxo1xif0",
+      "name": "anmo",
+      "near": "the page",
+      "at": 1790617020000,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1791000591979ulol": {
+      "id": "1791000591979ulol",
+      "status": "done",
+      "firstSeen": "2026-10-03T04:12:37.953Z",
+      "history": [
+        "2026-10-03T04:18:34.095Z taken off the wall",
+        "2026-10-03T04:18:34.272Z new -> done"
+      ],
+      "room": "/",
+      "text": "make the constelation shit only in monet. also rename monet to universe. ",
+      "kind": "idea",
+      "by": "pxo1xif0",
+      "name": "anmo",
+      "near": "the ticker",
+      "at": 1791000591979,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "17910006815823xuw": {
+      "id": "17910006815823xuw",
+      "status": "done",
+      "firstSeen": "2026-10-03T04:12:37.953Z",
+      "history": [
+        "2026-10-03T04:18:34.095Z taken off the wall",
+        "2026-10-03T04:18:34.199Z new -> done"
+      ],
+      "room": "/THE FIELD/",
+      "text": "like why is the galaxy up here? make sure that the galaxy background thing doesnt leak into special folders",
+      "kind": "idea",
+      "by": "pxo1xif0",
+      "name": "anmo",
+      "near": "the masthead",
+      "at": 1791000681583,
+      "replies": [],
+      "gone": true,
+      "flags": []
+    },
+    "1791001093674qelw": {
+      "id": "1791001093674qelw",
+      "status": "new",
+      "firstSeen": "2026-10-03T04:18:34.088Z",
+      "history": [],
+      "room": "/MOONLIGHT/",
+      "text": "YOOO WHERE DID THE ASCII MOON GO????",
+      "kind": "idea",
+      "by": "pxo1xif0",
+      "name": "anmo",
+      "near": "the masthead",
+      "at": 1791001093675,
+      "replies": [],
+      "gone": false,
+      "flags": []
     }
   },
-  "updated": "2026-09-24T07:22:36.023Z"
+  "updated": "2026-10-03T04:18:34.408Z"
 }
