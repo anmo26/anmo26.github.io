@@ -4555,7 +4555,7 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   /* above the bin in the corner (9998): while it is open it is the thing
      you are using, and the bin was sitting on the drift button */
   z-index: 9999;
-  width: min(36rem, calc(100vw - 16px));
+  width: min(30rem, calc(100vw - 16px));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -4585,10 +4585,6 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   align-items: center;
   gap: .6rem;
 }
-/* the time handle has the whole width of the panel to itself: a longer
-   handle is a slower one, and it is the one that needs to be slow */
-.sky-dial.sky-dial-when { grid-template-columns: 1fr; }   /* beats the phone rule below */
-.sky-time-wrap { position: relative; display: block; padding-bottom: .95rem; }
 .sky-foot {
   display: flex;
   align-items: center;
@@ -4642,7 +4638,7 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
 }
 #sky-dials input[type="range"]:focus-visible { box-shadow: 0 0 0 2px rgba(190, 215, 255, .4); }
 
-.sky-now, .sky-run {
+.sky-now {
   font: inherit;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -4653,20 +4649,10 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   padding: .3rem .55rem;
   cursor: pointer;
 }
-.sky-now:hover, .sky-run:hover {
+.sky-now:hover {
   border-color: rgba(220, 235, 255, .7);
 }
 
-/* Drift is the one switch left. Off, it looks like any other button —
-   a dashed, greyed-out outline read as "not available", which is the
-   opposite of what it is. On, it fills and breathes. */
-.sky-run[aria-pressed="true"] {
-  background: rgba(205, 224, 255, .14);
-  border-color: rgba(222, 236, 255, .62);
-}
-
-/* While the sky is running, the button itself keeps time. */
-.sky-run[aria-pressed="true"] { animation: skyrun 1.6s ease-in-out infinite; }
 @keyframes skyrun {
   0%, 100% { background: rgba(205, 224, 255, .10); }
   50%      { background: rgba(205, 224, 255, .26); }
@@ -5009,41 +4995,6 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
 }
 
 
-/* ------------------------------------------------------------ the sky panel
-
-   The landmarks under the time handle — a day and three days either side
-   of now, ticks for a week and a month — and the line itself, drawn into
-   the handle's own background so the thumb sits on top of them.
-   ===================================================================== */
-
-#sky-dials .sky-time {
-  height: 16px;
-  color: rgba(200, 218, 248, .55);
-  background:
-    var(--ticks, none),
-    linear-gradient(rgba(200, 218, 248, .3), rgba(200, 218, 248, .3)) 0 50% / 100% 2px no-repeat;
-}
-.sky-marks {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: .9rem;
-  pointer-events: none;
-}
-.sky-marks i {
-  position: absolute;
-  top: 0;
-  transform: translateX(-50%);
-  font-style: normal;
-  font-size: .5rem;
-  letter-spacing: .06em;
-  color: rgba(214, 226, 248, .45);
-  white-space: nowrap;
-}
-.sky-marks i.now { color: rgba(236, 242, 252, .8); }
-
-.sky-dial-key { font-size: .54rem; }
-.sky-dial b { min-width: 0; text-align: right; }
-
 /* The `sky` button. Its light comes on whenever the sky on the page is not
    the sky outside — wound away from now, or drifting — so that with the
    panel shut you still know you are looking at another day. */
@@ -5059,4 +5010,58 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
   #sky-dials { width: calc(100vw - 16px); font-size: .58rem; }
   .sky-dial { grid-template-columns: 2.9rem 1fr 4rem; }
 
+}
+
+
+/* ------------------------------------------------------------ the shuttle
+
+   Drift, either way, at three speeds and the year. A strip of segments like
+   the shuttle on a tape deck: stop in the middle, backwards to the left,
+   forwards to the right, faster the further out. The one that is running
+   is lit; the year is set apart a little, because it is not a speed at
+   all — it is the same moment, one day after another.
+   ===================================================================== */
+
+.sky-shuttle {
+  display: flex;
+  border: 1px solid rgba(190, 210, 245, .22);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.sky-shuttle button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: .5rem 0;
+  border: 0;
+  border-left: 1px solid rgba(190, 210, 245, .14);
+  background: transparent;
+  color: rgba(222, 232, 250, .72);
+  font: inherit;
+  font-size: .56rem;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+.sky-shuttle button:first-child { border-left: 0; }
+.sky-shuttle button:hover { background: rgba(205, 224, 255, .08); color: #EEF3FC; }
+.sky-shuttle button[aria-pressed="true"] {
+  background: rgba(205, 224, 255, .2);
+  color: #FFFFFF;
+  animation: shuttle-run 1.6s ease-in-out infinite;
+}
+.sky-shuttle .sky-stop[aria-pressed="true"] { animation: none; background: rgba(205, 224, 255, .1); }
+.sky-shuttle .sky-year { color: rgba(240, 214, 160, .8); }
+.sky-shuttle .sky-year[aria-pressed="true"] { background: rgba(240, 200, 130, .22); color: #FFE9C2; }
+@keyframes shuttle-run {
+  0%, 100% { background-color: rgba(205, 224, 255, .2); }
+  50%      { background-color: rgba(205, 224, 255, .3); }
+}
+
+.sky-foot-text { display: flex; flex-direction: column; gap: .2rem; flex: 1 1 auto; min-width: 0; }
+.sky-speed-read { opacity: .55; font-size: .52rem; letter-spacing: .08em; }
+.sky-foot .sky-time-read { font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-shuttle button[aria-pressed="true"] { animation: none; }
 }

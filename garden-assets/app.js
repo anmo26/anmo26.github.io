@@ -11263,6 +11263,20 @@
       }
     }
 
+    /* ---- the analemma: where the sun stood at this moment on every day
+       of the year drift has run through. Older days fainter. Drawn before
+       the ground, so the winter end of the figure can sink below it. ---- */
+    if (skyTrail.length > 1) {
+      var tk, tp, n = skyTrail.length;
+      for (tk = 0; tk < n; tk++) {
+        tp = project(skyTrail[tk].alt, skyTrail[tk].az);
+        if (!tp.on || skyTrail[tk].alt < -2) continue;
+        svg.push('<circle cx="' + tp.x.toFixed(1) + '" cy="' + tp.y.toFixed(1) +
+                 '" r="2.1" fill="' + rgba(sunColour(skyTrail[tk].alt),
+                 (0.16 + 0.6 * (tk / n)) * (0.55 + 0.45 * (1 - night))) + '"/>');
+      }
+    }
+
     /* ---- the sun ---- */
     if (sunHere.on && sp.alt > -3) {
       var sr = (skyFull ? 17 : 15) + Math.max(0, (10 - sp.alt)) * 0.55;
@@ -11384,70 +11398,6 @@
      fine, and long where you need to be long.
      ------------------------------------------------------------------- */
 
-  /* How far the handle takes you.
-
-     The handle was 136 pixels covering four months, so around day three a
-     single pixel was fifteen HOURS of sky. Asked for: the three days either
-     side of now slow, then a gentle acceleration -- and then a top speed it
-     stops accelerating at, so the far end moves at a steady, predictable
-     rate instead of running away. So, three parts, joined so the speed
-     never jumps:
-
-       now to three days     62% of the travel, a steady walk -- about six
-                             minutes a pixel near now, forty by day three
-       three days onwards    the speed grows smoothly, from exactly where
-                             the walk left it...
-       from 78% of the way   ...to a top speed, and then holds it: about
-                             nineteen hours a pixel, out to two months
-
-     (Per pixel on the full-width handle in the panel, 270px each way.) */
-
-  var SKY_REACH = 60 * 86400000;       // two months either way
-  var SKY_SLOW = 3 * 86400000;         // the slow window: three days
-  var SKY_SLOW_AT = 0.62;              // ...which is this much of the travel
-  var SKY_SLOW_BEND = 1.6;             // how gently it curves inside the window
-  var SKY_TOP_AT = 0.78;               // where it stops accelerating
-  var SKY_RUN = (function () {
-    var S1 = SKY_SLOW * SKY_SLOW_BEND / SKY_SLOW_AT;   // the walk's speed at day three
-    function k(top) { return Math.log(top / S1) / (SKY_TOP_AT - SKY_SLOW_AT); }
-    function end(top) {
-      var kk = k(top);
-      return SKY_SLOW + (top - S1) / kk + top * (1 - SKY_TOP_AT);
-    }
-    // the top speed that lands the end of the handle on exactly two months
-    var lo = S1 * 1.001, hi = S1 * 2000, i, mid;
-    for (i = 0; i < 90; i++) {
-      mid = (lo + hi) / 2;
-      if (end(mid) < SKY_REACH) lo = mid; else hi = mid;
-    }
-    var top = (lo + hi) / 2;
-    return { S1: S1, top: top, k: k(top) };
-  })();
-
-  function skyCurve(a) {               // 0..1 of the travel -> milliseconds
-    var R = SKY_RUN;
-    if (a <= SKY_SLOW_AT) return SKY_SLOW * Math.pow(a / SKY_SLOW_AT, SKY_SLOW_BEND);
-    if (a <= SKY_TOP_AT) return SKY_SLOW + R.S1 * (Math.exp(R.k * (a - SKY_SLOW_AT)) - 1) / R.k;
-    return SKY_SLOW + (R.top - R.S1) / R.k + R.top * (a - SKY_TOP_AT);
-  }
-
-  function skyDialToMs(v) {
-    var m = skyCurve(Math.min(1, Math.abs(v / 100)));
-    return Math.round(v < 0 ? -m : m);
-  }
-
-  /** And back again, so that running the clock moves the handle with it,
-   *  and so the landmarks under the handle can be placed. */
-  function skyMsToDial(ms) {
-    var want = Math.abs(ms), lo = 0, hi = 1, k, mid;
-    if (want >= skyCurve(1)) return ms < 0 ? -100 : 100;
-    for (k = 0; k < 40; k++) {
-      mid = (lo + hi) / 2;
-      if (skyCurve(mid) < want) lo = mid; else hi = mid;
-    }
-    return (ms < 0 ? -lo : lo) * 100;
-  }
-
   function skyWhen() { return Date.now() + skyShift; }
 
   function skyStamp(at) {
@@ -11498,40 +11448,14 @@
         '<input class="sky-up" type="range" min="-8" max="86" step="1" ' +
           'aria-label="how high up the sky you are looking">' +
         '<b class="sky-up-read"></b></label>' +
-      '<div class="sky-dial sky-dial-when">' +
-        '<span class="sky-time-wrap">' +
-          '<input class="sky-time" type="range" min="-100" max="100" step="0.1" value="0" ' +
-            'aria-label="wind the sky forwards or back">' +
-          '<span class="sky-marks" aria-hidden="true"></span>' +
-        '</span></div>' +
-      '<div class="sky-foot"><span class="sky-dial-key">when</span><b class="sky-time-read"></b>' +
-        '<button class="sky-now" type="button">now</button>' +
-        '<button class="sky-run" type="button" aria-pressed="false">drift</button></div>';
+      '<div class="sky-shuttle" role="group" aria-label="drift through time">' +
+        skyShuttleButtons() +
+      '</div>' +
+      '<div class="sky-foot">' +
+        '<span class="sky-foot-text"><b class="sky-time-read"></b>' +
+        '<span class="sky-speed-read"></span></span>' +
+        '<button class="sky-now" type="button">now</button></div>';
     document.body.appendChild(bar);
-
-    /* ---- landmarks under the time handle: a day and three days either
-       side of now, and where the three slow days end. Placed from the same
-       curve the handle uses, so they are where those moments really are. */
-    (function () {
-      var marks = bar.querySelector('.sky-marks'), html = '', ticks = [];
-      var LAND = [[-3, '3d'], [-1, '1d'], [0, 'now'], [1, '1d'], [3, '3d']];
-      var EXTRA = [-30, -14, -7, 7, 14, 30];      // a week, two, a month: ticks only
-      function pos(days) {
-        var f = (skyMsToDial(days * 86400000) + 100) / 200;
-        return 'calc(6px + (100% - 12px) * ' + f.toFixed(4) + ')';
-      }
-      LAND.forEach(function (m) {
-        html += '<i style="left:' + pos(m[0]) + '"' + (m[0] === 0 ? ' class="now"' : '') +
-                '>' + m[1] + '</i>';
-        ticks.push('linear-gradient(currentColor, currentColor) ' + pos(m[0]) +
-                   ' 50% / 1px ' + (m[0] === 0 ? 11 : 7) + 'px no-repeat');
-      });
-      EXTRA.forEach(function (d) {
-        ticks.push('linear-gradient(currentColor, currentColor) ' + pos(d) + ' 50% / 1px 4px no-repeat');
-      });
-      marks.innerHTML = html;
-      bar.querySelector('.sky-time').style.setProperty('--ticks', ticks.join(', '));
-    })();
 
     /* ---- the button in the taskbar that opens it ---- */
     var tray = document.getElementById('taskbar-toggles');
@@ -11596,8 +11520,8 @@
     var up = bar.querySelector('.sky-up');
     var upRead = bar.querySelector('.sky-up-read');
     var azRead = bar.querySelector('.sky-az-read');
-    var tm = bar.querySelector('.sky-time');
     var tmRead = bar.querySelector('.sky-time-read');
+    var speedRead = bar.querySelector('.sky-speed-read');
 
     az.value = Math.round(skyLook);
     up.value = Math.round(skyTiltNow());
@@ -11616,6 +11540,7 @@
       azRead.textContent = skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
       upRead.textContent = Math.round(skyTiltNow()) + '°';
       tmRead.textContent = skyStamp(at);
+      speedRead.textContent = skySpeedWords();
       /* The panel can be closed while the sky is still wound away from now,
          or running. The light on the `sky` button says so, and hovering it
          says when. */
@@ -11640,81 +11565,169 @@
       skyTilt = Number(up.value);  // nor does tipping your head back
       soon(false);
     });
-    tm.addEventListener('input', function () {
-      skyShift = skyDialToMs(Number(tm.value));
-      soon(true);
-    });
     bar.querySelector('.sky-now').addEventListener('click', function () {
-      skyShift = 0;
-      tm.value = 0;
       stopDrift();
+      skyShift = 0;
+      skyTrail = [];
       soon(true);
       play('tick');
     });
 
 
     /* ------------------------------------------------------------- drift
-       The sky really does move, all the time, and it is already redrawn
-       every twenty seconds. But the real rate is fifteen degrees an hour,
-       which across this window is about half a pixel in those twenty
-       seconds -- true, and completely invisible. You cannot watch the sun
-       cross the sky in real time any more than you can watch a clock's
-       hour hand.
+       The sky really does move, all the time, and it is redrawn every
+       twenty seconds -- but at fifteen degrees an hour that is half a pixel
+       a redraw, and nobody can watch it. Drift is how you watch it.
 
-       So: hold the button down on time itself. Drift runs the clock at
-       nine hundred times, which is a quarter of an hour every second -- a
-       day and a night in about a minute and a half. The sun climbs, goes
-       over, reddens, sets; the stars come up behind it in the right order
-       and wheel; the moon rises late and fills out over the following
-       nights. Everything is the same arithmetic, just asked faster.
+       It began as one button that ran the clock forwards at a quarter of an
+       hour a second. Then there was a handle for winding the clock, and the
+       handle was never quite right -- too fast, then too slow, then too
+       fast again -- and the drift was the part people loved. So the handle
+       is gone and drift is the whole of it: a row of speeds, either way,
+       like the shuttle on a tape deck.
+
+         15m   a quarter of an hour a second. The sun walks; a day and a
+               night is a minute and a half.
+         1h    an hour a second. A day in twenty-four seconds.
+         6h    six hours a second. The moon goes round its phases in about
+               two minutes.
+         year  not a speed at all. It jumps exactly one day per frame, so
+               every frame is THE SAME MOMENT on the next day, and a year
+               goes by in about eighteen seconds. The stars at this hour
+               wheel through the seasons -- Orion arrives for the winter
+               and leaves in the spring -- and if the sun is up, it leaves
+               a trail of where it stood at this hour each day: the long
+               figure of eight called the analemma. That figure is the
+               whole of why the summer sun is high and the winter sun is
+               low, drawn by the sun itself.
+
+       Press a speed to go; press the lit one again to stop there. `now`
+       brings it all back.
        ------------------------------------------------------------------ */
 
-    var runBtn = bar.querySelector('.sky-run');
+    var shuttle = [].slice.call(bar.querySelectorAll('.sky-shuttle button'));
+
+    function paintShuttle() {
+      shuttle.forEach(function (b) {
+        b.setAttribute('aria-pressed', Number(b.getAttribute('data-speed')) === skySpeed ? 'true' : 'false');
+      });
+      speedRead.textContent = skySpeedWords();
+    }
 
     function driftStep(ts) {
-      if (!skyRun) return;
+      if (!skyRun || !skySpeed) return;
+      var spec = SKY_SHUTTLE[Math.abs(skySpeed)], dir = skySpeed < 0 ? -1 : 1;
       if (!skyRunLast) skyRunLast = ts;
-      skyShift += (ts - skyRunLast) * SKY_RUN_RATE;
+      // a frame that stalled (a busy tab) must not throw the sky days ahead
+      var dt = Math.min(100, ts - skyRunLast);
       skyRunLast = ts;
-      if (skyShift > SKY_REACH) skyShift = -SKY_REACH;
-      tm.value = skyMsToDial(skyShift);
-      /* A whole sky is rebuilt from scratch on every paint, so it is drawn
-         at about twenty a second rather than at sixty. Smooth enough that
-         the sun slides, cheap enough that the page stays warm. */
-      if (ts - skyRunDrawn > 46) { skyRunDrawn = ts; paint(); }
+      if (!spec.year) skyShift += dir * dt * spec.rate;
+
+      /* A whole sky is rebuilt on every paint, so it is drawn at about
+         twenty a second rather than sixty. In the year it is one day per
+         paint, exactly, so the moment never slides. */
+      if (ts - skyRunDrawn > 46) {
+        skyRunDrawn = ts;
+        if (spec.year) skyShift += dir * 86400000;
+        if (Math.abs(skyShift) > SKY_FAR) {
+          skyShift = (skyShift < 0 ? -1 : 1) * SKY_FAR;
+          setSpeed(0);
+          return;
+        }
+        paint();
+        if (spec.year) skyTrailAdd();
+      }
       skyRun = requestAnimationFrame(driftStep);
     }
     function stopDrift() {
       if (skyRun) cancelAnimationFrame(skyRun);
       skyRun = 0; skyRunLast = 0;
-      if (runBtn) runBtn.setAttribute('aria-pressed', 'false');
+      skySpeed = 0;
       document.body.classList.remove('sky-running');
       skyBtn.classList.remove('running');
+      paintShuttle();
     }
     function startDrift() {
-      if (skyRun) return;
+      if (skyRun) return;                       // already running: the new speed is picked up
       skyRunLast = 0;
-      runBtn.setAttribute('aria-pressed', 'true');
       document.body.classList.add('sky-running');
       skyRun = requestAnimationFrame(driftStep);
     }
-    runBtn.addEventListener('click', function () {
-      if (skyRun) stopDrift(); else startDrift();
-      play('tick');
+    function setSpeed(n) {
+      if (n === skySpeed) n = 0;                // the lit one again: stop here
+      var wasYear = skySpeed && SKY_SHUTTLE[Math.abs(skySpeed)].year;
+      var isYear = n && SKY_SHUTTLE[Math.abs(n)].year;
+      if (!isYear || !wasYear) skyTrail = [];   // a trail belongs to one run of the year
+      if (!n) { stopDrift(); paint(); return; }
+      skySpeed = n;
+      startDrift();
+      paintShuttle();
+    }
+    shuttle.forEach(function (b) {
+      b.addEventListener('click', function () {
+        setSpeed(Number(b.getAttribute('data-speed')));
+        play('tick');
+      });
     });
-    // winding the clock by hand means you have stopped watching it run
-    tm.addEventListener('pointerdown', stopDrift);
-    // and nothing should run on in a tab nobody is looking at
+    // nothing should run on in a tab nobody is looking at
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) stopDrift();
     });
 
+    paintShuttle();
     paint();
   }
 
   var skyRun = 0, skyRunLast = 0, skyRunDrawn = 0;
   var skyPanelClose = null;
-  var SKY_RUN_RATE = 900;          // a quarter of an hour of sky per second
+  var skySpeed = 0;                // -4..4 along the shuttle; 0 is stopped
+  var SKY_FAR = 100 * 365.25 * 86400000;   // a century either way, and it stops
+
+  // [rate in ms of sky per ms of real time, the label, the words]
+  var SKY_SHUTTLE = [
+    null,
+    { rate: 900,   short: '15m',  words: 'a quarter of an hour a second' },
+    { rate: 3600,  short: '1h',   words: 'an hour a second' },
+    { rate: 21600, short: '6h',   words: 'six hours a second' },
+    { year: true,  short: 'year', words: 'this moment, every day' }
+  ];
+
+  function skyShuttleButtons() {
+    var html = '', n, spec, label;
+    for (n = -4; n <= 4; n++) {
+      if (n === 0) {
+        html += '<button type="button" class="sky-stop" data-speed="0" ' +
+                'aria-label="stop">&#10073;&#10073;</button>';
+        continue;
+      }
+      spec = SKY_SHUTTLE[Math.abs(n)];
+      label = n < 0 ? '&#9666;&thinsp;' + spec.short : spec.short + '&thinsp;&#9656;';
+      html += '<button type="button" data-speed="' + n + '" class="' +
+              (spec.year ? 'sky-year' : '') + '" aria-label="' +
+              spec.words + (n < 0 ? ', backwards' : ', forwards') + '">' + label + '</button>';
+    }
+    return html;
+  }
+
+  function skySpeedWords() {
+    if (!skySpeed) {
+      return Math.abs(skyShift) < 60000 ? 'the sky as it is right now' : 'stopped here';
+    }
+    var spec = SKY_SHUTTLE[Math.abs(skySpeed)];
+    if (spec.year) return spec.words + (skySpeed < 0 ? ', going back' : ', going on');
+    return spec.words + (skySpeed < 0 ? ', backwards' : '');
+  }
+
+  /* ------------------------------------------------------- the analemma
+     Where the sun stood at this same moment on each day the year has run
+     through. Kept in the sky's own terms -- height and compass bearing --
+     so it stays put when you turn round. */
+  var skyTrail = [];
+  function skyTrailAdd() {
+    if (!skyCache || !skyCache.sun) return;
+    skyTrail.push({ alt: skyCache.sun.alt, az: skyCache.sun.az });
+    if (skyTrail.length > 380) skyTrail.shift();
+  }
 
   var skyCache = null;
 

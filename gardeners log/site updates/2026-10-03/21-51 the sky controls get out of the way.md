@@ -1,12 +1,12 @@
-# 3 october 2026, 22:01
+# 3 october 2026, 21:51
 
 ## what changed
 
-- the time handle is gone; drift is how you move through time now, either way
-- drift has speeds: a quarter of an hour, an hour or six hours of sky every second
-- the year: the same moment on every day, a whole year in about eighteen seconds
-- in the year, by day, the sun draws its figure of eight: why summer is high and winter low
-- the sky controls live behind a `sky` button in the taskbar, so nothing covers the folders
+- the sky controls moved off the page into a `sky` button in the taskbar, so nothing covers the folders
+- the time handle is four times longer, with landmarks under it for a day and three days
+- three days either side of now go slowly; past that it speeds up, then holds one steady speed
+- the sky button lights up whenever the sky on the page is not now, so you always know
+- the secrets stir once after a few seconds, and lean or glow as your cursor comes near
 
 ## you planned
 
