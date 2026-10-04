@@ -3,25 +3,14 @@
 Every note ever left on the wall, and what was decided about it.
 Nothing in here is built until Anmo says so, out loud, note by note.
 
-Read 03/10/2026, 01:14:48. 59 notes in the ledger.
+Read 03/10/2026, 14:04:27. 59 notes in the ledger.
 
-## parked (13)
-
-### 1791003013330o70n
-
-- **idea**, front page · THE FIELD/
-- by anmo (pxo1xif0), today
-
-> make all the secrets more obvous, like make it more obvious to grow the tree in garden, make it more obvious somehow to like click the waves. idk. help me brainstorm and ask me questions in claude about this regarding this. 
-
-  - *claude:* not built yet — you asked to think it through first, so the questions are waiting for you in claude. leaving this up until we decide.
-
-**decided:** talking it through with anmo first
+## parked (12)
 
 ### 1789571885963xvth
 
 - **chat**, /THE BAR/ · the mini fig
-- by Stan (2i39jnmt), 16 days ago
+- by Stan (2i39jnmt), 17 days ago
 
 > i found!
 
@@ -32,7 +21,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1789537732329pxw9
 
 - **chat**, /THE GARDEN/ · Screenshot 2026-09-04 at 2.38.29 AM.png
-- by master yoda! (8nmirhlz), 16 days ago
+- by master yoda! (8nmirhlz), 17 days ago
 
 > who else found this garden? its kinda cool! try growing the tree!!!!! click it multiple times at the base.
 
@@ -43,7 +32,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1789537712080fu9j
 
 - **chat**, /MOONLIGHT/ · the music player — *taken off the wall*
-- by master yoda! (8nmirhlz), 16 days ago
+- by master yoda! (8nmirhlz), 17 days ago
 
 > i made the rocket fly by clicking the button below it!
 
@@ -54,7 +43,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 17895376834560i0m
 
 - **chat**, /MOONLIGHT/ · the page — *taken off the wall*
-- by master yoda! (8nmirhlz), 16 days ago
+- by master yoda! (8nmirhlz), 17 days ago
 
 > am i the only one who has found this place? leave a comment if u found it too!!
 
@@ -65,7 +54,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1789537496650fyua
 
 - **chat**, front page · the mini fig — *taken off the wall*
-- by master yoda! (8nmirhlz), 16 days ago
+- by master yoda! (8nmirhlz), 17 days ago
 
 > hi! i like this site a lot. please dont delete this note!
 
@@ -157,7 +146,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 
 **decided:** not a change to the site — see the answer
 
-## done (41)
+## done (42)
 
 ### 1791003056932huvh
 
@@ -167,6 +156,17 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 > i think the time scroll in universe is a little bit finicky. hard to narrow down a certain time. maybe the further u get away from today, teh faster it scrolls? idk. maybe like make it only abel to go frowared at most 2 months? think about how to fix this. 
 
 **decided:** two months each way, a steeper curve, arrow keys for exact hours
+
+### 1791003013330o70n
+
+- **idea**, front page · THE FIELD/ — *taken off the wall*
+- by anmo (pxo1xif0), today
+
+> make all the secrets more obvous, like make it more obvious to grow the tree in garden, make it more obvious somehow to like click the waves. idk. help me brainstorm and ask me questions in claude about this regarding this. 
+
+  - *claude:* not built yet — you asked to think it through first, so the questions are waiting for you in claude. leaving this up until we decide.
+
+**decided:** stirs once after a few seconds; leans or glows as a cursor nears
 
 ### 17910024113149rgq
 
@@ -221,21 +221,21 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1790617020000cd3s
 
 - **idea**, front page · the page — *taken off the wall*
-- by anmo (pxo1xif0), 4 days ago
+- by anmo (pxo1xif0), 5 days ago
 
 > in certain backgorund colors, text can be hard to read. 
 
 ### 1790616957727gtti
 
 - **idea**, front page · the taskbar — *taken off the wall*
-- by anmo (pxo1xif0), 4 days ago
+- by anmo (pxo1xif0), 5 days ago
 
 > in individual subfolders, why can't i drag files all the way to the left, there are invisible walls
 
 ### 17901768210474bn6
 
 - **idea**, front page · the page — *taken off the wall*
-- by Anmo (r5u3jewz), 9 days ago
+- by Anmo (r5u3jewz), 10 days ago
 
 > way too many tabs at the bottom. make it better and clean
 
@@ -244,7 +244,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 179017677576677oj
 
 - **idea**, front page · Screenshot 2026-09-18 at 9.28.34 PM.png — *taken off the wall*
-- by Anmo (r5u3jewz), 9 days ago
+- by Anmo (r5u3jewz), 10 days ago
 
 > bug: when i double click to minimize, it opens the actual photo and then it glitches after it minimizes so the scale is off
 
@@ -265,14 +265,14 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1789552212506i7kj
 
 - **idea**, front page · the music player — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
+- by Anmo (r5u3jewz), 17 days ago
 
 > have stickies show the date and time it was written.
 
 ### 1789552167217iba4
 
 - **chat**, front page · the ticker — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
+- by Anmo (r5u3jewz), 17 days ago
 
 > I WILL NOT BE MAKING A MAJOR EDIT UNTIL SEPT 20!!!! ADD STICKIES TO ANYTHING YOU THINK NEEDS FIXING!!!! I WILL BE FILLING THE SITE UP WITH CONTENT SOON! 9/16/26
 
@@ -283,28 +283,28 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1789552135307jgxa
 
 - **idea**, front page · the ticker — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
+- by Anmo (r5u3jewz), 17 days ago
 
 > make the folders slightly larger
 
 ### 1789551822358u9a1
 
 - **idea**, front page · todo.md — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
+- by Anmo (r5u3jewz), 17 days ago
 
 > why does to do resize itself to its original size after i drag it somewhere? i dont like that
 
 ### 1789551798473k3ts
 
 - **idea**, front page · the ticker — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
+- by Anmo (r5u3jewz), 17 days ago
 
 > double click on an opened video, photo, or text to close it.
 
 ### 1789538121072ktcp
 
 - **chat**, /pogo/ · 0N7A2311.JPG — *taken off the wall*
-- by Anmo (r5u3jewz), 16 days ago
+- by Anmo (r5u3jewz), 17 days ago
 
 > thumbnail photos shouldnt be scaleable. its broken. fix this. 
 
@@ -513,7 +513,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1789571975185wu61
 
 - **idea**, /test folder/ · Screenshot 2026-09-14 at 3.45.54 AM.png — *taken off the wall*
-- by Stan (2i39jnmt), 16 days ago
+- by Stan (2i39jnmt), 17 days ago
 
 > 
 
@@ -524,7 +524,7 @@ Read 03/10/2026, 01:14:48. 59 notes in the ledger.
 ### 1789571752477qt06
 
 - **chat**, front page · the mini fig — *taken off the wall*
-- by Stan (2i39jnmt), 16 days ago
+- by Stan (2i39jnmt), 17 days ago
 
 > penis 
 

@@ -10921,11 +10921,9 @@
    *  in the sky. Measured, not guessed, because the taskbar wraps on a
    *  narrow window and the dials are taller on a phone. */
   function skyFloor() {
-    var px = taskbarHeight(), el;
-    el = document.getElementById('sky-dials');
-    if (el && !el.hidden && el.getBoundingClientRect) {
-      px += el.getBoundingClientRect().height + 14;
-    }
+    // the dials are a panel that opens on request now; the horizon only
+    // has to clear the taskbar, and the ground gets its room back
+    var px = taskbarHeight();
     var h = window.innerHeight || 800;
     // 54px of ground below the line: the compass is written there now
     return Math.max(0.6, Math.min(0.92, 1 - (px + 54) / h));
@@ -11388,36 +11386,64 @@
 
   /* How far the handle takes you.
 
-     Six months over one short handle made a pixel of it most of a week, so
-     it came down to two months on a fourth-power curve -- and then "make it
-     slow down around now even more, about two and a half times". So it is
-     a ninth power now, with a gentle straight-line term underneath it so
-     the middle of the handle is never dead.
+     The handle was 136 pixels covering four months, so around day three a
+     single pixel was fifteen HOURS of sky. Asked for: the three days either
+     side of now slow, then a gentle acceleration -- and then a top speed it
+     stops accelerating at, so the far end moves at a steady, predictable
+     rate instead of running away. So, three parts, joined so the speed
+     never jumps:
 
-     Measured, against the fourth-power version:
-       the first hour now takes 43% of the handle's travel  (was 16%)
-       the first day takes 63%                              (was 36%)
-       the first week 79%, and the last fifth is the month and a half after
-     The first tenth of the handle is four minutes. The ends still reach two
-     months, and the arrow keys still move it one notch at a time. */
+       now to three days     62% of the travel, a steady walk -- about six
+                             minutes a pixel near now, forty by day three
+       three days onwards    the speed grows smoothly, from exactly where
+                             the walk left it...
+       from 78% of the way   ...to a top speed, and then holds it: about
+                             nineteen hours a pixel, out to two months
+
+     (Per pixel on the full-width handle in the panel, 270px each way.) */
 
   var SKY_REACH = 60 * 86400000;       // two months either way
-  var SKY_NEAR = 40 * 60000;           // the straight-line part: 40 minutes
+  var SKY_SLOW = 3 * 86400000;         // the slow window: three days
+  var SKY_SLOW_AT = 0.62;              // ...which is this much of the travel
+  var SKY_SLOW_BEND = 1.6;             // how gently it curves inside the window
+  var SKY_TOP_AT = 0.78;               // where it stops accelerating
+  var SKY_RUN = (function () {
+    var S1 = SKY_SLOW * SKY_SLOW_BEND / SKY_SLOW_AT;   // the walk's speed at day three
+    function k(top) { return Math.log(top / S1) / (SKY_TOP_AT - SKY_SLOW_AT); }
+    function end(top) {
+      var kk = k(top);
+      return SKY_SLOW + (top - S1) / kk + top * (1 - SKY_TOP_AT);
+    }
+    // the top speed that lands the end of the handle on exactly two months
+    var lo = S1 * 1.001, hi = S1 * 2000, i, mid;
+    for (i = 0; i < 90; i++) {
+      mid = (lo + hi) / 2;
+      if (end(mid) < SKY_REACH) lo = mid; else hi = mid;
+    }
+    var top = (lo + hi) / 2;
+    return { S1: S1, top: top, k: k(top) };
+  })();
+
+  function skyCurve(a) {               // 0..1 of the travel -> milliseconds
+    var R = SKY_RUN;
+    if (a <= SKY_SLOW_AT) return SKY_SLOW * Math.pow(a / SKY_SLOW_AT, SKY_SLOW_BEND);
+    if (a <= SKY_TOP_AT) return SKY_SLOW + R.S1 * (Math.exp(R.k * (a - SKY_SLOW_AT)) - 1) / R.k;
+    return SKY_SLOW + (R.top - R.S1) / R.k + R.top * (a - SKY_TOP_AT);
+  }
 
   function skyDialToMs(v) {
-    var a = Math.abs(v / 100);         // 0 .. 1
-    var m = SKY_NEAR * a + SKY_REACH * Math.pow(a, 9);
+    var m = skyCurve(Math.min(1, Math.abs(v / 100)));
     return Math.round(v < 0 ? -m : m);
   }
 
-  /** And back again, so that running the clock moves the handle with it.
-   *  There is no tidy inverse for that curve, so it is found by halving. */
+  /** And back again, so that running the clock moves the handle with it,
+   *  and so the landmarks under the handle can be placed. */
   function skyMsToDial(ms) {
     var want = Math.abs(ms), lo = 0, hi = 1, k, mid;
-    if (want >= SKY_NEAR + SKY_REACH) return ms < 0 ? -100 : 100;
+    if (want >= skyCurve(1)) return ms < 0 ? -100 : 100;
     for (k = 0; k < 40; k++) {
       mid = (lo + hi) / 2;
-      if (SKY_NEAR * mid + SKY_REACH * Math.pow(mid, 9) < want) lo = mid; else hi = mid;
+      if (skyCurve(mid) < want) lo = mid; else hi = mid;
     }
     return (ms < 0 ? -lo : lo) * 100;
   }
@@ -11453,10 +11479,16 @@
 
     var bar = document.createElement('div');
     bar.id = 'sky-dials';
-    /* Each handle has its reading right beside it. The compass and the
-       height handle used to sit side by side with one reading after both,
-       so you could not tell which number belonged to which -- and the
-       compass point had drifted away from the compass. */
+    bar.hidden = true;
+    bar.setAttribute('role', 'dialog');
+    bar.setAttribute('aria-label', 'the sky');
+    /* Not a bar across the page any more. It stood over the bottom row of
+       folders whatever window it was in -- "I REALLY hate how the toggle
+       bar is covering up the folders" -- so it is a panel now, opened from
+       a `sky` button in the taskbar beside sound and notes, and it is only
+       there while you are using it. Each handle has its reading beside it;
+       the time handle runs the full width, with landmarks under it, because
+       a longer handle is a slower one. */
     bar.innerHTML =
       '<label class="sky-dial"><span class="sky-dial-key">facing</span>' +
         '<input class="sky-az" type="range" min="0" max="359" step="1" ' +
@@ -11466,13 +11498,99 @@
         '<input class="sky-up" type="range" min="-8" max="86" step="1" ' +
           'aria-label="how high up the sky you are looking">' +
         '<b class="sky-up-read"></b></label>' +
-      '<label class="sky-dial"><span class="sky-dial-key">when</span>' +
-        '<input class="sky-time" type="range" min="-100" max="100" step="0.2" value="0" ' +
-          'aria-label="wind the sky forwards or back">' +
-        '<b class="sky-time-read"></b></label>' +
-      '<button class="sky-now" type="button">now</button>' +
-      '<button class="sky-run" type="button" aria-pressed="false">drift</button>';
+      '<div class="sky-dial sky-dial-when">' +
+        '<span class="sky-time-wrap">' +
+          '<input class="sky-time" type="range" min="-100" max="100" step="0.1" value="0" ' +
+            'aria-label="wind the sky forwards or back">' +
+          '<span class="sky-marks" aria-hidden="true"></span>' +
+        '</span></div>' +
+      '<div class="sky-foot"><span class="sky-dial-key">when</span><b class="sky-time-read"></b>' +
+        '<button class="sky-now" type="button">now</button>' +
+        '<button class="sky-run" type="button" aria-pressed="false">drift</button></div>';
     document.body.appendChild(bar);
+
+    /* ---- landmarks under the time handle: a day and three days either
+       side of now, and where the three slow days end. Placed from the same
+       curve the handle uses, so they are where those moments really are. */
+    (function () {
+      var marks = bar.querySelector('.sky-marks'), html = '', ticks = [];
+      var LAND = [[-3, '3d'], [-1, '1d'], [0, 'now'], [1, '1d'], [3, '3d']];
+      var EXTRA = [-30, -14, -7, 7, 14, 30];      // a week, two, a month: ticks only
+      function pos(days) {
+        var f = (skyMsToDial(days * 86400000) + 100) / 200;
+        return 'calc(6px + (100% - 12px) * ' + f.toFixed(4) + ')';
+      }
+      LAND.forEach(function (m) {
+        html += '<i style="left:' + pos(m[0]) + '"' + (m[0] === 0 ? ' class="now"' : '') +
+                '>' + m[1] + '</i>';
+        ticks.push('linear-gradient(currentColor, currentColor) ' + pos(m[0]) +
+                   ' 50% / 1px ' + (m[0] === 0 ? 11 : 7) + 'px no-repeat');
+      });
+      EXTRA.forEach(function (d) {
+        ticks.push('linear-gradient(currentColor, currentColor) ' + pos(d) + ' 50% / 1px 4px no-repeat');
+      });
+      marks.innerHTML = html;
+      bar.querySelector('.sky-time').style.setProperty('--ticks', ticks.join(', '));
+    })();
+
+    /* ---- the button in the taskbar that opens it ---- */
+    var tray = document.getElementById('taskbar-toggles');
+    var skyWrap = document.createElement('span');
+    skyWrap.className = 'picker picker-sky';
+    var skyBtn = document.createElement('button');
+    skyBtn.className = 'toggle sky-toggle';
+    skyBtn.type = 'button';
+    skyBtn.setAttribute('aria-expanded', 'false');
+    skyBtn.setAttribute('aria-controls', 'sky-dials');
+    skyBtn.setAttribute('aria-pressed', 'false');
+    skyBtn.innerHTML = '<span class="led"></span>sky';
+    skyWrap.appendChild(skyBtn);
+    if (tray) {
+      // beside notes, which is where the other things you reach for are
+      var after = null;
+      [].forEach.call(tray.querySelectorAll('.picker'), function (w) {
+        var b = w.querySelector('button.toggle');
+        if (b && /notes/.test(b.textContent)) after = w;
+      });
+      if (after && after.nextSibling) tray.insertBefore(skyWrap, after.nextSibling);
+      else tray.appendChild(skyWrap);
+    }
+
+    function placePanel() {
+      var r = skyBtn.getBoundingClientRect();
+      bar.style.bottom = Math.round(window.innerHeight - r.top + 8) + 'px';
+      var w = bar.getBoundingClientRect().width;
+      bar.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - w - 8))) + 'px';
+    }
+    function openPanel() {
+      document.querySelectorAll('.picker-menu').forEach(function (m) { m.hidden = true; });
+      bar.hidden = false;
+      placePanel();
+      skyBtn.setAttribute('aria-expanded', 'true');
+      paint();
+    }
+    function closePanel() {
+      if (bar.hidden) return;
+      bar.hidden = true;
+      skyBtn.setAttribute('aria-expanded', 'false');
+    }
+    skyPanelClose = closePanel;
+
+    /* Opened and closed by a click, not by hovering like the other menus:
+       a slider is dragged, and a drag that strayed an inch off the panel
+       would have shut it in your hand. It stays until you press `sky`
+       again, press Escape, or put something down somewhere else. */
+    skyBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (bar.hidden) openPanel(); else closePanel();
+      play('tick');
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (bar.hidden || bar.contains(e.target) || skyWrap.contains(e.target)) return;
+      closePanel();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
+    window.addEventListener('resize', function () { if (!bar.hidden) placePanel(); });
 
     var az = bar.querySelector('.sky-az');
     var up = bar.querySelector('.sky-up');
@@ -11498,6 +11616,13 @@
       azRead.textContent = skyFacing().toLowerCase() + ' · ' + Math.round(skyLook) + '°';
       upRead.textContent = Math.round(skyTiltNow()) + '°';
       tmRead.textContent = skyStamp(at);
+      /* The panel can be closed while the sky is still wound away from now,
+         or running. The light on the `sky` button says so, and hovering it
+         says when. */
+      var away = Math.abs(skyShift) >= 60000 || !!skyRun;
+      skyBtn.setAttribute('aria-pressed', away ? 'true' : 'false');
+      skyBtn.classList.toggle('running', !!skyRun);
+      skyBtn.title = away ? skyStamp(at) : 'the sky';
     }
 
     /* One repaint per frame at most, however fast the handle is dragged. */
@@ -11564,6 +11689,7 @@
       skyRun = 0; skyRunLast = 0;
       if (runBtn) runBtn.setAttribute('aria-pressed', 'false');
       document.body.classList.remove('sky-running');
+      skyBtn.classList.remove('running');
     }
     function startDrift() {
       if (skyRun) return;
@@ -11587,6 +11713,7 @@
   }
 
   var skyRun = 0, skyRunLast = 0, skyRunDrawn = 0;
+  var skyPanelClose = null;
   var SKY_RUN_RATE = 900;          // a quarter of an hour of sky per second
 
   var skyCache = null;
@@ -11643,13 +11770,10 @@
   /** The dials, though, are only for the front page. Inside a folder they
    *  float over whatever is in it -- in the library they were sitting on
    *  top of the books -- and you did not open a folder to turn the sky. */
-  function dialsWanted() {
-    // the front page is the one with nothing to go back to -- and a phone
-    // has no room for two sliders, four buttons and a readout, so there
-    // they simply are not there. The sky itself still is.
-    return skyWanted() && window.innerWidth > 559 &&
-           !document.querySelector('.masthead .up');
-  }
+  /** The dials are a panel behind a button now, so they can be offered
+   *  wherever the sky is -- on a phone too, and inside folders. They only
+   *  cover anything while somebody has them open on purpose. */
+  function dialsWanted() { return skyWanted(); }
 
   /** Put the whole sky -- stars, weather, meteors, dials -- in or out of
    *  sight in one move, and take its ink with it. */
@@ -11658,8 +11782,12 @@
       var el = document.getElementById(id);
       if (el) el.hidden = !on;
     });
-    var dl = document.getElementById('sky-dials');
-    if (dl) dl.hidden = !(on && dialsWanted());
+    /* The panel is never opened by anything but its own button. All this
+       does is take the button away, and shut the panel, where there is no
+       sky to turn. */
+    var sb = document.querySelector('.picker-sky');
+    if (sb) sb.hidden = !on;
+    if (!on && skyPanelClose) skyPanelClose();
     var wx = document.querySelector('.sky-wx');
     if (wx) wx.hidden = !on;
 

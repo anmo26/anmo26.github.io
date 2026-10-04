@@ -1,11 +1,11 @@
-# 3 october 2026, 21:51
+# 3 october 2026, 14:03
 
 ## what changed
 
-- the sky controls moved off the page into a `sky` button in the taskbar, so nothing covers the folders
-- the time handle is four times longer, with landmarks under it for a day and three days
-- three days either side of now go slowly; past that it speeds up, then holds one steady speed
-- the sky button lights up whenever the sky on the page is not now, so you always know
+- daytime writing is dark again, and every label picks its own ink against the sky behind it
+- the horizon is real ground now: the sun sets behind it, and the compass is written on it
+- the time dial slows down around now about two and a half times more
+- each dial reading sits beside its own handle; haze and names are gone and both stay on
 - the secrets stir once after a few seconds, and lean or glow as your cursor comes near
 
 ## you planned

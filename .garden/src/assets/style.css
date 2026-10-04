@@ -4549,33 +4549,55 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
 
 #sky-dials {
   position: fixed;
-  left: 50%;
-  bottom: calc(var(--taskbar-h, 2.4rem) + .7rem);
-  transform: translateX(-50%);
-  z-index: 8200;
+  /* left and bottom are set by app.js, from wherever the `sky` button is */
+  left: 8px;
+  bottom: calc(var(--taskbar-h, 2.4rem) + .5rem);
+  /* above the bin in the corner (9998): while it is open it is the thing
+     you are using, and the bin was sitting on the drift button */
+  z-index: 9999;
+  width: min(36rem, calc(100vw - 16px));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  padding: .85rem .95rem .8rem;
+  border-radius: 6px;
+  background: rgba(14, 18, 34, .78);
+  border: 1px solid rgba(190, 210, 245, .18);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .7);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .1em;
+  color: rgba(226, 234, 250, .9);
+  animation: sky-panel-in .18s ease-out;
+}
+#sky-dials[hidden] { display: none; }
+@keyframes sky-panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.sky-dial {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr 4.4rem;
+  align-items: center;
+  gap: .6rem;
+}
+/* the time handle has the whole width of the panel to itself: a longer
+   handle is a slower one, and it is the one that needs to be slow */
+.sky-dial.sky-dial-when { grid-template-columns: 1fr; }   /* beats the phone rule below */
+.sky-time-wrap { position: relative; display: block; padding-bottom: .95rem; }
+.sky-foot {
   display: flex;
   align-items: center;
-  gap: 1.1rem;
-  padding: .5rem .9rem;
-  border-radius: 3px;
-  background: rgba(18, 24, 44, .42);
-  border: 1px solid rgba(190, 210, 245, .16);
-  -webkit-backdrop-filter: blur(7px);
-  backdrop-filter: blur(7px);
-  font-family: var(--mono);
-  font-size: .58rem;
-  letter-spacing: .1em;
-  color: rgba(224, 234, 250, .8);
-  opacity: .42;
-  transition: opacity .3s ease;
-  max-width: calc(100vw - 2rem);
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: .55rem;
+  padding-top: .15rem;
+  border-top: 1px solid rgba(190, 210, 245, .12);
+  padding-top: .6rem;
 }
-#sky-dials:hover, #sky-dials:focus-within { opacity: 1; }
-#sky-dials[hidden] { display: none; }
-
-.sky-dial { display: flex; align-items: center; gap: .45rem; }
+.sky-foot .sky-time-read { flex: 1 1 auto; min-width: 0 !important; }
 .sky-dial-key {
   text-transform: uppercase;
   opacity: .55;
@@ -4587,21 +4609,15 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   min-width: 9.5em;
   opacity: .9;
 }
-/* each reading is sized to what it holds, so it sits right beside its own
-   handle instead of leaving a gap that makes it look like the next one's */
-.sky-az-read { min-width: 5.6em !important; }
-.sky-up-read { min-width: 2.4em !important; }
+
 
 /* The handles. A range input is a different animal in every browser, so
    this draws the whole thing rather than asking nicely. */
-/* The height handle is the short one: it only has ninety degrees to cover,
-   where the compass has three hundred and sixty. */
-#sky-dials .sky-up { width: 4.2rem !important; }
-
 #sky-dials input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  width: 8.5rem;
+  width: 100%;
+  margin: 0;
   height: 2px;
   border-radius: 2px;
   background: rgba(200, 218, 248, .3);
@@ -4656,12 +4672,6 @@ body.sky-whole main > .marquee { position: relative; z-index: 1; }
   50%      { background: rgba(205, 224, 255, .26); }
 }
 
-@media (max-width: 559px) {
-  #sky-dials { font-size: .54rem; gap: .5rem; padding: .4rem .5rem; }
-  #sky-dials input[type="range"] { width: 5.5rem; }
-  #sky-dials .sky-up { width: 3rem !important; }
-  .sky-dial b { min-width: 0; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   #sky-dials { transition: none; }
@@ -4740,22 +4750,6 @@ body.sky-whole .item[data-key=".garden.log"] { color: initial; }
 body.sky-whole .item.kind-todo h3 a { color: var(--ochre); }
 body.sky-whole .item.kind-todo p,
 body.sky-whole .item.kind-todo li { color: var(--ink-soft); }
-
-/* and the dials go to the corner rather than standing in the middle of the
-   folder, which is where things actually are */
-#sky-dials { left: 1rem; transform: none; }
-@media (max-width: 719px) {
-  /* Centred from left:50% — which on its own only lets the box shrink-wrap
-     into the right-hand HALF of the window, so it came out 304px wide on a
-     607px screen and stacked four deep. An explicit content width, capped,
-     lets it use the room that is actually there. */
-  #sky-dials {
-    left: 50%;
-    transform: translateX(-50%);
-    width: max-content;
-    max-width: calc(100vw - 1.5rem);
-  }
-}
 
 /* A star near the horizon shivers; a star overhead is steady. --lo is how
    far down the twinkle dips, written per star by app.js from how much air
@@ -4905,30 +4899,6 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
 }
 
 
-/* --------------------------------------------- the dials on a narrow window
-
-   Below about nine hundred pixels the row of handles wrapped into three
-   rows and stood in the middle of the folder — and because the horizon is
-   placed above whatever is standing at the bottom of the window, three rows
-   of dials also pushed the ground a quarter of the way up the page. Two
-   rows at most here, everything a size smaller, and the readings sized to
-   what they say rather than to a fixed column.
-   ===================================================================== */
-
-@media (max-width: 899px) and (min-width: 560px) {
-  #sky-dials {
-    gap: .35rem .85rem;
-    padding: .35rem .6rem;
-    font-size: .54rem;
-    max-width: min(34rem, calc(100vw - 1.5rem));
-  }
-  #sky-dials input[type="range"] { width: 5.4rem; }
-  #sky-dials .sky-up { width: 2.8rem !important; }
-  #sky-dials .sky-time { width: 6.2rem; }
-  .sky-dial { gap: .35rem; }
-  .sky-dial b { min-width: 0 !important; }
-  .sky-now, .sky-run { padding: .22rem .45rem; }
-}
 
 
 /* ================================================================== HINTS
@@ -5036,4 +5006,57 @@ body.notes-off .taskbar .picker-note { opacity: .34; pointer-events: none; }
   #clock-shell.nudge #clock,
   #adam.nudge #adam-art,
   #pad.nudge #rocket { animation: none; }
+}
+
+
+/* ------------------------------------------------------------ the sky panel
+
+   The landmarks under the time handle — a day and three days either side
+   of now, ticks for a week and a month — and the line itself, drawn into
+   the handle's own background so the thumb sits on top of them.
+   ===================================================================== */
+
+#sky-dials .sky-time {
+  height: 16px;
+  color: rgba(200, 218, 248, .55);
+  background:
+    var(--ticks, none),
+    linear-gradient(rgba(200, 218, 248, .3), rgba(200, 218, 248, .3)) 0 50% / 100% 2px no-repeat;
+}
+.sky-marks {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: .9rem;
+  pointer-events: none;
+}
+.sky-marks i {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-style: normal;
+  font-size: .5rem;
+  letter-spacing: .06em;
+  color: rgba(214, 226, 248, .45);
+  white-space: nowrap;
+}
+.sky-marks i.now { color: rgba(236, 242, 252, .8); }
+
+.sky-dial-key { font-size: .54rem; }
+.sky-dial b { min-width: 0; text-align: right; }
+
+/* The `sky` button. Its light comes on whenever the sky on the page is not
+   the sky outside — wound away from now, or drifting — so that with the
+   panel shut you still know you are looking at another day. */
+.picker-sky[hidden] { display: none; }
+.sky-toggle.running .led { animation: sky-led 1.4s ease-in-out infinite; }
+@keyframes sky-led {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .25; }
+}
+
+/* on a phone the panel is the width of the screen, less a margin */
+@media (max-width: 559px) {
+  #sky-dials { width: calc(100vw - 16px); font-size: .58rem; }
+  .sky-dial { grid-template-columns: 2.9rem 1fr 4rem; }
+
 }

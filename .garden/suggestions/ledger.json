@@ -1234,10 +1234,12 @@
     },
     "1791003013330o70n": {
       "id": "1791003013330o70n",
-      "status": "parked",
+      "status": "done",
       "firstSeen": "2026-10-03T04:52:12.390Z",
       "history": [
-        "2026-10-03T05:14:47.590Z new -> parked"
+        "2026-10-03T05:14:47.590Z new -> parked",
+        "2026-10-03T18:04:27.078Z parked -> done",
+        "2026-10-03T18:04:27.670Z taken off the wall"
       ],
       "room": "/",
       "text": "make all the secrets more obvous, like make it more obvious to grow the tree in garden, make it more obvious somehow to like click the waves. idk. help me brainstorm and ask me questions in claude about this regarding this. ",
@@ -1253,9 +1255,9 @@
           "at": 1791004476354
         }
       ],
-      "gone": false,
+      "gone": true,
       "flags": [],
-      "why": "talking it through with anmo first"
+      "why": "stirs once after a few seconds; leans or glows as a cursor nears"
     },
     "1791003056932huvh": {
       "id": "1791003056932huvh",
@@ -1298,5 +1300,5 @@
       "why": "captions one line, masthead note one line, dials off the books"
     }
   },
-  "updated": "2026-10-03T05:14:48.889Z"
+  "updated": "2026-10-03T18:04:27.671Z"
 }
